@@ -705,14 +705,6 @@ void tst_QDate::yearsZeroToNinetyNine()
 
     {
         QDate dt;
-        dt.setYMD(1, 2, 3);
-        QCOMPARE(dt.year(), 1901);
-        QCOMPARE(dt.month(), 2);
-        QCOMPARE(dt.day(), 3);
-    }
-
-    {
-        QDate dt;
         dt.setDate(1, 2, 3);
         QCOMPARE(dt.year(), 1);
         QCOMPARE(dt.month(), 2);

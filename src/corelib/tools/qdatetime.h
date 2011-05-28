@@ -76,23 +76,18 @@ public:
     int weekNumber(int *yearNum = 0) const;
 
 #ifndef QT_NO_TEXTDATE
-    // ### Qt 5: merge these functions.
-    static QString shortMonthName(int month);
-    static QString shortMonthName(int month, MonthNameType type);
-    static QString shortDayName(int weekday);
-    static QString shortDayName(int weekday, MonthNameType type);
-    static QString longMonthName(int month);
-    static QString longMonthName(int month, MonthNameType type);
-    static QString longDayName(int weekday);
-    static QString longDayName(int weekday, MonthNameType type);
+    static QString shortMonthName(int month, MonthNameType type = QDate::DateFormat);
+    static QString shortDayName(int weekday, MonthNameType type = QDate::DateFormat);
+    static QString longMonthName(int month, MonthNameType type = QDate::DateFormat);
+    static QString longDayName(int weekday, MonthNameType type = QDate::DateFormat);
 #endif // QT_NO_TEXTDATE
+
 #ifndef QT_NO_DATESTRING
     QString toString(Qt::DateFormat f = Qt::TextDate) const;
     QString toString(const QString &format) const;
 #endif
-    bool setYMD(int y, int m, int d);
-    bool setDate(int year, int month, int day);
 
+    bool setDate(int year, int month, int day);
     void getDate(int *year, int *month, int *day);
 
     QDate addDays(int days) const;
@@ -114,10 +109,6 @@ public:
 #endif
     static bool isValid(int y, int m, int d);
     static bool isLeapYear(int year);
-
-    // ### Qt 5: remove these two functions
-    static uint gregorianToJulian(int y, int m, int d);
-    static void julianToGregorian(uint jd, int &y, int &m, int &d);
 
     static inline QDate fromJulianDay(int jd) { QDate d; d.jd = jd; return d; }
     inline int toJulianDay() const { return jd; }

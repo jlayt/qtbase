@@ -185,8 +185,6 @@ static QString fmtDateTime(const QString& f, const QTime* dt = 0, const QDate* d
  *****************************************************************************/
 
 /*!
-    \since 4.5
-
     \enum QDate::MonthNameType
 
     This enum describes the types of the string representation used
@@ -293,9 +291,6 @@ static QString fmtDateTime(const QString& f, const QTime* dt = 0, const QDate* d
     If the specified date is invalid, the date is not set and
     isValid() returns false. A date before 2 January 4713 B.C. is
     considered invalid.
-
-    \warning Years 0 to 99 are interpreted as is, i.e., years
-             0-99.
 
     \sa isValid()
 */
@@ -521,10 +516,8 @@ int QDate::weekNumber(int *yearNumber) const
 
 #ifndef QT_NO_TEXTDATE
 /*!
-    \since 4.5
-
     Returns the short name of the \a month for the representation specified
-    by \a type.
+    by \a type.  By default returns the normal type for date formatting.
 
     The months are enumerated using the following convention:
 
@@ -566,22 +559,8 @@ QString QDate::shortMonthName(int month, QDate::MonthNameType type)
 }
 
 /*!
-    Returns the short version of the name of the \a month. The
-    returned name is in normal type which can be used for date formatting.
-
-    \sa toString(), longMonthName(), shortDayName(), longDayName()
- */
-
-QString QDate::shortMonthName(int month)
-{
-    return shortMonthName(month, QDate::DateFormat);
-}
-
-/*!
-    \since 4.5
-
     Returns the long name of the \a month for the representation specified
-    by \a type.
+    by \a type.  By default returns the normal type for date formatting.
 
     The months are enumerated using the following convention:
 
@@ -623,25 +602,8 @@ QString QDate::longMonthName(int month, MonthNameType type)
 }
 
 /*!
-    Returns the long version of the name of the \a month. The
-    returned name is in normal type which can be used for date formatting.
-
-    \sa toString(), shortMonthName(), shortDayName(), longDayName()
- */
-
-QString QDate::longMonthName(int month)
-{
-    if (month < 1 || month > 12) {
-        month = 1;
-    }
-    return QLocale::system().monthName(month, QLocale::LongFormat);
-}
-
-/*!
-    \since 4.5
-
     Returns the short name of the \a weekday for the representation specified
-    by \a type.
+    by \a type.  By default returns the normal type for date formatting.
 
     The days are enumerated using the following convention:
 
@@ -678,25 +640,8 @@ QString QDate::shortDayName(int weekday, MonthNameType type)
 }
 
 /*!
-    Returns the short version of the name of the \a weekday. The
-    returned name is in normal type which can be used for date formatting.
-
-    \sa toString(), longDayName(), shortMonthName(), longMonthName()
- */
-
-QString QDate::shortDayName(int weekday)
-{
-    if (weekday < 1 || weekday > 7) {
-        weekday = 1;
-    }
-    return QLocale::system().dayName(weekday, QLocale::ShortFormat);
-}
-
-/*!
-    \since 4.5
-
     Returns the long name of the \a weekday for the representation specified
-    by \a type.
+    by \a type.  By default returns the normal type for date formatting.
 
     The days are enumerated using the following convention:
 
@@ -732,20 +677,6 @@ QString QDate::longDayName(int weekday, MonthNameType type)
     return QLocale::system().dayName(weekday, QLocale::LongFormat);
 }
 
-/*!
-    Returns the long version of the name of the \a weekday. The
-    returned name is in normal type which can be used for date formatting.
-
-    \sa toString(), shortDayName(), shortMonthName(), longMonthName()
- */
-
-QString QDate::longDayName(int weekday)
-{
-    if (weekday < 1 || weekday > 7) {
-        weekday = 1;
-    }
-    return QLocale::system().dayName(weekday, QLocale::LongFormat);
-}
 #endif //QT_NO_TEXTDATE
 
 #ifndef QT_NO_DATESTRING
@@ -892,27 +823,8 @@ QString QDate::toString(const QString& format) const
 }
 #endif //QT_NO_DATESTRING
 
-/*!
-    \obsolete
-
-    Sets the date's year \a y, month \a m, and day \a d.
-
-    If \a y is in the range 0 to 99, it is interpreted as 1900 to
-    1999.
-
-    Use setDate() instead.
-*/
-
-bool QDate::setYMD(int y, int m, int d)
-{
-    if (uint(y) <= 99)
-        y += 1900;
-    return setDate(y, m, d);
-}
 
 /*!
-    \since 4.2
-
     Sets the date's \a year, \a month, and \a day. Returns true if
     the date is valid; otherwise returns false.
 
@@ -933,8 +845,6 @@ bool QDate::setDate(int year, int month, int day)
 }
 
 /*!
-    \since 4.5
-
     Extracts the date's year, month, and day, and assigns them to
     *\a year, *\a month, and *\a day. The pointers may be null.
 
@@ -1344,30 +1254,6 @@ bool QDate::isLeapYear(int y)
     } else {
         return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
     }
-}
-
-/*!
-    \internal
-
-    This function has a confusing name and shouldn't be part of the
-    API anyway, since we have toJulian() and fromJulian().
-    ### Qt 5: remove it
-*/
-uint QDate::gregorianToJulian(int y, int m, int d)
-{
-    return julianDayFromDate(y, m, d);
-}
-
-/*!
-    \internal
-
-    This function has a confusing name and shouldn't be part of the
-    API anyway, since we have toJulian() and fromJulian().
-    ### Qt 5: remove it
-*/
-void QDate::julianToGregorian(uint jd, int &y, int &m, int &d)
-{
-    getDateFromJulianDay(jd, &y, &m, &d);
 }
 
 /*! \fn static QDate QDate::fromJulianDay(int jd)
@@ -2330,8 +2216,6 @@ qint64 toMSecsSinceEpoch_helper(qint64 jd, int msecs)
 }
 
 /*!
-    \since 4.7
-
     Returns the datetime as the number of milliseconds that have passed
     since 1970-01-01T00:00:00.000, Coordinated Universal Time (Qt::UTC).
 
@@ -2384,8 +2268,6 @@ uint QDateTime::toTime_t() const
 }
 
 /*!
-    \since 4.7
-
     Sets the date and time given the number of milliseconds,\a msecs, that have
     passed since 1970-01-01T00:00:00.000, Coordinated Universal Time
     (Qt::UTC). On systems that do not support time zones this function
@@ -2690,7 +2572,6 @@ QDateTime QDateTimePrivate::addMSecs(const QDateTime &dt, qint64 msecs)
  Adds \a msecs to utcDate and \a utcTime as appropriate. It is assumed that
  utcDate and utcTime are adjusted to UTC.
 
- \since 4.5
  \internal
  */
 void QDateTimePrivate::addMSecs(QDate &utcDate, QTime &utcTime, qint64 msecs)
@@ -2923,7 +2804,6 @@ bool QDateTime::operator<(const QDateTime &other) const
 
 /*!
     \fn QDateTime QDateTime::currentDateTimeUtc()
-    \since 4.7
     Returns the current datetime, as reported by the system clock, in
     UTC.
 
@@ -2932,7 +2812,6 @@ bool QDateTime::operator<(const QDateTime &other) const
 
 /*!
     \fn qint64 QDateTime::currentMSecsSinceEpoch()
-    \since 4.7
 
     Returns the number of milliseconds since 1970-01-01T00:00:00 Universal
     Coordinated Time. This number is like the POSIX time_t variable, but
@@ -3189,8 +3068,6 @@ qint64 QDateTime::currentMSecsSinceEpoch()
 #endif
 
 /*!
-  \since 4.2
-
   Returns a datetime whose date and time are the number of \a seconds
   that have passed since 1970-01-01T00:00:00, Coordinated Universal
   Time (Qt::UTC). On systems that do not support time zones, the time
@@ -3206,8 +3083,6 @@ QDateTime QDateTime::fromTime_t(uint seconds)
 }
 
 /*!
-  \since 4.7
-
   Returns a datetime whose date and time are the number of milliseconds, \a msecs,
   that have passed since 1970-01-01T00:00:00.000, Coordinated Universal
   Time (Qt::UTC). On systems that do not support time zones, the time
@@ -3227,7 +3102,6 @@ QDateTime QDateTime::fromMSecsSinceEpoch(qint64 msecs)
 }
 
 /*!
- \since 4.4
  \internal
 
  Sets the offset from UTC to \a seconds, and also sets timeSpec() to
@@ -3259,7 +3133,6 @@ void QDateTime::setUtcOffset(int seconds)
 }
 
 /*!
- \since 4.4
  \internal
 
  Returns the UTC offset in seconds. If the timeSpec() isn't
