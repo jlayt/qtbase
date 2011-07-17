@@ -329,14 +329,19 @@ bool QDate::isValid() const
     Returns the year of this date. Negative numbers indicate years
     before 1 A.D. = 1 C.E., such that year -44 is 44 B.C.
 
+    Returns 0 if the date is invalid.
+
     \sa month(), day()
 */
 
 int QDate::year() const
 {
-    int y;
-    getDateFromJulianDay(jd, &y, 0, 0);
-    return y;
+    if (isValid()) {
+        int y;
+        getDateFromJulianDay(jd, &y, 0, 0);
+        return y;
+    }
+    return 0;
 }
 
 /*!
@@ -358,79 +363,111 @@ int QDate::year() const
     \i 12 = "December"
     \endlist
 
+    Returns 0 if the date is invalid.
+
     \sa year(), day()
 */
 
 int QDate::month() const
 {
-    int m;
-    getDateFromJulianDay(jd, 0, &m, 0);
-    return m;
+    if (isValid()) {
+        int m;
+        getDateFromJulianDay(jd, 0, &m, 0);
+        return m;
+    }
+    return 0;
 }
 
 /*!
     Returns the day of the month (1 to 31) of this date.
+
+    Returns 0 if the date is invalid.
 
     \sa year(), month(), dayOfWeek()
 */
 
 int QDate::day() const
 {
-    int d;
-    getDateFromJulianDay(jd, 0, 0, &d);
-    return d;
+    if (isValid()) {
+        int dd;
+        getDateFromJulianDay(jd, 0, 0, &dd);
+        return dd;
+    }
+    return 0;
 }
 
 /*!
     Returns the weekday (1 to 7) for this date.
+
+    Returns 0 if the date is invalid.
 
     \sa day(), dayOfYear(), Qt::DayOfWeek
 */
 
 int QDate::dayOfWeek() const
 {
-    return (jd % 7) + 1;
+    if (isValid()) {
+        return (jd % 7) + 1;
+    }
+    return 0;
 }
 
 /*!
     Returns the day of the year (1 to 365 or 366 on leap years) for
     this date.
 
+    Returns 0 if the date is invalid.
+
     \sa day(), dayOfWeek()
 */
 
 int QDate::dayOfYear() const
 {
-    return jd - julianDayFromDate(year(), 1, 1) + 1;
+    if (isValid()) {
+        return jd - julianDayFromDate(year(), 1, 1) + 1;
+    }
+    return 0;
 }
 
 /*!
     Returns the number of days in the month (28 to 31) for this date.
+
+    Returns 0 if the date is invalid.
 
     \sa day(), daysInYear()
 */
 
 int QDate::daysInMonth() const
 {
-    int y, m, d;
-    getDateFromJulianDay(jd, &y, &m, &d);
-    if (m == 2 && isLeapYear(y))
-        return 29;
-    else
-        return monthDays[m];
+    if (isValid()) {
+        int y, m;
+        getDateFromJulianDay(jd, &y, &m, 0);
+        if (m == 2 && isLeapYear(y))
+            return 29;
+        else if (m < 1 || m > 12)
+            return 0;
+        else
+            return monthDays[m];
+    }
+    return 0;
 }
 
 /*!
     Returns the number of days in the year (365 or 366) for this date.
+
+    Returns 0 if the date is invalid.
 
     \sa day(), daysInMonth()
 */
 
 int QDate::daysInYear() const
 {
-    int y, m, d;
-    getDateFromJulianDay(jd, &y, &m, &d);
-    return isLeapYear(y) ? 366 : 365;
+    if (isValid()) {
+        int y;
+        getDateFromJulianDay(jd, &y, 0, 0);
+        return isLeapYear(y) ? 366 : 365;
+    }
+    return 0;
 }
 
 /*!
@@ -539,13 +576,15 @@ int QDate::weekNumber(int *yearNumber) const
     The month names will be localized according to the system's locale
     settings.
 
+    Returns an empty string if the date is invalid.
+
     \sa toString(), longMonthName(), shortDayName(), longDayName()
 */
 
 QString QDate::shortMonthName(int month, QDate::MonthNameType type)
 {
     if (month < 1 || month > 12) {
-        month = 1;
+        return QString();
     }
     switch (type) {
     case QDate::DateFormat:
@@ -582,13 +621,15 @@ QString QDate::shortMonthName(int month, QDate::MonthNameType type)
     The month names will be localized according to the system's locale
     settings.
 
+    Returns an empty string if the date is invalid.
+
     \sa toString(), shortMonthName(), shortDayName(), longDayName()
 */
 
 QString QDate::longMonthName(int month, MonthNameType type)
 {
     if (month < 1 || month > 12) {
-        month = 1;
+        return QString();
     }
     switch (type) {
     case QDate::DateFormat:
@@ -620,13 +661,15 @@ QString QDate::longMonthName(int month, MonthNameType type)
     The day names will be localized according to the system's locale
     settings.
 
+    Returns an empty string if the date is invalid.
+
     \sa toString(), shortMonthName(), longMonthName(), longDayName()
 */
 
 QString QDate::shortDayName(int weekday, MonthNameType type)
 {
     if (weekday < 1 || weekday > 7) {
-        weekday = 1;
+        return QString();
     }
     switch (type) {
     case QDate::DateFormat:
@@ -658,13 +701,15 @@ QString QDate::shortDayName(int weekday, MonthNameType type)
     The day names will be localized according to the system's locale
     settings.
 
+    Returns an empty string if the date is invalid.
+
     \sa toString(), shortDayName(), shortMonthName(), longMonthName()
 */
 
 QString QDate::longDayName(int weekday, MonthNameType type)
 {
     if (weekday < 1 || weekday > 7) {
-        weekday = 1;
+        return QString();
     }
     switch (type) {
     case QDate::DateFormat:
@@ -848,22 +893,39 @@ bool QDate::setDate(int year, int month, int day)
     Extracts the date's year, month, and day, and assigns them to
     *\a year, *\a month, and *\a day. The pointers may be null.
 
+    Returns 0 if the date is invalid.
+
     \sa year(), month(), day(), isValid()
 */
 void QDate::getDate(int *year, int *month, int *day)
 {
-    getDateFromJulianDay(jd, year, month, day);
+    if (isValid()) {
+        getDateFromJulianDay(jd, year, month, day);
+    } else {
+        if (year)
+            *year = 0;
+        if (month)
+            *month = 0;
+        if (day)
+            *day = 0;
+    }
 }
 
 /*!
     Returns a QDate object containing a date \a ndays later than the
     date of this object (or earlier if \a ndays is negative).
 
+    Returns a null date if the current date is invalid or the new date is
+    out-of-range.
+
     \sa addMonths() addYears() daysTo()
 */
 
 QDate QDate::addDays(int ndays) const
 {
+    if (isNull())
+        return QDate();
+
     QDate d;
     // this is basically "d.jd = jd + ndays" with checks for integer overflow
     if (ndays >= 0)
@@ -978,6 +1040,8 @@ QDate QDate::addYears(int nyears) const
     Returns the number of days from this date to \a d (which is
     negative if \a d is earlier than this date).
 
+    Returns 0 if either date is invalid.
+
     Example:
     \snippet doc/src/snippets/code/src_corelib_tools_qdatetime.cpp 0
 
@@ -986,7 +1050,11 @@ QDate QDate::addYears(int nyears) const
 
 int QDate::daysTo(const QDate &d) const
 {
-    return d.jd - jd;
+    if (isNull() || d.isNull()) {
+        return 0;
+    } else {
+        return d.jd - jd;
+    }
 }
 
 
@@ -1370,45 +1438,65 @@ bool QTime::isValid() const
 /*!
     Returns the hour part (0 to 23) of the time.
 
+    Returns -1 if the time is invalid.
+
     \sa minute(), second(), msec()
 */
 
 int QTime::hour() const
 {
-    return ds() / MSECS_PER_HOUR;
+    if (isValid())
+        return ds() / MSECS_PER_HOUR;
+    else
+        return -1;
 }
 
 /*!
     Returns the minute part (0 to 59) of the time.
+
+    Returns -1 if the time is invalid.
 
     \sa hour(), second(), msec()
 */
 
 int QTime::minute() const
 {
-    return (ds() % MSECS_PER_HOUR) / MSECS_PER_MIN;
+    if (isValid())
+        return (ds() % MSECS_PER_HOUR) / MSECS_PER_MIN;
+    else
+        return -1;
 }
 
 /*!
     Returns the second part (0 to 59) of the time.
+
+    Returns -1 if the time is invalid.
 
     \sa hour(), minute(), msec()
 */
 
 int QTime::second() const
 {
-    return (ds() / 1000)%SECS_PER_MIN;
+    if (isValid())
+        return (ds() / 1000) % SECS_PER_MIN;
+    else
+        return -1;
 }
 
 /*!
     Returns the millisecond part (0 to 999) of the time.
+
+    Returns -1 if the time is invalid.
 
     \sa hour(), minute(), second()
 */
 
 int QTime::msec() const
 {
-    return ds() % 1000;
+    if (isValid())
+        return ds() % 1000;
+    else
+        return -1;
 }
 
 #ifndef QT_NO_DATESTRING
@@ -1555,6 +1643,8 @@ bool QTime::setHMS(int h, int m, int s, int ms)
 
     Note that the time will wrap if it passes midnight.
 
+    Returns a null time if this time is invalid.
+
     Example:
 
     \snippet doc/src/snippets/code/src_corelib_tools_qdatetime.cpp 5
@@ -1577,12 +1667,17 @@ QTime QTime::addSecs(int s) const
 
     secsTo() does not take into account any milliseconds.
 
+    Returns 0 if either time is invalid.
+
     \sa addSecs(), QDateTime::secsTo()
 */
 
 int QTime::secsTo(const QTime &t) const
 {
-    return (t.ds() - ds()) / 1000;
+    if (isValid() && t.isValid())
+        return (t.ds() - ds()) / 1000;
+    else
+        return 0;
 }
 
 /*!
@@ -1592,18 +1687,22 @@ int QTime::secsTo(const QTime &t) const
     Note that the time will wrap if it passes midnight. See addSecs()
     for an example.
 
+    Returns a null time if this time is invalid.
+
     \sa addSecs(), msecsTo(), QDateTime::addMSecs()
 */
 
 QTime QTime::addMSecs(int ms) const
 {
     QTime t;
-    if (ms < 0) {
-        // % not well-defined for -ve, but / is.
-        int negdays = (MSECS_PER_DAY - ms) / MSECS_PER_DAY;
-        t.mds = (ds() + ms + negdays * MSECS_PER_DAY) % MSECS_PER_DAY;
-    } else {
-        t.mds = (ds() + ms) % MSECS_PER_DAY;
+    if (isValid()) {
+        if (ms < 0) {
+            // % not well-defined for -ve, but / is.
+            int negdays = (MSECS_PER_DAY - ms) / MSECS_PER_DAY;
+            t.mds = (ds() + ms + negdays * MSECS_PER_DAY) % MSECS_PER_DAY;
+        } else {
+            t.mds = (ds() + ms) % MSECS_PER_DAY;
+        }
     }
 #if defined(Q_OS_WINCE)
     if (startTick > NullTime)
@@ -1621,18 +1720,24 @@ QTime QTime::addMSecs(int ms) const
     seconds in a day, the result is always between -86400000 and
     86400000 ms.
 
+    Returns 0 if either time is invalid.
+
     \sa secsTo(), addMSecs(), QDateTime::msecsTo()
 */
 
 int QTime::msecsTo(const QTime &t) const
 {
+    if (isValid() && t.isValid()) {
 #if defined(Q_OS_WINCE)
-    // GetLocalTime() for Windows CE has no milliseconds resolution
-    if (t.startTick > NullTime && startTick > NullTime)
-        return t.startTick - startTick;
-    else
+        // GetLocalTime() for Windows CE has no milliseconds resolution
+        if (t.startTick > NullTime && startTick > NullTime)
+            return t.startTick - startTick;
+        else
 #endif
-        return t.ds() - ds();
+            return t.ds() - ds();
+    } else {
+        return 0;
+    }
 }
 
 
@@ -2234,7 +2339,7 @@ qint64 QDateTime::toMSecsSinceEpoch() const
     QTime utcTime;
     d->getUTC(utcDate, utcTime);
 
-    return toMSecsSinceEpoch_helper(utcDate.jd, utcTime.ds());
+    return toMSecsSinceEpoch_helper(utcDate.toJulianDay(), QTime(0, 0, 0).msecsTo(utcTime));
 }
 
 /*!
@@ -2294,7 +2399,7 @@ void QDateTime::setMSecsSinceEpoch(qint64 msecs)
     }
 
     d->date = QDate(1970, 1, 1).addDays(ddays);
-    d->time = QTime().addMSecs(msecs);
+    d->time = QTime(0, 0, 0).addMSecs(msecs);
     d->spec = QDateTimePrivate::UTC;
 
     if (oldSpec != QDateTimePrivate::UTC)
@@ -2319,7 +2424,7 @@ void QDateTime::setTime_t(uint secsSince1Jan1970UTC)
     QDateTimePrivate::Spec oldSpec = d->spec;
 
     d->date = QDate(1970, 1, 1).addDays(secsSince1Jan1970UTC / SECS_PER_DAY);
-    d->time = QTime().addSecs(secsSince1Jan1970UTC % SECS_PER_DAY);
+    d->time = QTime(0, 0, 0).addSecs(secsSince1Jan1970UTC % SECS_PER_DAY);
     d->spec = QDateTimePrivate::UTC;
 
     if (oldSpec != QDateTimePrivate::UTC)
@@ -2576,8 +2681,8 @@ QDateTime QDateTimePrivate::addMSecs(const QDateTime &dt, qint64 msecs)
  */
 void QDateTimePrivate::addMSecs(QDate &utcDate, QTime &utcTime, qint64 msecs)
 {
-    uint dd = utcDate.jd;
-    int tt = utcTime.ds();
+    int dd = utcDate.toJulianDay();
+    int tt = QTime(0, 0, 0).msecsTo(utcTime);
     int sign = 1;
     if (msecs < 0) {
         msecs = -msecs;
@@ -2599,8 +2704,8 @@ void QDateTimePrivate::addMSecs(QDate &utcDate, QTime &utcTime, qint64 msecs)
         tt = tt % MSECS_PER_DAY;
     }
 
-    utcDate.jd = dd;
-    utcTime.mds = tt;
+    utcDate = QDate::fromJulianDay(dd);
+    utcTime = QTime(0, 0, 0).addMSecs(tt);
 }
 
 /*!
@@ -2650,6 +2755,8 @@ int QDateTime::daysTo(const QDateTime &other) const
     to Qt::UTC to ensure that the result is correct if one of the two
     datetimes has daylight saving time (DST) and the other doesn't.
 
+    Returns 0 if either time is invalid.
+
     Example:
     \snippet doc/src/snippets/code/src_corelib_tools_qdatetime.cpp 11
 
@@ -2658,13 +2765,17 @@ int QDateTime::daysTo(const QDateTime &other) const
 
 int QDateTime::secsTo(const QDateTime &other) const
 {
-    QDate date1, date2;
-    QTime time1, time2;
+    if (isValid() && other.isValid()) {
+        QDate date1, date2;
+        QTime time1, time2;
 
-    d->getUTC(date1, time1);
-    other.d->getUTC(date2, time2);
+        d->getUTC(date1, time1);
+        other.d->getUTC(date2, time2);
 
-    return (date1.daysTo(date2) * SECS_PER_DAY) + time1.secsTo(time2);
+        return (date1.daysTo(date2) * SECS_PER_DAY) + time1.secsTo(time2);
+    } else {
+        return 0;
+    }
 }
 
 /*!
@@ -2676,21 +2787,27 @@ int QDateTime::secsTo(const QDateTime &other) const
     to Qt::UTC to ensure that the result is correct if one of the two
     datetimes has daylight saving time (DST) and the other doesn't.
 
+    Returns 0 if either time is null.
+
     \sa addMSecs(), daysTo(), QTime::msecsTo()
 */
 
 qint64 QDateTime::msecsTo(const QDateTime &other) const
 {
-    QDate selfDate;
-    QDate otherDate;
-    QTime selfTime;
-    QTime otherTime;
+    if (isValid() && other.isValid()) {
+        QDate selfDate;
+        QDate otherDate;
+        QTime selfTime;
+        QTime otherTime;
 
-    d->getUTC(selfDate, selfTime);
-    other.d->getUTC(otherDate, otherTime);
+        d->getUTC(selfDate, selfTime);
+        other.d->getUTC(otherDate, otherTime);
 
-    return (static_cast<qint64>(selfDate.daysTo(otherDate)) * static_cast<qint64>(MSECS_PER_DAY))
-           + static_cast<qint64>(selfTime.msecsTo(otherTime));
+        return (static_cast<qint64>(selfDate.daysTo(otherDate)) * static_cast<qint64>(MSECS_PER_DAY))
+               + static_cast<qint64>(selfTime.msecsTo(otherTime));
+    } else {
+        return 0;
+    }
 }
 
 
@@ -2842,7 +2959,7 @@ QTime QTime::currentTime()
     SYSTEMTIME st;
     memset(&st, 0, sizeof(SYSTEMTIME));
     GetLocalTime(&st);
-    ct.mds = msecsFromDecomposed(st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+    ct.setHMS(st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 #if defined(Q_OS_WINCE)
     ct.startTick = GetTickCount() % MSECS_PER_DAY;
 #endif
@@ -3813,7 +3930,7 @@ static QDateTimePrivate::Spec utcToLocal(QDate &date, QTime &time)
     QDate fakeDate = adjustDate(date);
 
     // won't overflow because of fakeDate
-    time_t secsSince1Jan1970UTC = toMSecsSinceEpoch_helper(fakeDate.toJulianDay(), QTime().msecsTo(time)) / 1000;
+    time_t secsSince1Jan1970UTC = toMSecsSinceEpoch_helper(fakeDate.toJulianDay(), QTime(0, 0, 0).msecsTo(time)) / 1000;
     tm *brokenDown = 0;
 
 #if defined(Q_OS_WINCE)
