@@ -48,6 +48,8 @@ class tst_QDate : public QObject
     Q_OBJECT
 private slots:
     void toString();
+    void isNull_data();
+    void isNull();
     void isValid_data();
     void isValid();
     void julianDay_data();
@@ -101,66 +103,105 @@ private slots:
 
 Q_DECLARE_METATYPE(QDate)
 
+tst_QDate::tst_QDate()
+{
+}
+
+tst_QDate::~tst_QDate()
+{
+
+}
+
+void tst_QDate::init()
+{
+// This will be executed immediately before each test is run.
+// TODO: Add initialization code here.
+}
+
+void tst_QDate::cleanup()
+{
+// This will be executed immediately after each test is run.
+// TODO: Add cleanup code here.
+}
+
+void tst_QDate::isNull_data()
+{
+    QTest::addColumn<qint64>("jd");
+    QTest::addColumn<bool>("null");
+
+    QTest::newRow("qint64 min")     << std::numeric_limits<qint64>::min()     << true;
+    QTest::newRow("qint64 min + 1") << std::numeric_limits<qint64>::min() + 1 << false;
+    QTest::newRow("qint64 max")     << std::numeric_limits<qint64>::max()     << false;
+}
+
+void tst_QDate::isNull()
+{
+    QFETCH(qint64, jd);
+
+    QDate d = QDate::fromJulianDay(jd);
+    QTEST(d.isNull(), "null");
+}
+
 void tst_QDate::isValid_data()
 {
+    qint64 nullJd = std::numeric_limits<qint64>::min();
+
     QTest::addColumn<int>("year");
     QTest::addColumn<int>("month");
     QTest::addColumn<int>("day");
-    QTest::addColumn<uint>("jd");
+    QTest::addColumn<qint64>("jd");
     QTest::addColumn<bool>("valid");
 
-    QTest::newRow("0-0-0") << 0 << 0 << 0 << 0U << false;
-    QTest::newRow("month 0") << 2000 << 0 << 1 << 0U << false;
-    QTest::newRow("day 0") << 2000 << 1 << 0 << 0U << false;
+    QTest::newRow("0-0-0")    <<    0 <<  0 << 0 << nullJd << false;
+    QTest::newRow("month 0")  << 2000 <<  0 << 1 << nullJd << false;
+    QTest::newRow("day 0")    << 2000 <<  1 << 0 << nullJd << false;
 
-    QTest::newRow("month 13") << 2000 << 13 << 1 << 0U << false;
+    QTest::newRow("month 13") << 2000 << 13 << 1 << nullJd << false;
 
     // test leap years
-    QTest::newRow("non-leap") << 2006 << 2 << 29 << 0U << false;
-    QTest::newRow("normal leap") << 2004 << 2 << 29 << 2453065U << true;
-    QTest::newRow("century leap") << 1900 << 2 << 29 << 0U << false;
-    QTest::newRow("century leap") << 2100 << 2 << 29 << 0U << false;
-    QTest::newRow("400-years leap") << 2000 << 2 << 29 << 2451604U << true;
-    QTest::newRow("400-years leap 2") << 2400 << 2 << 29 << 2597701U << true;
-    QTest::newRow("400-years leap 3") << 1600 << 2 << 29 << 2305507U << true;
-    QTest::newRow("year 0") << 0 << 2 << 27 << 0U << false;
+    QTest::newRow("non-leap")         << 2006 <<  2 << 29 << nullJd  << false;
+    QTest::newRow("normal leap")      << 2004 <<  2 << 29 << qint64(2453065) << true;
+    QTest::newRow("century leap")     << 1900 <<  2 << 29 << nullJd  << false;
+    QTest::newRow("century leap")     << 2100 <<  2 << 29 << nullJd  << false;
+    QTest::newRow("400-years leap")   << 2000 <<  2 << 29 << qint64(2451604) << true;
+    QTest::newRow("400-years leap 2") << 2400 <<  2 << 29 << qint64(2597701) << true;
+    QTest::newRow("400-years leap 3") << 1600 <<  2 << 29 << qint64(2305507) << true;
+    QTest::newRow("year 0")           <<    0 <<  2 << 27 << nullJd  << false;
 
     // test the number of days in months:
-    QTest::newRow("jan") << 2000 << 1 << 31 << 2451575U << true;
-    QTest::newRow("feb") << 2000 << 2 << 29 << 2451604U << true; // same data as 400-years leap
-    QTest::newRow("mar") << 2000 << 3 << 31 << 2451635U << true;
-    QTest::newRow("apr") << 2000 << 4 << 30 << 2451665U << true;
-    QTest::newRow("may") << 2000 << 5 << 31 << 2451696U << true;
-    QTest::newRow("jun") << 2000 << 6 << 30 << 2451726U << true;
-    QTest::newRow("jul") << 2000 << 7 << 31 << 2451757U << true;
-    QTest::newRow("aug") << 2000 << 8 << 31 << 2451788U << true;
-    QTest::newRow("sep") << 2000 << 9 << 30 << 2451818U << true;
-    QTest::newRow("oct") << 2000 << 10 << 31 << 2451849U << true;
-    QTest::newRow("nov") << 2000 << 11 << 30 << 2451879U << true;
-    QTest::newRow("dec") << 2000 << 12 << 31 << 2451910U << true;
+    QTest::newRow("jan") << 2000 <<  1 << 31 << qint64(2451575) << true;
+    QTest::newRow("feb") << 2000 <<  2 << 29 << qint64(2451604) << true; // same data as 400-years leap
+    QTest::newRow("mar") << 2000 <<  3 << 31 << qint64(2451635) << true;
+    QTest::newRow("apr") << 2000 <<  4 << 30 << qint64(2451665) << true;
+    QTest::newRow("may") << 2000 <<  5 << 31 << qint64(2451696) << true;
+    QTest::newRow("jun") << 2000 <<  6 << 30 << qint64(2451726) << true;
+    QTest::newRow("jul") << 2000 <<  7 << 31 << qint64(2451757) << true;
+    QTest::newRow("aug") << 2000 <<  8 << 31 << qint64(2451788) << true;
+    QTest::newRow("sep") << 2000 <<  9 << 30 << qint64(2451818) << true;
+    QTest::newRow("oct") << 2000 << 10 << 31 << qint64(2451849) << true;
+    QTest::newRow("nov") << 2000 << 11 << 30 << qint64(2451879) << true;
+    QTest::newRow("dec") << 2000 << 12 << 31 << qint64(2451910) << true;
 
     // and invalid dates:
-    QTest::newRow("ijan") << 2000 << 1 << 32 << 0U << false;
-    QTest::newRow("ifeb") << 2000 << 2 << 30 << 0U << false;
-    QTest::newRow("imar") << 2000 << 3 << 32 << 0U << false;
-    QTest::newRow("iapr") << 2000 << 4 << 31 << 0U << false;
-    QTest::newRow("imay") << 2000 << 5 << 32 << 0U << false;
-    QTest::newRow("ijun") << 2000 << 6 << 31 << 0U << false;
-    QTest::newRow("ijul") << 2000 << 7 << 32 << 0U << false;
-    QTest::newRow("iaug") << 2000 << 8 << 32 << 0U << false;
-    QTest::newRow("isep") << 2000 << 9 << 31 << 0U << false;
-    QTest::newRow("ioct") << 2000 << 10 << 32 << 0U << false;
-    QTest::newRow("inov") << 2000 << 11 << 31 << 0U << false;
-    QTest::newRow("idec") << 2000 << 12 << 32 << 0U << false;
+    QTest::newRow("ijan") << 2000 <<  1 << 32 << nullJd << false;
+    QTest::newRow("ifeb") << 2000 <<  2 << 30 << nullJd << false;
+    QTest::newRow("imar") << 2000 <<  3 << 32 << nullJd << false;
+    QTest::newRow("iapr") << 2000 <<  4 << 31 << nullJd << false;
+    QTest::newRow("imay") << 2000 <<  5 << 32 << nullJd << false;
+    QTest::newRow("ijun") << 2000 <<  6 << 31 << nullJd << false;
+    QTest::newRow("ijul") << 2000 <<  7 << 32 << nullJd << false;
+    QTest::newRow("iaug") << 2000 <<  8 << 32 << nullJd << false;
+    QTest::newRow("isep") << 2000 <<  9 << 31 << nullJd << false;
+    QTest::newRow("ioct") << 2000 << 10 << 32 << nullJd << false;
+    QTest::newRow("inov") << 2000 << 11 << 31 << nullJd << false;
+    QTest::newRow("idec") << 2000 << 12 << 32 << nullJd << false;
 
     // the beginning of the Julian Day calendar:
-    QTest::newRow("jd negative1") << -4714 << 1 << 1 << 0U << false;
-    QTest::newRow("jd negative2") << -4713 << 1 << 1 << 0U << false;
-    QTest::newRow("jd negative3") << -4713 << 1 << 2 << 1U << true;
-    QTest::newRow("jd negative4") << -4713 << 1 << 3 << 2U << true;
-    QTest::newRow("jd 0") << -4713 << 1 << 1 << 0U << false;
-    QTest::newRow("jd 1") << -4713 << 1 << 2 << 1U << true;
-    QTest::newRow("imminent overflow") << 11754508 << 12 << 13 << 4294967295U << true;
+    QTest::newRow("jd earliest formula") <<   -4800 <<  1 <<  1 << qint64(   -31776) << true;
+    QTest::newRow("jd -1")               <<   -4714 << 12 << 31 << qint64(       -1) << true;
+    QTest::newRow("jd 0")                <<   -4713 <<  1 <<  1 << qint64(        0) << true;
+    QTest::newRow("jd 1")                <<   -4713 <<  1 <<  2 << qint64(        1) << true;
+    QTest::newRow("jd latest formula")   << 1400000 << 12 << 31 << qint64(513060925) << true;
 }
 
 void tst_QDate::isValid()
@@ -196,15 +237,15 @@ void tst_QDate::julianDay()
     QFETCH(int, year);
     QFETCH(int, month);
     QFETCH(int, day);
-    QFETCH(uint, jd);
+    QFETCH(qint64, jd);
 
     {
         QDate d;
         d.setDate(year, month, day);
-        QCOMPARE(uint(d.toJulianDay()), jd);
+        QCOMPARE(d.toJulianDay(), jd);
     }
 
-    if (jd) {
+    if (jd != std::numeric_limits<qint64>::min()) {
         QDate d = QDate::fromJulianDay(jd);
         QCOMPARE(d.year(), year);
         QCOMPARE(d.month(), month);
@@ -433,9 +474,7 @@ void tst_QDate::addDays_data()
     QTest::newRow( "data10" ) << 2000 << 2 << 28 << -1 << 2000 << 2 << 27;
     QTest::newRow( "data11" ) << 2001 << 2 << 28 << -30 << 2001 << 1 << 29;
 
-    QDate invalid;
-    QTest::newRow( "data12" ) << -4713 << 1 << 2 << -2
-        << invalid.year() << invalid.month() << invalid.day();
+    QTest::newRow( "data12" ) << -4713 << 1 << 2 << -2 << -4714 << 12 << 31;
 }
 
 void tst_QDate::addMonths()
@@ -796,6 +835,8 @@ void tst_QDate::toString_format()
 
 void tst_QDate::isLeapYear()
 {
+    QVERIFY(QDate::isLeapYear(-4801));
+    QVERIFY(!QDate::isLeapYear(-4800));
     QVERIFY(QDate::isLeapYear(-4445));
     QVERIFY(!QDate::isLeapYear(-4444));
     QVERIFY(!QDate::isLeapYear(-6));
@@ -1053,9 +1094,17 @@ void tst_QDate::roundtrip() const
     // year(), month(), day(), julianDayFromDate(), and getDateFromJulianDay()
     // to ensure they are internally consistent (but doesn't guarantee correct)
 
-    // Test Julian round trip in both BC and AD
+    // Test Julian round trip around JD 0 and current low end of valid range
     QDate testDate;
-    QDate loopDate = QDate::fromJulianDay(1684899); //  1 Jan 100 BC
+    QDate loopDate = QDate::fromJulianDay(-31776); // 1 Jan 4800 BC
+    while ( loopDate.toJulianDay() <= 5113 ) {     // 31 Dec 4700 AD
+        testDate.setDate( loopDate.year(), loopDate.month(), loopDate.day() );
+        QCOMPARE( loopDate.toJulianDay(), testDate.toJulianDay() );
+        loopDate = loopDate.addDays(1);
+    }
+
+    // Test Julian round trip in both BC and AD
+    loopDate = QDate::fromJulianDay(1684899);       //  1 Jan 100 BC
     while ( loopDate.toJulianDay() <= 1757948 ) {   // 31 Dec 100 AD
         testDate.setDate( loopDate.year(), loopDate.month(), loopDate.day() );
         QCOMPARE( loopDate.toJulianDay(), testDate.toJulianDay() );
@@ -1073,6 +1122,22 @@ void tst_QDate::roundtrip() const
     // Test Gregorian round trip during current useful period
     loopDate = QDate::fromJulianDay(2378497);     //  1 Jan 1900 AD
     while ( loopDate.toJulianDay() <= 2488433 ) { // 31 Dec 2100 AD
+        testDate.setDate( loopDate.year(), loopDate.month(), loopDate.day() );
+        QCOMPARE( loopDate.toJulianDay(), testDate.toJulianDay() );
+        loopDate = loopDate.addDays(1);
+    }
+
+    // Test Gregorian round trip at top end of widget/format range
+    loopDate = QDate::fromJulianDay(5336961);     //  1 Jan 9900 AD
+    while ( loopDate.toJulianDay() <= 5373484 ) { // 31 Dec 9999 AD
+        testDate.setDate( loopDate.year(), loopDate.month(), loopDate.day() );
+        QCOMPARE( loopDate.toJulianDay(), testDate.toJulianDay() );
+        loopDate = loopDate.addDays(1);
+    }
+
+    // Test Gregorian round trip at top end of conversion range
+    loopDate = QDate::fromJulianDay(513024036);     //  1 Jan 1399900 AD
+    while ( loopDate.toJulianDay() <= 513060925 ) { // 31 Dec 1400000 AD
         testDate.setDate( loopDate.year(), loopDate.month(), loopDate.day() );
         QCOMPARE( loopDate.toJulianDay(), testDate.toJulianDay() );
         loopDate = loopDate.addDays(1);

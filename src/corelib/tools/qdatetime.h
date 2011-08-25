@@ -42,6 +42,7 @@
 #ifndef QDATETIME_H
 #define QDATETIME_H
 
+#include <limits>
 #include <QtCore/qstring.h>
 #include <QtCore/qnamespace.h>
 #include <QtCore/qsharedpointer.h>
@@ -60,10 +61,10 @@ public:
         StandaloneFormat
     };
 public:
-    QDate() { jd = 0; }
+    QDate() { jd = std::numeric_limits<qint64>::min(); }
     QDate(int y, int m, int d);
 
-    bool isNull() const { return jd == 0; }
+    bool isNull() const { return jd == std::numeric_limits<qint64>::min(); }
     bool isValid() const;
 
     int year() const;
@@ -110,11 +111,11 @@ public:
     static bool isValid(int y, int m, int d);
     static bool isLeapYear(int year);
 
-    static inline QDate fromJulianDay(int jd) { QDate d; d.jd = jd; return d; }
-    inline int toJulianDay() const { return jd; }
+    static inline QDate fromJulianDay(qint64 jd) { QDate d; d.jd = jd; return d; }
+    inline qint64 toJulianDay() const { return jd; }
 
 private:
-    uint jd;
+    qint64 jd;
 
     friend class QDateTime;
     friend class QDateTimePrivate;
