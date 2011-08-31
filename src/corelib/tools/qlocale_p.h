@@ -174,9 +174,6 @@ public:
     enum NumberMode { IntegerMode, DoubleStandardMode, DoubleScientificMode };
     bool validateChars(const QString &str, NumberMode numMode, QByteArray *buff, int decDigits = -1) const;
 
-    QString dateTimeToString(const QString &format, const QDate *date, const QTime *time,
-                             const QLocale *q) const;
-
     quint16 m_language_id, m_script_id, m_country_id;
 
     quint16 m_decimal, m_group, m_list, m_percent,
@@ -271,9 +268,7 @@ private:
 };
 #endif
 
-QString qt_readEscapedFormatString(const QString &format, int *idx);
 bool qt_splitLocaleName(const QString &name, QString &lang, QString &script, QString &cntry);
-int qt_repeatCount(const QString &s, int i);
 
 QT_END_NAMESPACE
 

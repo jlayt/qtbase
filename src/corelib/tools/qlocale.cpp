@@ -62,6 +62,7 @@ QT_END_NAMESPACE
 #include "qlocale_tools_p.h"
 #include "qdatetime_p.h"
 #include "qdatetimeparser_p.h"
+#include "qdatetimeformatter_p.h"
 #include "qnamespace.h"
 #include "qdatetime.h"
 #include "qstringlist.h"
@@ -384,49 +385,6 @@ static const QLocalePrivate *findLocale(const QString &name)
     QLocalePrivate::getLangAndCountry(name, lang, script, cntry);
 
     return QLocalePrivate::findLocale(lang, script, cntry);
-}
-
-QString qt_readEscapedFormatString(const QString &format, int *idx)
-{
-    int &i = *idx;
-
-    Q_ASSERT(format.at(i) == QLatin1Char('\''));
-    ++i;
-    if (i == format.size())
-        return QString();
-    if (format.at(i).unicode() == '\'') { // "''" outside of a quoted stirng
-        ++i;
-        return QLatin1String("'");
-    }
-
-    QString result;
-
-    while (i < format.size()) {
-        if (format.at(i).unicode() == '\'') {
-            if (i + 1 < format.size() && format.at(i + 1).unicode() == '\'') {
-                // "''" inside of a quoted string
-                result.append(QLatin1Char('\''));
-                i += 2;
-            } else {
-                break;
-            }
-        } else {
-            result.append(format.at(i++));
-        }
-    }
-    if (i < format.size())
-        ++i;
-
-    return result;
-}
-
-int qt_repeatCount(const QString &s, int i)
-{
-    QChar c = s.at(i);
-    int j = i + 1;
-    while (j < s.size() && s.at(j) == c)
-        ++j;
-    return j - i;
 }
 
 static const QLocalePrivate *default_lp = 0;
@@ -1299,7 +1257,12 @@ QString QLocale::toString(qulonglong i) const
 
 QString QLocale::toString(const QDate &date, const QString &format) const
 {
-    return d()->dateTimeToString(format, &date, 0, this);
+#ifndef QT_BOOTSTRAPPED
+    return QDateTimeFormatter::dateTimeToString(format, &date, 0, this);
+#else
+    Q_UNUSED(format);
+    return QString();
+#endif
 }
 
 /*!
@@ -1326,50 +1289,6 @@ QString QLocale::toString(const QDate &date, FormatType format) const
     return toString(date, format_str);
 }
 
-static bool timeFormatContainsAP(const QString &format)
-{
-    int i = 0;
-    while (i < format.size()) {
-        if (format.at(i).unicode() == '\'') {
-            qt_readEscapedFormatString(format, &i);
-            continue;
-        }
-
-        if (format.at(i).toLower().unicode() == 'a')
-            return true;
-
-        ++i;
-    }
-    return false;
-}
-
-static QString timeZone()
-{
-#if defined(Q_OS_WINCE)
-    TIME_ZONE_INFORMATION info;
-    DWORD res = GetTimeZoneInformation(&info);
-    if (res == TIME_ZONE_ID_UNKNOWN)
-        return QString();
-    return QString::fromWCharArray(info.StandardName);
-#elif defined(Q_OS_WIN)
-    _tzset();
-# if defined(_MSC_VER) && _MSC_VER >= 1400
-    size_t returnSize = 0;
-    char timeZoneName[512];
-    if (_get_tzname(&returnSize, timeZoneName, 512, 1))
-        return QString();
-    return QString::fromLocal8Bit(timeZoneName);
-# else
-    return QString::fromLocal8Bit(_tzname[1]);
-# endif
-#elif defined(Q_OS_VXWORKS)
-    return QString();
-#else
-    tzset();
-    return QString::fromLocal8Bit(tzname[1]);
-#endif
-}
-
 /*!
     Returns a localized string representation of the given \a time according
     to the specified \a format.
@@ -1377,7 +1296,12 @@ static QString timeZone()
 */
 QString QLocale::toString(const QTime &time, const QString &format) const
 {
-    return d()->dateTimeToString(format, 0, &time, this);
+#ifndef QT_BOOTSTRAPPED
+    return QDateTimeFormatter::dateTimeToString(format, 0, &time, this);
+#else
+    Q_UNUSED(format);
+    return QString();
+#endif
 }
 
 /*!
@@ -1390,9 +1314,14 @@ QString QLocale::toString(const QTime &time, const QString &format) const
 
 QString QLocale::toString(const QDateTime &dateTime, const QString &format) const
 {
+#ifndef QT_BOOTSTRAPPED
     const QDate dt = dateTime.date();
     const QTime tm = dateTime.time();
-    return d()->dateTimeToString(format, &dt, &tm, this);
+    return QDateTimeFormatter::dateTimeToString(format, &dt, &tm, this);
+#else
+    Q_UNUSED(format);
+    return QString();
+#endif
 }
 
 /*!
@@ -2259,220 +2188,6 @@ QString QLocale::pmText() const
     }
 #endif
     return getLocaleData(pm_data + d()->m_pm_idx, d()->m_pm_size);
-}
-
-
-QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *date, const QTime *time,
-                                         const QLocale *q) const
-{
-    Q_ASSERT(date || time);
-    if ((date && !date->isValid()) || (time && !time->isValid()))
-        return QString();
-    const bool format_am_pm = time && timeFormatContainsAP(format);
-
-    enum { AM, PM } am_pm = AM;
-    int hour12 = time ? time->hour() : -1;
-    if (time) {
-        if (hour12 == 0) {
-            am_pm = AM;
-            hour12 = 12;
-        } else if (hour12 < 12) {
-            am_pm = AM;
-        } else if (hour12 == 12) {
-            am_pm = PM;
-        } else {
-            am_pm = PM;
-            hour12 -= 12;
-        }
-    }
-
-    QString result;
-
-    int i = 0;
-    while (i < format.size()) {
-        if (format.at(i).unicode() == '\'') {
-            result.append(qt_readEscapedFormatString(format, &i));
-            continue;
-        }
-
-        const QChar c = format.at(i);
-        int repeat = qt_repeatCount(format, i);
-        bool used = false;
-        if (date) {
-            switch (c.unicode()) {
-            case 'y':
-                used = true;
-                if (repeat >= 4)
-                    repeat = 4;
-                else if (repeat >= 2)
-                    repeat = 2;
-
-                switch (repeat) {
-                case 4:
-                    result.append(longLongToString(date->year()));
-                    break;
-                case 2:
-                    result.append(longLongToString(date->year() % 100, -1, 10, 2,
-                                                   QLocalePrivate::ZeroPadded));
-                    break;
-                default:
-                    repeat = 1;
-                    result.append(c);
-                    break;
-                }
-                break;
-
-            case 'M':
-                used = true;
-                repeat = qMin(repeat, 4);
-                switch (repeat) {
-                case 1:
-                    result.append(longLongToString(date->month()));
-                    break;
-                case 2:
-                    result.append(longLongToString(date->month(), -1, 10, 2, QLocalePrivate::ZeroPadded));
-                    break;
-                case 3:
-                    result.append(q->monthName(date->month(), QLocale::ShortFormat));
-                    break;
-                case 4:
-                    result.append(q->monthName(date->month(), QLocale::LongFormat));
-                    break;
-                }
-                break;
-
-            case 'd':
-                used = true;
-                repeat = qMin(repeat, 4);
-                switch (repeat) {
-                case 1:
-                    result.append(longLongToString(date->day()));
-                    break;
-                case 2:
-                    result.append(longLongToString(date->day(), -1, 10, 2, QLocalePrivate::ZeroPadded));
-                    break;
-                case 3:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::ShortFormat));
-                    break;
-                case 4:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::LongFormat));
-                    break;
-                }
-                break;
-
-            default:
-                break;
-            }
-        }
-        if (!used && time) {
-            switch (c.unicode()) {
-            case 'h': {
-                used = true;
-                repeat = qMin(repeat, 2);
-                const int hour = format_am_pm ? hour12 : time->hour();
-
-                switch (repeat) {
-                case 1:
-                    result.append(longLongToString(hour));
-                    break;
-                case 2:
-                    result.append(longLongToString(hour, -1, 10, 2, QLocalePrivate::ZeroPadded));
-                    break;
-                }
-                break;
-            }
-            case 'H':
-                used = true;
-                repeat = qMin(repeat, 2);
-                switch (repeat) {
-                case 1:
-                    result.append(longLongToString(time->hour()));
-                    break;
-                case 2:
-                    result.append(longLongToString(time->hour(), -1, 10, 2, QLocalePrivate::ZeroPadded));
-                    break;
-                }
-                break;
-
-            case 'm':
-                used = true;
-                repeat = qMin(repeat, 2);
-                switch (repeat) {
-                case 1:
-                    result.append(longLongToString(time->minute()));
-                    break;
-                case 2:
-                    result.append(longLongToString(time->minute(), -1, 10, 2, QLocalePrivate::ZeroPadded));
-                    break;
-                }
-                break;
-
-            case 's':
-                used = true;
-                repeat = qMin(repeat, 2);
-                switch (repeat) {
-                case 1:
-                    result.append(longLongToString(time->second()));
-                    break;
-                case 2:
-                    result.append(longLongToString(time->second(), -1, 10, 2, QLocalePrivate::ZeroPadded));
-                    break;
-                }
-                break;
-
-            case 'a':
-                used = true;
-                if (i + 1 < format.length() && format.at(i + 1).unicode() == 'p') {
-                    repeat = 2;
-                } else {
-                    repeat = 1;
-                }
-                result.append(am_pm == AM ? q->amText().toLower() : q->pmText().toLower());
-                break;
-
-            case 'A':
-                used = true;
-                if (i + 1 < format.length() && format.at(i + 1).unicode() == 'P') {
-                    repeat = 2;
-                } else {
-                    repeat = 1;
-                }
-                result.append(am_pm == AM ? q->amText().toUpper() : q->pmText().toUpper());
-                break;
-
-            case 'z':
-                used = true;
-                if (repeat >= 3) {
-                    repeat = 3;
-                } else {
-                    repeat = 1;
-                }
-                switch (repeat) {
-                case 1:
-                    result.append(longLongToString(time->msec()));
-                    break;
-                case 3:
-                    result.append(longLongToString(time->msec(), -1, 10, 3, QLocalePrivate::ZeroPadded));
-                    break;
-                }
-                break;
-
-            case 't':
-                used = true;
-                repeat = 1;
-                result.append(timeZone());
-                break;
-            default:
-                break;
-            }
-        }
-        if (!used) {
-            result.append(QString(repeat, c));
-        }
-        i += repeat;
-    }
-
-    return result;
 }
 
 QString QLocalePrivate::doubleToString(double d,
