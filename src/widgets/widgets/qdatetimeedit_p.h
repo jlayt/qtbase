@@ -61,11 +61,21 @@
 #include "QtWidgets/qlabel.h"
 #include "QtWidgets/qdatetimeedit.h"
 #include "private/qabstractspinbox_p.h"
-#include "private/qdatetime_p.h"
+#include "private/qdatetimeparser_p.h"
 
 #include "qdebug.h"
 
 #ifndef QT_NO_DATETIMEEDIT
+
+#define QDATETIMEEDIT_TIME_MIN QTime(0, 0, 0, 0)
+#define QDATETIMEEDIT_TIME_MAX QTime(23, 59, 59, 999)
+#define QDATETIMEEDIT_DATE_MIN QDate(100, 1, 1)
+#define QDATETIMEEDIT_COMPAT_DATE_MIN QDate(1752, 9, 14)
+#define QDATETIMEEDIT_DATE_MAX QDate(7999, 12, 31)
+#define QDATETIMEEDIT_DATETIME_MIN QDateTime(QDATETIMEEDIT_DATE_MIN, QDATETIMEEDIT_TIME_MIN)
+#define QDATETIMEEDIT_COMPAT_DATETIME_MIN QDateTime(QDATETIMEEDIT_COMPAT_DATE_MIN, QDATETIMEEDIT_TIME_MIN)
+#define QDATETIMEEDIT_DATETIME_MAX QDateTime(QDATETIMEEDIT_DATE_MAX, QDATETIMEEDIT_TIME_MAX)
+#define QDATETIMEEDIT_DATE_INITIAL QDate(2000, 1, 1)
 
 QT_BEGIN_NAMESPACE
 

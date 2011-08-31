@@ -61,6 +61,7 @@ QT_END_NAMESPACE
 #include "qlocale_p.h"
 #include "qlocale_tools_p.h"
 #include "qdatetime_p.h"
+#include "qdatetimeparser_p.h"
 #include "qnamespace.h"
 #include "qdatetime.h"
 #include "qstringlist.h"
