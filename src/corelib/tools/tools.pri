@@ -10,6 +10,7 @@ HEADERS +=  \
         tools/qchar.h \
         tools/qcontainerfwd.h \
         tools/qcryptographichash.h \
+        tools/qdatecalculator.h \
         tools/qdatetime.h \
         tools/qdatetime_p.h \
         tools/qdatetimeparser_p.h \
@@ -61,6 +62,7 @@ SOURCES += \
         tools/qbytearray.cpp \
         tools/qbytearraymatcher.cpp \
         tools/qcryptographichash.cpp \
+        tools/qdatecalculator.cpp \
         tools/qdatetime.cpp \
         tools/qdatetimeparser.cpp \
         tools/qdatetimeformatter.cpp \
