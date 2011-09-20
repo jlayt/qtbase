@@ -977,18 +977,25 @@ inline void QTextStreamPrivate::putString(const QString &s, bool number)
     if (padSize > 0) {
         QString pad(padSize, padChar);
         if (fieldAlignment == QTextStream::AlignLeft) {
-            tmp.append(QString(padSize, padChar));
-        } else if (fieldAlignment == QTextStream::AlignRight
-                   || fieldAlignment == QTextStream::AlignAccountingStyle) {
-            tmp.prepend(QString(padSize, padChar));
-            if (fieldAlignment == QTextStream::AlignAccountingStyle && number) {
-                const QChar sign = s.size() > 0 ? s.at(0) : QChar();
-                if (sign == locale.negativeSign() || sign == locale.positiveSign()) {
-                    QChar *data = tmp.data();
-                    data[padSize] = tmp.at(0);
-                    data[0] = sign;
+            tmp.append(pad);
+        } else if (fieldAlignment == QTextStream::AlignRight) {
+            tmp.prepend(pad);
+        } else if (fieldAlignment == QTextStream::AlignAccountingStyle) {
+            if (number) {
+                QString sign;
+                QString minus = locale.negativeSign();
+                QString plus = locale.positiveSign();
+                if (!minus.isEmpty() && s.indexOf(minus) == 0) {
+                    sign = minus;
+                } else if (!plus.isEmpty() && s.indexOf(plus) == 0) {
+                    sign = plus;
                 }
-           }
+                tmp.remove(0, sign.length());
+                tmp.prepend(pad);
+                tmp.prepend(sign);
+            } else {
+                tmp.prepend(pad);
+            }
         } else if (fieldAlignment == QTextStream::AlignCenter) {
             tmp.prepend(QString(padSize/2, padChar));
             tmp.append(QString(padSize - padSize/2, padChar));
@@ -1733,7 +1740,7 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
                 base = 10;
             }
             ungetChar(ch2);
-        } else if (ch == locale.negativeSign() || ch == locale.positiveSign() || ch.isDigit()) {
+        } else if (ch == locale.negativeSign().at(0) || ch == locale.positiveSign().at(0) || ch.isDigit()) {
             base = 10;
         } else {
             ungetChar(ch);
@@ -1802,25 +1809,44 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
     }
     case 10: {
         // Parse sign (or first digit)
-        QChar sign;
+        QChar ch;
+        QString sign;
         int ndigits = 0;
-        if (!getChar(&sign))
+        while (getChar(&ch) && !ch.isDigit()) {
+            sign.append(ch);
+        }
+        if (ch.isNull() && sign.isEmpty())
             return npsMissingDigit;
         if (sign != locale.negativeSign() && sign != locale.positiveSign()) {
-            if (!sign.isDigit()) {
-                ungetChar(sign);
+            if (!ch.isDigit()) {
+                ungetChar(ch);
+                for (int i = sign.length(); i < 1; --i)
+                    ungetChar(sign.at(i -1));
                 return npsMissingDigit;
             }
-            val += sign.digitValue();
+            val += ch.digitValue();
             ndigits++;
         }
         // Parse digits
-        QChar ch;
+        QString group = locale.groupSeparator();
         while (getChar(&ch)) {
             if (ch.isDigit()) {
                 val *= 10;
                 val += ch.digitValue();
-            } else if (locale != QLocale::c() && ch == locale.groupSeparator()) {
+            } else if (locale != QLocale::c() && ch == group.at(0)) {
+                if (group.length() > 1) {
+                    QString sep(ch);
+                    while (getChar(&ch) && !ch.isDigit()) {
+                        sign.append(ch);
+                    }
+                    if (!ch.isNull())
+                        ungetChar(ch);
+                    if (sep != group) {
+                        for (int i = sep.length(); i < 1; --i)
+                            ungetChar(sep.at(i -1));
+                        break;
+                    }
+                }
                 continue;
             } else {
                 ungetChar(ch);
@@ -1936,6 +1962,17 @@ bool QTextStreamPrivate::getReal(double *f)
     scan(0, 0, 0, NotSpace);
     consumeLastToken();
 
+    QString decimal = locale.decimalPoint();
+    int decimalSize = decimal.size();
+    QString exp = locale.exponential();
+    int expSize = exp.size();
+    QString minus = locale.negativeSign();
+    int minusSize = minus.size();
+    QString plus = locale.positiveSign();
+    int plusSize = plus.size();
+    QString group = locale.groupSeparator();
+    int groupSize = group.size();
+
     const int BufferSize = 128;
     char buf[BufferSize];
     int i = 0;
@@ -1963,19 +2000,92 @@ bool QTextStreamPrivate::getReal(double *f)
             input = InputT;
             break;
         default: {
+            int ii = 1;
             QChar lc = c.toLower();
-            if (lc == locale.decimalPoint().toLower())
-                input = InputDot;
-            else if (lc == locale.exponential().toLower())
-                input = InputExp;
-            else if (lc == locale.negativeSign().toLower()
-                     || lc == locale.positiveSign().toLower())
-                input = InputSign;
-            else if (locale != QLocale::c() // backward-compatibility
-                     && lc == locale.groupSeparator().toLower())
-                input = InputDigit; // well, it isn't a digit, but no one cares.
-            else
-                input = None;
+            QString sym(c);
+            if (lc == decimal.at(0).toLower()) {
+                while (ii < decimalSize && getChar(&c)) {
+                    ++ii;
+                    sym.append(c);
+                }
+                if (sym.toLower() == decimal.toLower()) {
+                    input = InputDot;
+                    break;
+                } else {
+                    while (ii > 1) {
+                        ungetChar(c);
+                        --ii;
+                        c = sym.at(ii - 1);
+                    }
+                }
+            }
+            if (lc == exp.at(0).toLower()) {
+                while (ii < expSize && getChar(&c)) {
+                    ++ii;
+                    sym.append(c);
+                }
+                if (sym.toLower() == exp.toLower()) {
+                    input = InputExp;
+                    break;
+                } else {
+                    while (ii > 1) {
+                        ungetChar(c);
+                        --ii;
+                        c = sym.at(ii - 1);
+                    }
+                }
+            }
+            if (lc == minus.at(0).toLower()) {
+                while (ii < minusSize && getChar(&c)) {
+                    ++ii;
+                    sym.append(c);
+                }
+                if (sym.toLower() == minus.toLower()) {
+                    input = InputSign;
+                    break;
+                } else {
+                    while (ii > 1) {
+                        ungetChar(c);
+                        --ii;
+                        c = sym.at(ii - 1);
+                    }
+                }
+            }
+            if (lc == plus.at(0).toLower()) {
+                while (ii < plusSize && getChar(&c)) {
+                    ++ii;
+                    sym.append(c);
+                }
+                if (sym.toLower() == plus.toLower()) {
+                    input = InputSign;
+                    break;
+                } else {
+                    while (ii > 1) {
+                        ungetChar(c);
+                        --ii;
+                        c = sym.at(ii - 1);
+                    }
+                }
+            }
+            if (locale != QLocale::c() // backward-compatibility
+                     && lc == group.at(0).toLower()) {
+                while (ii < groupSize && getChar(&c)) {
+                    ++ii;
+                    sym.append(c);
+                }
+                if (sym.toLower() == group.toLower()) {
+                    input = InputDigit; // well, it isn't a digit, but no one cares.
+                    break;
+                } else {
+                    while (ii > 1) {
+                        ungetChar(c);
+                        --ii;
+                        c = sym.at(ii - 1);
+                    }
+                }
+            }
+            input = None;
+            break;
         }
             break;
         }

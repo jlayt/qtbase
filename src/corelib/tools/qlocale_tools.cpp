@@ -72,12 +72,12 @@ static char *_qdtoa( NEEDS_VOLATILE double d, int mode, int ndigits, int *decpt,
                         int *sign, char **rve, char **digits_str);
 #endif
 
-QString qulltoa(qulonglong l, int base, const QChar _zero)
+QString qulltoa(qulonglong l, int base, const QString _zero)
 {
     ushort buff[65]; // length of MAX_ULLONG in base 2
     ushort *p = buff + 65;
 
-    if (base != 10 || _zero.unicode() == '0') {
+    if (base != 10 || _zero.at(0).unicode() == '0') {
         while (l != 0) {
             int c = l % base;
 
@@ -95,7 +95,7 @@ QString qulltoa(qulonglong l, int base, const QChar _zero)
         while (l != 0) {
             int c = l % base;
 
-            *(--p) = _zero.unicode() + c;
+            *(--p) = _zero.at(0).unicode() + c;
 
             l /= base;
         }
@@ -104,12 +104,12 @@ QString qulltoa(qulonglong l, int base, const QChar _zero)
     return QString(reinterpret_cast<QChar *>(p), 65 - (p - buff));
 }
 
-QString qlltoa(qlonglong l, int base, const QChar zero)
+QString qlltoa(qlonglong l, int base, const QString zero)
 {
     return qulltoa(l < 0 ? -l : l, base, zero);
 }
 
-QString &decimalForm(QChar zero, QChar decimal, QChar group,
+QString &decimalForm(QString zero, QString decimal, QString group,
                      QString &digits, int decpt, uint precision,
                      PrecisionMode pm,
                      bool always_show_decpt,
@@ -151,8 +151,8 @@ QString &decimalForm(QChar zero, QChar decimal, QChar group,
     return digits;
 }
 
-QString &exponentForm(QChar zero, QChar decimal, QChar exponential,
-                      QChar group, QChar plus, QChar minus,
+QString &exponentForm(QString zero, QString decimal, QString exponential,
+                      QString group, QString plus, QString minus,
                       QString &digits, int decpt, uint precision,
                       PrecisionMode pm,
                       bool always_show_decpt)

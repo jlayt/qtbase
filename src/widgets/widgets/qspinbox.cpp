@@ -1116,7 +1116,7 @@ QVariant QDoubleSpinBoxPrivate::validateAndInterpret(QString &input, int &pos,
         state = max != min ? QValidator::Intermediate : QValidator::Invalid;
         goto end;
     case 1:
-        if (copy.at(0) == locale.decimalPoint()
+        if (copy.at(0) == locale.decimalPoint().at(0)
             || (plus && copy.at(0) == QLatin1Char('+'))
             || (minus && copy.at(0) == QLatin1Char('-'))) {
             state = QValidator::Intermediate;
@@ -1124,7 +1124,7 @@ QVariant QDoubleSpinBoxPrivate::validateAndInterpret(QString &input, int &pos,
         }
         break;
     case 2:
-        if (copy.at(1) == locale.decimalPoint()
+        if (copy.at(1) == locale.decimalPoint().at(0)
             && ((plus && copy.at(0) == QLatin1Char('+')) || (minus && copy.at(0) == QLatin1Char('-')))) {
             state = QValidator::Intermediate;
             goto end;
@@ -1133,14 +1133,14 @@ QVariant QDoubleSpinBoxPrivate::validateAndInterpret(QString &input, int &pos,
     default: break;
     }
 
-    if (copy.at(0) == locale.groupSeparator()) {
+    if (copy.at(0) == locale.groupSeparator().at(0)) {
         QSBDEBUG() << __FILE__ << __LINE__<< "state is set to Invalid";
         state = QValidator::Invalid;
         goto end;
     } else if (len > 1) {
         const int dec = copy.indexOf(locale.decimalPoint());
         if (dec != -1) {
-            if (dec + 1 < copy.size() && copy.at(dec + 1) == locale.decimalPoint() && pos == dec + 1) {
+            if (dec + 1 < copy.size() && copy.at(dec + 1) == locale.decimalPoint().at(0) && pos == dec + 1) {
                 copy.remove(dec + 1, 1); // typing a delimiter when you are on the delimiter
             } // should be treated as typing right arrow
 
@@ -1150,7 +1150,7 @@ QVariant QDoubleSpinBoxPrivate::validateAndInterpret(QString &input, int &pos,
                 goto end;
             }
             for (int i=dec + 1; i<copy.size(); ++i) {
-                if (copy.at(i).isSpace() || copy.at(i) == locale.groupSeparator()) {
+                if (copy.at(i).isSpace() || copy.at(i) == locale.groupSeparator().at(0)) {
                     QSBDEBUG() << __FILE__ << __LINE__<< "state is set to Invalid";
                     state = QValidator::Invalid;
                     goto end;
@@ -1159,12 +1159,12 @@ QVariant QDoubleSpinBoxPrivate::validateAndInterpret(QString &input, int &pos,
         } else {
             const QChar &last = copy.at(len - 1);
             const QChar &secondLast = copy.at(len - 2);
-            if ((last == locale.groupSeparator() || last.isSpace())
-                && (secondLast == locale.groupSeparator() || secondLast.isSpace())) {
+            if ((last == locale.groupSeparator().at(0) || last.isSpace())
+                && (secondLast == locale.groupSeparator().at(0) || secondLast.isSpace())) {
                 state = QValidator::Invalid;
                 QSBDEBUG() << __FILE__ << __LINE__<< "state is set to Invalid";
                 goto end;
-            } else if (last.isSpace() && (!locale.groupSeparator().isSpace() || secondLast.isSpace())) {
+            } else if (last.isSpace() && (!locale.groupSeparator().at(0).isSpace() || secondLast.isSpace())) {
                 state = QValidator::Invalid;
                 QSBDEBUG() << __FILE__ << __LINE__<< "state is set to Invalid";
                 goto end;
@@ -1178,8 +1178,8 @@ QVariant QDoubleSpinBoxPrivate::validateAndInterpret(QString &input, int &pos,
         QSBDEBUG() << __FILE__ << __LINE__ << locale << copy << num << ok;
 
         if (!ok) {
-            if (locale.groupSeparator().isPrint()) {
-                if (max < 1000 && min > -1000 && copy.contains(locale.groupSeparator())) {
+            if (locale.groupSeparator().at(0).isPrint()) {
+                if (max < 1000 && min > -1000 && copy.contains(locale.groupSeparator().at(0))) {
                     state = QValidator::Invalid;
                     QSBDEBUG() << __FILE__ << __LINE__<< "state is set to Invalid";
                     goto end;
@@ -1187,7 +1187,7 @@ QVariant QDoubleSpinBoxPrivate::validateAndInterpret(QString &input, int &pos,
 
                 const int len = copy.size();
                 for (int i=0; i<len- 1; ++i) {
-                    if (copy.at(i) == locale.groupSeparator() && copy.at(i + 1) == locale.groupSeparator()) {
+                    if (copy.at(i) == locale.groupSeparator().at(0) && copy.at(i + 1) == locale.groupSeparator().at(0)) {
                         QSBDEBUG() << __FILE__ << __LINE__<< "state is set to Invalid";
                         state = QValidator::Invalid;
                         goto end;

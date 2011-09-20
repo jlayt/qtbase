@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: latin-1 -*-
 #############################################################################
 ##
 ## Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
@@ -90,27 +91,6 @@ def parse_list_pattern_part_format(pattern):
     result = result.replace("{2}", "%3")
     return result
 
-def ordStr(c):
-    if len(c) == 1:
-        return str(ord(c))
-    return "##########"
-
-# the following functions are supposed to fix the problem with QLocale
-# returning a character instead of strings for QLocale::exponential()
-# and others. So we fallback to default values in these cases.
-def fixOrdStrExp(c):
-    if len(c) == 1:
-        return str(ord(c))
-    return str(ord('e'))
-def fixOrdStrPercent(c):
-    if len(c) == 1:
-        return str(ord(c))
-    return str(ord('%'))
-def fixOrdStrList(c):
-    if len(c) == 1:
-        return str(ord(c))
-    return str(ord(';'))
-
 def generateLocaleInfo(path):
     (dir_name, file_name) = os.path.split(path)
 
@@ -194,16 +174,19 @@ def generateLocaleInfo(path):
             if t and t[0][0] == 'info':
                 result['currencyDigits'] = int(filter(lambda x: x[0] == 'digits', t[0][1])[0][1])
                 result['currencyRounding'] = int(filter(lambda x: x[0] == 'rounding', t[0][1])[0][1])
+
     numbering_system = None
     try:
         numbering_system = findEntry(path, "numbers/defaultNumberingSystem")
     except:
         pass
+
     def findEntryDef(path, xpath, value=''):
         try:
             return findEntry(path, xpath)
         except xpathlite.Error:
             return value
+
     def get_number_in_system(path, xpath, numbering_system):
         if numbering_system:
             try:
@@ -211,22 +194,38 @@ def generateLocaleInfo(path):
             except xpathlite.Error:
                 pass
         return findEntry(path, xpath)
+
     result['decimal'] = get_number_in_system(path, "numbers/symbols/decimal", numbering_system)
     result['group'] = get_number_in_system(path, "numbers/symbols/group", numbering_system)
     result['list'] = get_number_in_system(path, "numbers/symbols/list", numbering_system)
     result['percent'] = get_number_in_system(path, "numbers/symbols/percentSign", numbering_system)
     result['zero'] = get_number_in_system(path, "numbers/symbols/nativeZeroDigit", numbering_system)
+    result['patternDigit'] = get_number_in_system(path, "numbers/symbols/patternDigit", numbering_system)
     result['minus'] = get_number_in_system(path, "numbers/symbols/minusSign", numbering_system)
     result['plus'] = get_number_in_system(path, "numbers/symbols/plusSign", numbering_system)
-    result['exp'] = get_number_in_system(path, "numbers/symbols/exponential", numbering_system).lower()
+    result['exp'] = get_number_in_system(path, "numbers/symbols/exponential", numbering_system)
+    result['perMille'] = get_number_in_system(path, "numbers/symbols/perMille", numbering_system)
+    result['infinity'] = get_number_in_system(path, "numbers/symbols/infinity", numbering_system)
+    result['nan'] = get_number_in_system(path, "numbers/symbols/nan", numbering_system)
+    try:
+        result['currencyDecimal'] = get_number_in_system(path, "numbers/symbols/currencyDecimal", numbering_system)
+    except:
+        result['currencyDecimal'] = result['decimal']
+    try:
+        result['currencyGroup'] = get_number_in_system(path, "numbers/symbols/currencyGroup", numbering_system)
+    except:
+        result['currencyGroup'] = result['group']
+
     result['quotationStart'] = findEntry(path, "delimiters/quotationStart")
     result['quotationEnd'] = findEntry(path, "delimiters/quotationEnd")
     result['alternateQuotationStart'] = findEntry(path, "delimiters/alternateQuotationStart")
     result['alternateQuotationEnd'] = findEntry(path, "delimiters/alternateQuotationEnd")
+
     result['listPatternPartStart'] = parse_list_pattern_part_format(findEntry(path, "listPatterns/listPattern/listPatternPart[start]"))
     result['listPatternPartMiddle'] = parse_list_pattern_part_format(findEntry(path, "listPatterns/listPattern/listPatternPart[middle]"))
     result['listPatternPartEnd'] = parse_list_pattern_part_format(findEntry(path, "listPatterns/listPattern/listPatternPart[end]"))
     result['listPatternPartTwo'] = parse_list_pattern_part_format(findEntry(path, "listPatterns/listPattern/listPatternPart[2]"))
+
     result['am'] = findEntry(path, "dates/calendars/calendar[gregorian]/dayPeriods/dayPeriodContext[format]/dayPeriodWidth[wide]/dayPeriod[am]", draft)
     result['pm'] = findEntry(path, "dates/calendars/calendar[gregorian]/dayPeriods/dayPeriodContext[format]/dayPeriodWidth[wide]/dayPeriod[pm]", draft)
     result['longDateFormat'] = convert_date(findEntry(path, "dates/calendars/calendar[gregorian]/dateFormats/dateFormatLength[full]/dateFormat/pattern"))
@@ -703,14 +702,20 @@ print \
             <script>AnyScript</script>\n\
             <country>AnyCountry</country>\n\
             <countryEndonym></countryEndonym>\n\
-            <decimal>46</decimal>\n\
-            <group>44</group>\n\
-            <list>59</list>\n\
-            <percent>37</percent>\n\
-            <zero>48</zero>\n\
-            <minus>45</minus>\n\
-            <plus>43</plus>\n\
-            <exp>101</exp>\n\
+            <decimal>.</decimal>\n\
+            <group>,</group>\n\
+            <list>;</list>\n\
+            <percent>%</percent>\n\
+            <zero>0</zero>\n\
+            <patternDigit>#</patternDigit>\n\
+            <minus>-</minus>\n\
+            <plus>+</plus>\n\
+            <exp>E</exp>\n\
+            <perMille>‰</perMille>\n\
+            <infinity>∞</infinity>\n\
+            <nan>NaN</nan>\n\
+            <currencyDecimal>.</currencyDecimal>\n\
+            <currencyGroup>,</currencyGroup>\n\
             <quotationStart>\"</quotationStart>\n\
             <quotationEnd>\"</quotationEnd>\n\
             <alternateQuotationStart>\'</alternateQuotationStart>\n\
@@ -761,14 +766,20 @@ for key in locale_keys:
     print "            <languagecode>" + l['language_code']        + "</languagecode>"
     print "            <scriptcode>" + l['script_code']        + "</scriptcode>"
     print "            <countrycode>"  + l['country_code']         + "</countrycode>"
-    print "            <decimal>"  + ordStr(l['decimal']) + "</decimal>"
-    print "            <group>"    + ordStr(l['group'])   + "</group>"
-    print "            <list>"     + fixOrdStrList(l['list'])    + "</list>"
-    print "            <percent>"  + fixOrdStrPercent(l['percent']) + "</percent>"
-    print "            <zero>"     + ordStr(l['zero'])    + "</zero>"
-    print "            <minus>"    + ordStr(l['minus'])   + "</minus>"
-    print "            <plus>"     + ordStr(l['plus'])   + "</plus>"
-    print "            <exp>"      + fixOrdStrExp(l['exp'])     + "</exp>"
+    print "            <decimal>"         + l['decimal'].encode('utf-8')         + "</decimal>"
+    print "            <group>"           + l['group'].encode('utf-8')           + "</group>"
+    print "            <list>"            + l['list'].encode('utf-8')            + "</list>"
+    print "            <percent>"         + l['percent'].encode('utf-8')         + "</percent>"
+    print "            <zero>"            + l['zero'].encode('utf-8')            + "</zero>"
+    print "            <patternDigit>"    + l['patternDigit'].encode('utf-8')    + "</patternDigit>"
+    print "            <minus>"           + l['minus'].encode('utf-8')           + "</minus>"
+    print "            <plus>"            + l['plus'].encode('utf-8')            + "</plus>"
+    print "            <exp>"             + l['exp'].encode('utf-8')             + "</exp>"
+    print "            <perMille>"        + l['perMille'].encode('utf-8')        + "</perMille>"
+    print "            <infinity>"        + l['infinity'].encode('utf-8')        + "</infinity>"
+    print "            <nan>"             + l['nan'].encode('utf-8')             + "</nan>"
+    print "            <currencyDecimal>" + l['currencyDecimal'].encode('utf-8') + "</currencyDecimal>"
+    print "            <currencyGroup>"   + l['currencyGroup'].encode('utf-8')   + "</currencyGroup>"
     print "            <quotationStart>" + l['quotationStart'].encode('utf-8') + "</quotationStart>"
     print "            <quotationEnd>" + l['quotationEnd'].encode('utf-8')   + "</quotationEnd>"
     print "            <alternateQuotationStart>" + l['alternateQuotationStart'].encode('utf-8') + "</alternateQuotationStart>"

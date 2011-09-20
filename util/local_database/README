@@ -1,1 +1,11 @@
 local_database is used to generate qlocale data from the Common Locale Data Repository (The database for localized names (like date formats, country names etc)).
+
+Download the CLDR core.zip database from http://unicode.org/Public/cldr/ and extract it somewhere convenient.
+
+To convert the CLDR xml database into QLocale xml format run:
+
+  cldr2qlocalexml.py <path/to/cldr/common/main> >> qtlocale.xml
+
+To convet QLocale xml file into C++ encoded look-up tables:
+
+  qlocalexml2cpp.py <path/to/qtlocale.xml> <path/to/qtbase>

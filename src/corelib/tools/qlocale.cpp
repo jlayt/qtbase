@@ -508,26 +508,6 @@ void QLocalePrivate::updateSystemPrivate()
     if (!res.isNull())
         system_lp->m_script_id = res.toInt();
 
-    res = sys_locale->query(QSystemLocale::DecimalPoint, QVariant());
-    if (!res.isNull())
-        system_lp->m_decimal = res.toString().at(0).unicode();
-
-    res = sys_locale->query(QSystemLocale::GroupSeparator, QVariant());
-    if (!res.isNull())
-        system_lp->m_group = res.toString().at(0).unicode();
-
-    res = sys_locale->query(QSystemLocale::ZeroDigit, QVariant());
-    if (!res.isNull())
-        system_lp->m_zero = res.toString().at(0).unicode();
-
-    res = sys_locale->query(QSystemLocale::NegativeSign, QVariant());
-    if (!res.isNull())
-        system_lp->m_minus = res.toString().at(0).unicode();
-
-    res = sys_locale->query(QSystemLocale::PositiveSign, QVariant());
-    if (!res.isNull())
-        system_lp->m_plus = res.toString().at(0).unicode();
-
 #ifdef QT_USE_ICU
     if (!default_lp)
         qt_initIcu(system_lp->bcp47Name());
@@ -1684,13 +1664,108 @@ QDateTime QLocale::toDateTime(const QString &string, const QString &format) cons
 }
 #endif
 
+QString QLocalePrivate::decimal() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == systemPrivate()) {
+        QVariant res = systemLocale()->query(QSystemLocale::DecimalPoint, QVariant());
+        if (!res.isNull())
+            return res.toString();
+    }
+#endif
+    return getLocaleData(number_symbols_data + m_decimal_idx, m_decimal_size);
+}
+
+QString QLocalePrivate::group() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == systemPrivate()) {
+        QVariant res = systemLocale()->query(QSystemLocale::GroupSeparator, QVariant());
+        if (!res.isNull())
+            return res.toString();
+    }
+#endif
+    return getLocaleData(number_symbols_data + m_group_idx, m_group_size);
+}
+
+QString QLocalePrivate::list() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == systemPrivate()) {
+        QVariant res = systemLocale()->query(QSystemLocale::ListSeparator, QVariant());
+        if (!res.isNull())
+            return res.toString();
+    }
+#endif
+    return getLocaleData(number_symbols_data + m_list_idx, m_list_size);
+}
+
+QString QLocalePrivate::percent() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == systemPrivate()) {
+        QVariant res = systemLocale()->query(QSystemLocale::PercentSymbol, QVariant());
+        if (!res.isNull())
+            return res.toString();
+    }
+#endif
+    return getLocaleData(number_symbols_data + m_percent_idx, m_percent_size);
+}
+
+QString QLocalePrivate::zero() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == systemPrivate()) {
+        QVariant res = systemLocale()->query(QSystemLocale::ZeroDigit, QVariant());
+        if (!res.isNull())
+            return res.toString();
+    }
+#endif
+    return getLocaleData(number_symbols_data + m_zero_idx, m_zero_size);
+}
+
+QString QLocalePrivate::plus() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == systemPrivate()) {
+        QVariant res = systemLocale()->query(QSystemLocale::PositiveSign, QVariant());
+        if (!res.isNull())
+            return res.toString();
+    }
+#endif
+    return getLocaleData(number_symbols_data + m_plus_idx, m_plus_size);
+}
+
+QString QLocalePrivate::minus() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == systemPrivate()) {
+        QVariant res = systemLocale()->query(QSystemLocale::NegativeSign, QVariant());
+        if (!res.isNull())
+            return res.toString();
+    }
+#endif
+    return getLocaleData(number_symbols_data + m_minus_idx, m_minus_size);
+}
+
+QString QLocalePrivate::exponential() const
+{
+#ifndef QT_NO_SYSTEMLOCALE
+    if (this == systemPrivate()) {
+        QVariant res = systemLocale()->query(QSystemLocale::ExponentialSymbol, QVariant());
+        if (!res.isNull())
+            return res.toString();
+    }
+#endif
+    return getLocaleData(number_symbols_data + m_exponential_idx, m_exponential_size);
+}
 
 /*!
     \since 4.1
 
     Returns the decimal point character of this locale.
 */
-QChar QLocale::decimalPoint() const
+QString QLocale::decimalPoint() const
 {
     return d()->decimal();
 }
@@ -1700,7 +1775,7 @@ QChar QLocale::decimalPoint() const
 
     Returns the group separator character of this locale.
 */
-QChar QLocale::groupSeparator() const
+QString QLocale::groupSeparator() const
 {
     return d()->group();
 }
@@ -1710,7 +1785,7 @@ QChar QLocale::groupSeparator() const
 
     Returns the percent character of this locale.
 */
-QChar QLocale::percent() const
+QString QLocale::percent() const
 {
     return d()->percent();
 }
@@ -1720,7 +1795,7 @@ QChar QLocale::percent() const
 
     Returns the zero digit character of this locale.
 */
-QChar QLocale::zeroDigit() const
+QString QLocale::zeroDigit() const
 {
     return d()->zero();
 }
@@ -1730,7 +1805,7 @@ QChar QLocale::zeroDigit() const
 
     Returns the negative sign character of this locale.
 */
-QChar QLocale::negativeSign() const
+QString QLocale::negativeSign() const
 {
     return d()->minus();
 }
@@ -1740,7 +1815,7 @@ QChar QLocale::negativeSign() const
 
     Returns the positive sign character of this locale.
 */
-QChar QLocale::positiveSign() const
+QString QLocale::positiveSign() const
 {
     return d()->plus();
 }
@@ -1750,7 +1825,7 @@ QChar QLocale::positiveSign() const
 
     Returns the exponential character of this locale.
 */
-QChar QLocale::exponential() const
+QString QLocale::exponential() const
 {
     return d()->exponential();
 }
@@ -2475,8 +2550,8 @@ QString QLocalePrivate::doubleToString(double d,
                                           d, precision, form, width, flags);
 }
 
-QString QLocalePrivate::doubleToString(const QChar _zero, const QChar plus, const QChar minus,
-                                       const QChar exponential, const QChar group, const QChar decimal,
+QString QLocalePrivate::doubleToString(const QString _zero, const QString plus, const QString minus,
+                                       const QString exponential, const QString group, const QString decimal,
                                        double d,
                                        int precision,
                                        DoubleForm form,
@@ -2560,8 +2635,8 @@ QString QLocalePrivate::doubleToString(const QChar _zero, const QChar plus, cons
             free(buff);
 #endif // QT_QLOCALE_USES_FCVT
 
-        if (_zero.unicode() != '0') {
-            ushort z = _zero.unicode() - '0';
+        if (_zero.at(0).unicode() != '0') {
+            ushort z = _zero.at(0).unicode() - '0';
             for (int i = 0; i < digits.length(); ++i)
                 reinterpret_cast<ushort *>(digits.data())[i] += z;
         }
@@ -2637,8 +2712,8 @@ QString QLocalePrivate::longLongToString(qlonglong l, int precision,
                                             l, precision, base, width, flags);
 }
 
-QString QLocalePrivate::longLongToString(const QChar zero, const QChar group,
-                                         const QChar plus, const QChar minus,
+QString QLocalePrivate::longLongToString(const QString zero, const QString group,
+                                         const QString plus, const QString minus,
                                          qlonglong l, int precision,
                                          int base, int width,
                                          unsigned flags)
@@ -2732,8 +2807,8 @@ QString QLocalePrivate::unsLongLongToString(qulonglong l, int precision,
                                                l, precision, base, width, flags);
 }
 
-QString QLocalePrivate::unsLongLongToString(const QChar zero, const QChar group,
-                                            const QChar plus,
+QString QLocalePrivate::unsLongLongToString(const QString zero, const QString group,
+                                            const QString plus,
                                             qulonglong l, int precision,
                                             int base, int width,
                                             unsigned flags)
@@ -2826,9 +2901,9 @@ bool QLocalePrivate::numberToCLocale(const QString &num,
 
         char out = digitToCLocale(in);
         if (out == 0) {
-            if (in == list())
+            if (in == list().at(0))
                 out = ';';
-            else if (in == percent())
+            else if (in == percent().at(0))
                 out = '%';
             // for handling base-x numbers
             else if (in.unicode() >= 'A' && in.unicode() <= 'Z')
@@ -2958,7 +3033,7 @@ double QLocalePrivate::stringToDouble(const QString &number, bool *ok,
                                         GroupSeparatorMode group_sep_mode) const
 {
     CharBuff buff;
-    if (!numberToCLocale(group().unicode() == 0xa0 ? number.trimmed() : number,
+    if (!numberToCLocale(group().at(0).unicode() == 0xa0 ? number.trimmed() : number,
                          group_sep_mode, &buff)) {
         if (ok != 0)
             *ok = false;
@@ -2971,7 +3046,7 @@ qlonglong QLocalePrivate::stringToLongLong(const QString &number, int base,
                                            bool *ok, GroupSeparatorMode group_sep_mode) const
 {
     CharBuff buff;
-    if (!numberToCLocale(group().unicode() == 0xa0 ? number.trimmed() : number,
+    if (!numberToCLocale(group().at(0).unicode() == 0xa0 ? number.trimmed() : number,
                          group_sep_mode, &buff)) {
         if (ok != 0)
             *ok = false;
@@ -2985,7 +3060,7 @@ qulonglong QLocalePrivate::stringToUnsLongLong(const QString &number, int base,
                                                bool *ok, GroupSeparatorMode group_sep_mode) const
 {
     CharBuff buff;
-    if (!numberToCLocale(group().unicode() == 0xa0 ? number.trimmed() : number,
+    if (!numberToCLocale(group().at(0).unicode() == 0xa0 ? number.trimmed() : number,
                          group_sep_mode, &buff)) {
         if (ok != 0)
             *ok = false;

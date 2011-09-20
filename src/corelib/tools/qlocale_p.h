@@ -68,14 +68,14 @@ QT_BEGIN_NAMESPACE
 struct Q_CORE_EXPORT QLocalePrivate
 {
 public:
-    QChar decimal() const { return QChar(m_decimal); }
-    QChar group() const { return QChar(m_group); }
-    QChar list() const { return QChar(m_list); }
-    QChar percent() const { return QChar(m_percent); }
-    QChar zero() const { return QChar(m_zero); }
-    QChar plus() const { return QChar(m_plus); }
-    QChar minus() const { return QChar(m_minus); }
-    QChar exponential() const { return QChar(m_exponential); }
+    QString decimal() const;
+    QString group() const;
+    QString list() const;
+    QString percent() const;
+    QString zero() const;
+    QString plus() const;
+    QString minus() const;
+    QString exponential() const;
 
     quint16 languageId() const { return m_language_id; }
     quint16 countryId() const { return m_country_id; }
@@ -125,18 +125,18 @@ public:
         ParseGroupSeparators
     };
 
-    static QString doubleToString(const QChar zero, const QChar plus,
-                                  const QChar minus, const QChar exponent,
-                                  const QChar group, const QChar decimal,
+    static QString doubleToString(const QString zero, const QString plus,
+                                  const QString minus, const QString exponent,
+                                  const QString group, const QString decimal,
                                   double d, int precision,
                                   DoubleForm form,
                                   int width, unsigned flags);
-    static QString longLongToString(const QChar zero, const QChar group,
-                                    const QChar plus, const QChar minus,
+    static QString longLongToString(const QString zero, const QString group,
+                                    const QString plus, const QString minus,
                                     qint64 l, int precision, int base,
                                     int width, unsigned flags);
-    static QString unsLongLongToString(const QChar zero, const QChar group,
-                                       const QChar plus,
+    static QString unsLongLongToString(const QString zero, const QString group,
+                                       const QString plus,
                                        quint64 l, int precision,
                                        int base, int width,
                                        unsigned flags);
@@ -177,10 +177,26 @@ public:
     QString dateTimeToString(const QString &format, const QDate *date, const QTime *time,
                              const QLocale *q) const;
 
+    // NOTE: The order of these variables must match the locale_data[] values in qlocale_data.h
+    // which are loaded into them.  Do not modify without first modifing the locale_data[] layout.
+
     quint16 m_language_id, m_script_id, m_country_id;
 
-    quint16 m_decimal, m_group, m_list, m_percent,
-        m_zero, m_minus, m_plus, m_exponential;
+    quint16 m_decimal_idx, m_decimal_size;
+    quint16 m_group_idx, m_group_size;
+    quint16 m_list_idx, m_list_size;
+    quint16 m_percent_idx, m_percent_size;
+    quint16 m_zero_idx, m_zero_size;
+    quint16 m_pattern_idx, m_pattern_size;
+    quint16 m_minus_idx, m_minus_size;
+    quint16 m_plus_idx, m_plus_size;
+    quint16 m_exponential_idx, m_exponential_size;
+    quint16 m_permille_idx, m_permill_size;
+    quint16 m_infinity_idx, m_infinity_size;
+    quint16 m_nan_idx, m_nan_size;
+    quint16 m_currency_decimal_idx, m_currency_decimal_size;
+    quint16 m_currency_group_idx, m_currency_group_size;
+
     quint16 m_quotation_start, m_quotation_end;
     quint16 m_alternate_quotation_start, m_alternate_quotation_end;
 
@@ -223,8 +239,8 @@ public:
 
 inline char QLocalePrivate::digitToCLocale(const QChar &in) const
 {
-    const QChar _zero = zero();
-    const QChar _group = group();
+    const QChar _zero = zero().at(0);
+    const QChar _group = group().at(0);
     const ushort zeroUnicode = _zero.unicode();
     const ushort tenUnicode = zeroUnicode + 10;
 
@@ -234,19 +250,19 @@ inline char QLocalePrivate::digitToCLocale(const QChar &in) const
     if (in.unicode() >= '0' && in.unicode() <= '9')
         return in.toLatin1();
 
-    if (in == plus())
+    if (in == plus().at(0))
         return '+';
 
-    if (in == minus())
+    if (in == minus().at(0))
         return '-';
 
-    if (in == decimal())
+    if (in == decimal().at(0))
         return '.';
 
-    if (in == group())
+    if (in == group().at(0))
         return ',';
 
-    if (in == exponential() || in == exponential().toUpper())
+    if (in == exponential().at(0) || in == exponential().at(0).toUpper())
         return 'e';
 
     // In several languages group() is the char 0xA0, which looks like a space.

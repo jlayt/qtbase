@@ -266,6 +266,15 @@ static QString getCFLocaleValue(CFStringRef key)
     return QCFString::toQString(CFStringRef(static_cast<CFTypeRef>(value)));
 }
 
+static QString getCFNumberFormatterValue(CFStringRef key)
+{
+    QCFType<CFLocaleRef> locale = CFLocaleCopyCurrent();
+    QCFType<CFNumberFormatterRef> numberFormatter =
+            CFNumberFormatterCreate(NULL, locale, kCFNumberFormatterNoStyle);
+    QCFTypeRef value CFNumberFormatterCopyProperty(formatter, key);
+    return QCFString::toQString(CFStringRef(static_cast<CFTypeRef>(value)));
+}
+
 static QLocale::MeasurementSystem macMeasurementSystem()
 {
     QCFType<CFLocaleRef> locale = CFLocaleCopyCurrent();
@@ -388,6 +397,17 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
         QString value = getCFLocaleValue(kCFLocaleGroupingSeparator);
         return value.isEmpty() ? QVariant() : value;
     }
+    case NegativeSign:
+        return getCFNumberFormatterValue(kCFNumberFormatterMinusSign);
+    case PositiveSign:
+        return getCFNumberFormatterValue(kCFNumberFormatterPlusSign);
+    case ZeroDigit:
+        return getCFNumberFormatterValue(kCFNumberFormatterZeroSymbol);
+    case PercentSymbol:
+        return getCFNumberFormatterValue(kCFNumberFormatterPercentSymbol);
+    case ExponentialSymbol:
+        return getCFNumberFormatterValue(kCFNumberFormatterExponentSymbol);
+
     case DateFormatLong:
     case DateFormatShort:
         return getMacDateFormat(type == DateFormatShort
@@ -410,11 +430,6 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
     case TimeToStringShort:
     case TimeToStringLong:
         return macTimeToString(in.toTime(), (type == TimeToStringShort));
-
-    case NegativeSign:
-    case PositiveSign:
-    case ZeroDigit:
-        break;
 
     case MeasurementSystem:
         return QVariant(static_cast<int>(macMeasurementSystem()));

@@ -74,8 +74,8 @@
 
 QT_BEGIN_NAMESPACE
 
-QString qulltoa(qulonglong l, int base, const QChar _zero);
-QString qlltoa(qlonglong l, int base, const QChar zero);
+QString qulltoa(qulonglong l, int base, const QString _zero);
+QString qlltoa(qlonglong l, int base, const QString zero);
 
 enum PrecisionMode {
     PMDecimalDigits =             0x01,
@@ -83,13 +83,13 @@ enum PrecisionMode {
     PMChopTrailingZeros =   0x03
 };
 
-QString &decimalForm(QChar zero, QChar decimal, QChar group,
+QString &decimalForm(QString zero, QString decimal, QString group,
                      QString &digits, int decpt, uint precision,
                      PrecisionMode pm,
                      bool always_show_decpt,
                      bool thousands_group);
-QString &exponentForm(QChar zero, QChar decimal, QChar exponential,
-                      QChar group, QChar plus, QChar minus,
+QString &exponentForm(QString zero, QString decimal, QString exponential,
+                      QString group, QString plus, QString minus,
                       QString &digits, int decpt, uint precision,
                       PrecisionMode pm,
                       bool always_show_decpt);

@@ -241,14 +241,20 @@ class Locale:
         self.script = eltText(firstChildElt(elt, "script"))
         self.country = eltText(firstChildElt(elt, "country"))
         self.countryEndonym = eltText(firstChildElt(elt, "countryEndonym"))
-        self.decimal = int(eltText(firstChildElt(elt, "decimal")))
-        self.group = int(eltText(firstChildElt(elt, "group")))
-        self.listDelim = int(eltText(firstChildElt(elt, "list")))
-        self.percent = int(eltText(firstChildElt(elt, "percent")))
-        self.zero = int(eltText(firstChildElt(elt, "zero")))
-        self.minus = int(eltText(firstChildElt(elt, "minus")))
-        self.plus = int(eltText(firstChildElt(elt, "plus")))
-        self.exp = int(eltText(firstChildElt(elt, "exp")))
+        self.decimal = eltText(firstChildElt(elt, "decimal"))
+        self.group = eltText(firstChildElt(elt, "group"))
+        self.listDelim = eltText(firstChildElt(elt, "list"))
+        self.percent = eltText(firstChildElt(elt, "percent"))
+        self.zero = eltText(firstChildElt(elt, "zero"))
+        self.patternDigit = eltText(firstChildElt(elt, "patternDigit"))
+        self.minus = eltText(firstChildElt(elt, "minus"))
+        self.plus = eltText(firstChildElt(elt, "plus"))
+        self.exp = eltText(firstChildElt(elt, "exp"))
+        self.perMille = eltText(firstChildElt(elt, "perMille"))
+        self.infinity = eltText(firstChildElt(elt, "infinity"))
+        self.nan = eltText(firstChildElt(elt, "nan"))
+        self.currencyDecimal = eltText(firstChildElt(elt, "currencyDecimal"))
+        self.currencyGroup = eltText(firstChildElt(elt, "currencyGroup"))
         self.quotationStart = ord(assertSingleChar(eltText(firstChildElt(elt, "quotationStart"))))
         self.quotationEnd = ord(assertSingleChar(eltText(firstChildElt(elt, "quotationEnd"))))
         self.alternateQuotationStart = ord(assertSingleChar(eltText(firstChildElt(elt, "alternateQuotationStart"))))
@@ -500,6 +506,7 @@ def main():
 
     data_temp_file.write("\n")
 
+    number_symbols_data = StringData()
     list_pattern_part_data = StringData()
     date_format_data = StringData()
     time_format_data = StringData()
@@ -515,7 +522,7 @@ def main():
 
     # Locale data
     data_temp_file.write("static const QLocalePrivate locale_data[] = {\n")
-    data_temp_file.write("//      lang   script terr    dec  group   list  prcnt   zero  minus  plus    exp quotStart quotEnd altQuotStart altQuotEnd lpStart lpMid lpEnd lpTwo sDtFmt lDtFmt sTmFmt lTmFmt ssMonth slMonth  sMonth lMonth  sDays  lDays  am,len      pm,len\n")
+    data_temp_file.write("//      lang   script terr    dec,len  group,len   list,len  prcnt,len   zero,len  minus,len  plus,len    exp,len quotStart quotEnd altQuotStart altQuotEnd lpStart lpMid lpEnd lpTwo sDtFmt lDtFmt sTmFmt lTmFmt ssMonth slMonth  sMonth lMonth  sDays  lDays  am,len      pm,len   currCode   currSym   currName   currPosFmt   currNegFmt   langEndo   terrEndo   currDig   currRnd   fdow   weStart   weEnd   lang   script   terr\n")
 
     locale_keys = locale_map.keys()
     compareLocaleKeys.default_map = default_map
@@ -524,16 +531,22 @@ def main():
 
     for key in locale_keys:
         l = locale_map[key]
-        data_temp_file.write("    { %6d,%6d,%6d,%6d,%6d,%6d,%6d,%6d,%6d,%6d,%6d,%6d,%6d,%6d,%6d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, {%s}, %s,%s,%s,%s,%s,%s,%6d,%6d,%6d,%6d,%6d }, // %s/%s/%s\n" \
+        data_temp_file.write("    { %6d,%6d,%6d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%6d,%6d,%6d,%6d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, {%s}, %s,%s,%s,%s,%s,%s,%6d,%6d,%6d,%6d,%6d }, // %s/%s/%s\n" \
                     % (key[0], key[1], key[2],
-                        l.decimal,
-                        l.group,
-                        l.listDelim,
-                        l.percent,
-                        l.zero,
-                        l.minus,
-                        l.plus,
-                        l.exp,
+                        number_symbols_data.append(l.decimal),
+                        number_symbols_data.append(l.group),
+                        number_symbols_data.append(l.listDelim),
+                        number_symbols_data.append(l.percent),
+                        number_symbols_data.append(l.zero),
+                        number_symbols_data.append(l.patternDigit),
+                        number_symbols_data.append(l.minus),
+                        number_symbols_data.append(l.plus),
+                        number_symbols_data.append(l.exp),
+                        number_symbols_data.append(l.perMille),
+                        number_symbols_data.append(l.infinity),
+                        number_symbols_data.append(l.nan),
+                        number_symbols_data.append(l.currencyDecimal),
+                        number_symbols_data.append(l.currencyGroup),
                         l.quotationStart,
                         l.quotationEnd,
                         l.alternateQuotationStart,
@@ -575,8 +588,16 @@ def main():
                         l.language,
                         l.script,
                         l.country))
-    data_temp_file.write("    {      0,      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,    0,0,    0,0,    0,0,   0,0,     0,0,     0,0,     0,0,     0,0,     0,0,     0,0,     0,0,    0,0,    0,0,    0,0,   0,0,   0,0,   0,0,   0,0,   0,0,   0,0,   0,0,   0,0, {0,0,0}, 0,0, 0,0, 0,0, 0,0, 0, 0, 0, 0, 0, 0,0, 0,0 }  // trailing 0s\n")
+    data_temp_file.write("    {      0,     0,     0, 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 , 0,0 ,     0,     0,     0,     0,    0,0,    0,0,    0,0,   0,0,     0,0,     0,0,     0,0,     0,0,     0,0,     0,0,     0,0,    0,0,    0,0,    0,0,   0,0,   0,0,   0,0,   0,0,   0,0,   0,0,   0,0,   0,0, {0,0,0}, 0,0, 0,0, 0,0, 0,0, 0, 0, 0, 0, 0, 0,0, 0,0 }  // trailing 0s\n")
     data_temp_file.write("};\n")
+
+    data_temp_file.write("\n")
+
+    # Number Symbols data
+    #check_static_char_array_length("number_symbols", number_symbols_data.data)
+    data_temp_file.write("static const ushort number_symbols_data[] = {\n")
+    data_temp_file.write(wrap_list(number_symbols_data.data))
+    data_temp_file.write("\n};\n")
 
     data_temp_file.write("\n")
 

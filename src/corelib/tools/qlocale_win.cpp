@@ -82,16 +82,19 @@ static QString winIso3116CtryName(LCID id = LOCALE_USER_DEFAULT);
 #ifndef LOCALE_SNATIVECOUNTRYNAME
 #  define LOCALE_SNATIVECOUNTRYNAME 0x00000008
 #endif
+#ifndef LOCALE_SPERCENT
+#  define LOCALE_SPERCENT 0x00000016
+#endif
 
 struct QSystemLocalePrivate
 {
     QSystemLocalePrivate();
 
-    QChar zeroDigit();
-    QChar decimalPoint();
-    QChar groupSeparator();
-    QChar negativeSign();
-    QChar positiveSign();
+    QString zeroDigit();
+    QString decimalPoint();
+    QString groupSeparator();
+    QString negativeSign();
+    QString positiveSign();
     QVariant dateFormat(QLocale::FormatType);
     QVariant timeFormat(QLocale::FormatType);
     QVariant dateTimeFormat(QLocale::FormatType);
@@ -125,7 +128,7 @@ private:
     // cached values:
     LCID lcid;
     SubstitutionType substitutionType;
-    QChar zero;
+    QString zero;
 
     QString getLocaleInfo(LCTYPE type, int maxlen = 0);
     int getLocaleInfo_int(LCTYPE type, int maxlen = 0);
@@ -208,7 +211,7 @@ QSystemLocalePrivate::SubstitutionType QSystemLocalePrivate::substitution()
 
 QString &QSystemLocalePrivate::substituteDigits(QString &string)
 {
-    ushort zero = zeroDigit().unicode();
+    ushort zero = zeroDigit().at(0).unicode();
     ushort *qch = (ushort *)string.data();
     for (ushort *end = qch + string.size(); qch != end; ++qch) {
         if (*qch >= '0' && *qch <= '9')
@@ -217,31 +220,31 @@ QString &QSystemLocalePrivate::substituteDigits(QString &string)
     return string;
 }
 
-QChar QSystemLocalePrivate::zeroDigit()
+QString QSystemLocalePrivate::zeroDigit()
 {
     if (zero.isNull())
         zero = getLocaleInfo_qchar(LOCALE_SNATIVEDIGITS);
     return zero;
 }
 
-QChar QSystemLocalePrivate::decimalPoint()
+QString QSystemLocalePrivate::decimalPoint()
 {
-    return getLocaleInfo_qchar(LOCALE_SDECIMAL);
+    return getLocaleInfo(LOCALE_SDECIMAL);
 }
 
-QChar QSystemLocalePrivate::groupSeparator()
+QString QSystemLocalePrivate::groupSeparator()
 {
-    return getLocaleInfo_qchar(LOCALE_STHOUSAND);
+    return getLocaleInfo(LOCALE_STHOUSAND);
 }
 
-QChar QSystemLocalePrivate::negativeSign()
+QString QSystemLocalePrivate::negativeSign()
 {
-    return getLocaleInfo_qchar(LOCALE_SNEGATIVESIGN);
+    return getLocaleInfo(LOCALE_SNEGATIVESIGN);
 }
 
-QChar QSystemLocalePrivate::positiveSign()
+QString QSystemLocalePrivate::positiveSign()
 {
-    return getLocaleInfo_qchar(LOCALE_SPOSITIVESIGN);
+    return getLocaleInfo(LOCALE_SPOSITIVESIGN);
 }
 
 QVariant QSystemLocalePrivate::dateFormat(QLocale::FormatType type)
@@ -586,7 +589,7 @@ void QSystemLocalePrivate::update()
 {
     lcid = GetUserDefaultLCID();
     substitutionType = SUnknown;
-    zero = QChar();
+    zero.clear();
 }
 
 QString QSystemLocalePrivate::winToQtFormat(const QString &sys_fmt)
@@ -662,14 +665,23 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
 {
     QSystemLocalePrivate *d = systemLocalePrivate();
     switch(type) {
+
     case DecimalPoint:
         return d->decimalPoint();
     case GroupSeparator:
         return d->groupSeparator();
+    case PercentSymbol: {
+        if (QSysInfo::windowsVersion() < QSysInfo::WV_WINDOWS7)
+            return QVariant();
+        return getLocaleInfo(LOCALE_SPERCENT);
+    }
+    case ZeroDigit:
+        return d->zeroDigit();
     case NegativeSign:
         return d->negativeSign();
     case PositiveSign:
         return d->positiveSign();
+
     case DateFormatLong:
         return d->dateFormat(QLocale::LongFormat);
     case DateFormatShort:
@@ -702,8 +714,6 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
         return d->toString(in.toDateTime(), QLocale::ShortFormat);
     case DateTimeToStringLong:
         return d->toString(in.toDateTime(), QLocale::LongFormat);
-    case ZeroDigit:
-        return d->zeroDigit();
     case LanguageId:
     case CountryId: {
         QString locale = QString::fromLatin1(getWinLocaleName());
