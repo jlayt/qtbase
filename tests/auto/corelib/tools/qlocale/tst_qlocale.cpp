@@ -1703,7 +1703,7 @@ void tst_QLocale::dayName_data()
 
     QTest::newRow("C long")  << QString("C") << QString("Sunday") << 7 << QLocale::LongFormat;
     QTest::newRow("C short")  << QString("C") << QString("Sun") << 7 << QLocale::ShortFormat;
-    QTest::newRow("C narrow")  << QString("C") << QString("7") << 7 << QLocale::NarrowFormat;
+    QTest::newRow("C narrow")  << QString("C") << QString("S") << 7 << QLocale::NarrowFormat;
 
     QTest::newRow("ru_RU long")  << QString("ru_RU") << QString::fromUtf8("\320\262\320\276\321\201\320\272\321\200\320\265\321\201\320\265\320\275\321\214\320\265") << 7 << QLocale::LongFormat;
     QTest::newRow("ru_RU short")  << QString("ru_RU") << QString::fromUtf8("\320\222\321\201") << 7 << QLocale::ShortFormat;
@@ -1756,6 +1756,7 @@ void tst_QLocale::standaloneDayName()
     QFETCH(QLocale::FormatType, format);
 
     QLocale l(locale_name);
+
     QCOMPARE(l.standaloneDayName(day, format), dayName);
 }
 
@@ -1886,7 +1887,7 @@ void tst_QLocale::monthName()
 
     QCOMPARE(c.monthName(1, QLocale::LongFormat), QLatin1String("January"));
     QCOMPARE(c.monthName(1, QLocale::ShortFormat), QLatin1String("Jan"));
-    QCOMPARE(c.monthName(1, QLocale::NarrowFormat), QLatin1String("1"));
+    QCOMPARE(c.monthName(1, QLocale::NarrowFormat), QLatin1String("J"));
 
     const QLocale de("de_DE");
     QCOMPARE(de.monthName(12, QLocale::LongFormat), QLatin1String("Dezember"));
@@ -1916,6 +1917,7 @@ void tst_QLocale::standaloneMonthName()
 
     QCOMPARE(c.standaloneMonthName(1, QLocale::LongFormat), QLatin1String("January"));
     QCOMPARE(c.standaloneMonthName(1, QLocale::ShortFormat), QLatin1String("Jan"));
+    QCOMPARE(c.standaloneMonthName(1, QLocale::NarrowFormat), QLatin1String("J"));
 
     const QLocale de("de_DE");
     // For de_DE locale Unicode CLDR database doesn't contain standalone long months

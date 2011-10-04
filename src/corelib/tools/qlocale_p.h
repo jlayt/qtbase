@@ -125,6 +125,21 @@ public:
         ParseGroupSeparators
     };
 
+#ifndef QT_NO_CALENDAR_SYSTEMS
+    // Order of calendar fields within calendar_index_data, 2 bytes per calendar field for idx and size
+    enum CalendarFields {
+        CalendarName = 0,
+        MonthNameLong, MonthNameShort, MonthNameNarrow, MonthNameLongStandalone, MonthNameShortStandalone, MonthNameNarrowStandalone,
+        DayNameLong, DayNameShort, DayNameNarrow, DayNameLongStandalone, DayNameShortStandalone, DayNameNarrowStandalone,
+        QuarterNameLong, QuarterNameShort, QuarterNameNarrow, QuarterNameLongStandalone, QuarterNameShortStandalone, QuarterNameNarrowStandalone,
+        AmLong, AmShort, AmNarrow, AmLongStandalone, AmShortStandalone, AmNarrowStandalone,
+        PmLong, PmShort, PmNarrow, PmLongStandalone, PmShortStandalone, PmNarrowStandalone,
+        DateFormatFull, DateFormatLong, DateFormatMedium, DateFormatShort,
+        TimeFormatFull, TimeFormatLong, TimeFormatMedium, TimeFormatShort,
+        DateTimeFormatFull, DateTimeFormatLong, DateTimeFormatMedium, DateTimeFormatShort, LastCalendarField = DateTimeFormatShort
+    };
+#endif
+
     static QString doubleToString(const QChar zero, const QChar plus,
                                   const QChar minus, const QChar exponent,
                                   const QChar group, const QChar decimal,
@@ -174,10 +189,11 @@ public:
     enum NumberMode { IntegerMode, DoubleStandardMode, DoubleScientificMode };
     bool validateChars(const QString &str, NumberMode numMode, QByteArray *buff, int decDigits = -1) const;
 
-    quint16 m_language_id, m_script_id, m_country_id;
+    quint16 m_language_id, m_language_endonym_idx, m_language_endonym_size;
+    quint16 m_script_id;
+    quint16 m_country_id, m_country_endonym_idx, m_country_endonym_size;
 
-    quint16 m_decimal, m_group, m_list, m_percent,
-        m_zero, m_minus, m_plus, m_exponential;
+    quint16 m_decimal, m_group, m_list, m_percent, m_zero, m_minus, m_plus, m_exponential;
     quint16 m_quotation_start, m_quotation_end;
     quint16 m_alternate_quotation_start, m_alternate_quotation_end;
 
@@ -185,37 +201,67 @@ public:
     quint16 m_list_pattern_part_mid_idx, m_list_pattern_part_mid_size;
     quint16 m_list_pattern_part_end_idx, m_list_pattern_part_end_size;
     quint16 m_list_pattern_part_two_idx, m_list_pattern_part_two_size;
-    quint16 m_short_date_format_idx, m_short_date_format_size;
-    quint16 m_long_date_format_idx, m_long_date_format_size;
-    quint16 m_short_time_format_idx, m_short_time_format_size;
-    quint16 m_long_time_format_idx, m_long_time_format_size;
-    quint16 m_standalone_short_month_names_idx, m_standalone_short_month_names_size;
-    quint16 m_standalone_long_month_names_idx, m_standalone_long_month_names_size;
-    quint16 m_standalone_narrow_month_names_idx, m_standalone_narrow_month_names_size;
-    quint16 m_short_month_names_idx, m_short_month_names_size;
-    quint16 m_long_month_names_idx, m_long_month_names_size;
-    quint16 m_narrow_month_names_idx, m_narrow_month_names_size;
-    quint16 m_standalone_short_day_names_idx, m_standalone_short_day_names_size;
-    quint16 m_standalone_long_day_names_idx, m_standalone_long_day_names_size;
-    quint16 m_standalone_narrow_day_names_idx, m_standalone_narrow_day_names_size;
-    quint16 m_short_day_names_idx, m_short_day_names_size;
-    quint16 m_long_day_names_idx, m_long_day_names_size;
-    quint16 m_narrow_day_names_idx, m_narrow_day_names_size;
-    quint16 m_am_idx, m_am_size;
-    quint16 m_pm_idx, m_pm_size;
+
     char m_currency_iso_code[3];
     quint16 m_currency_symbol_idx, m_currency_symbol_size;
     quint16 m_currency_display_name_idx, m_currency_display_name_size;
-    quint8 m_currency_format_idx, m_currency_format_size;
-    quint8 m_currency_negative_format_idx, m_currency_negative_format_size;
-    quint16 m_language_endonym_idx, m_language_endonym_size;
-    quint16 m_country_endonym_idx, m_country_endonym_size;
     quint16 m_currency_digits : 2;
     quint16 m_currency_rounding : 3;
+    quint8 m_currency_format_idx, m_currency_format_size;
+    quint8 m_currency_negative_format_idx, m_currency_negative_format_size;
+
     quint16 m_first_day_of_week : 3;
     quint16 m_weekend_start : 3;
     quint16 m_weekend_end : 3;
 
+#ifndef QT_NO_CALENDAR_SYSTEMS
+    quint16 m_calendar_data_index, m_calendar_default;
+    quint16 m_calendar_preference_idx, m_calendar_preference_size;
+    quint16 m_calendar_name_idx, m_calendar_name_size;
+#endif
+
+    quint16 m_month_names_long_idx, m_month_names_long_size;
+    quint16 m_month_names_short_idx, m_month_names_short_size;
+    quint16 m_month_names_narrow_idx, m_month_names_narrow_size;
+    quint16 m_month_names_long_standalone_idx, m_month_names_long_standalone_size;
+    quint16 m_month_names_short_standalone_idx, m_month_names_short_standalone_size;
+    quint16 m_month_names_narrow_standalone_idx, m_month_names_narrow_standalone_size;
+    quint16 m_day_names_long_idx, m_day_names_long_size;
+    quint16 m_day_names_short_idx, m_day_names_short_size;
+    quint16 m_day_names_narrow_idx, m_day_names_narrow_size;
+    quint16 m_day_names_long_standalone_idx, m_day_names_long_standalone_size;
+    quint16 m_day_names_short_standalone_idx, m_day_names_short_standalone_size;
+    quint16 m_day_names_narrow_standalone_idx, m_day_names_narrow_standalone_size;
+    quint16 m_quarter_names_long_idx, m_quarter_names_long_size;
+    quint16 m_quarter_names_short_idx, m_quarter_names_short_size;
+    quint16 m_quarter_names_narrow_idx, m_quarter_names_narrow_size;
+    quint16 m_quarter_names_long_standalone_idx, m_quarter_names_long_standalone_size;
+    quint16 m_quarter_names_short_standalone_idx, m_quarter_names_short_standalone_size;
+    quint16 m_quarter_names_narrow_standalone_idx, m_quarter_names_narrow_standalone_size;
+    quint16 m_am_long_idx, m_am_long_size;
+    quint16 m_am_short_idx, m_am_short_size;
+    quint16 m_am_narrow_idx, m_am_narrow_size;
+    quint16 m_am_long_standalone_idx, m_am_long_standalone_size;
+    quint16 m_am_short_standalone_idx, m_am_short_standalone_size;
+    quint16 m_am_narrow_standalone_idx, m_am_narrow_standalone_size;
+    quint16 m_pm_long_idx, m_pm_long_size;
+    quint16 m_pm_short_idx, m_pm_short_size;
+    quint16 m_pm_narrow_idx, m_pm_narrow_size;
+    quint16 m_pm_long_standalone_idx, m_pm_long_standalone_size;
+    quint16 m_pm_short_standalone_idx, m_pm_short_standalone_size;
+    quint16 m_pm_narrow_standalone_idx, m_pm_narrow_standalone_size;
+    quint16 m_date_format_full_idx, m_date_format_full_size;
+    quint16 m_date_format_long_idx, m_date_format_long_size;
+    quint16 m_date_format_medium_idx, m_date_format_medium_size;
+    quint16 m_date_format_short_idx, m_date_format_short_size;
+    quint16 m_time_format_full_idx, m_time_format_full_size;
+    quint16 m_time_format_long_idx, m_time_format_long_size;
+    quint16 m_time_format_medium_idx, m_time_format_medium_size;
+    quint16 m_time_format_short_idx, m_time_format_short_size;
+    quint16 m_date_time_format_full_idx, m_date_time_format_full_size;
+    quint16 m_date_time_format_long_idx, m_date_time_format_long_size;
+    quint16 m_date_time_format_medium_idx, m_date_time_format_medium_size;
+    quint16 m_date_time_format_short_idx, m_date_time_format_short_size;
 };
 
 inline char QLocalePrivate::digitToCLocale(const QChar &in) const

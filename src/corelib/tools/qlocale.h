@@ -379,6 +379,7 @@ public:
         TraditionalChineseScript = TraditionalHanScript,
         LastScript = TifinaghScript
     };
+
     enum Country {
         AnyCountry = 0,
         Afghanistan = 1,
@@ -629,27 +630,33 @@ public:
         LatinAmericaAndTheCaribbean = 246,
         LastCountry = LatinAmericaAndTheCaribbean
     };
-// GENERATED PART ENDS HERE
 
     enum CalendarSystem {
-        DefaultCalendar = 0,
-        GregorianCalendar = 1,
-        //ChineseCalendar = 2,
-        CopticCalendar = 3,
-        EthiopicCalendar = 4,
-        EthiopicAmeteAlemCalendar = 5,
-        //HebrewCalendar = 6,
-        IndianNationalCalendar = 7,
-        //IslamicCalendar = 8,
-        IslamicCivilCalendar = 9,
-        ISO8601Calendar = 10,
-        JapaneseCalendar = 11,
-        JulianCalendar = 12,
-        //PersianCalendar = 13,
-        ROCCalendar = 14,
-        ThaiCalendar = 15,
+        DefaultCalendar = -1,
+#ifdef QT_NO_CALENDAR_SYSTEMS
+        GregorianCalendar = 0,
+        LastCalendar = GregorianCalendar
+#else
+        GregorianCalendar = 0,
+        ChineseCalendar = 1,
+        CopticCalendar = 2,
+        EthiopicCalendar = 3,
+        EthiopicAmeteAlemCalendar = 4,
+        HebrewCalendar = 5,
+        IndianNationalCalendar = 6,
+        IslamicCalendar = 7,
+        IslamicCivilCalendar = 8,
+        ISO8601Calendar = 9,
+        JapaneseCalendar = 10,
+        JulianCalendar = 11,
+        PersianCalendar = 12,
+        ROCCalendar = 13,
+        ThaiCalendar = 14,
         LastCalendar = ThaiCalendar
+#endif
     };
+
+// GENERATED PART ENDS HERE
 
     enum MeasurementSystem { MetricSystem, ImperialSystem };
 

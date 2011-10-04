@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 #############################################################################
 ##
 ## Copyright (C) 2012 Nokia Corporation and/or its subsidiary(-ies).
@@ -166,13 +167,13 @@ def generateLocaleInfo(path):
     result['language'] = language
     result['script'] = script
     result['country'] = country
-    result['language_code'] = language_code
-    result['country_code'] = country_code
-    result['script_code'] = script_code
-    result['variant_code'] = variant_code
-    result['language_id'] = language_id
-    result['script_id'] = script_id
-    result['country_id'] = country_id
+    result['languageCode'] = language_code
+    result['countryCode'] = country_code
+    result['scriptCode'] = script_code
+    result['variantCode'] = variant_code
+    result['languageId'] = language_id
+    result['scriptId'] = script_id
+    result['countryId'] = country_id
 
     supplementalPath = dir_name + "/../supplemental/supplementalData.xml"
     currencies = findTagsInFile(supplementalPath, "currencyData/region[iso3166=%s]"%country_code);
@@ -199,11 +200,13 @@ def generateLocaleInfo(path):
         numbering_system = findEntry(path, "numbers/defaultNumberingSystem")
     except:
         pass
+
     def findEntryDef(path, xpath, value=''):
         try:
             return findEntry(path, xpath)
         except xpathlite.Error:
             return value
+
     def get_number_in_system(path, xpath, numbering_system):
         if numbering_system:
             try:
@@ -211,6 +214,62 @@ def generateLocaleInfo(path):
             except xpathlite.Error:
                 pass
         return findEntry(path, xpath)
+
+    def getMonths(path, calendar, context, width):
+        xpath = "dates/calendars/calendar[" + calendar + "]/months/monthContext[" + context + "]/monthWidth[" + width + "]/month"
+        result = findEntry(path, xpath + "[1]")  + ";" \
+               + findEntry(path, xpath + "[2]")  + ";" \
+               + findEntry(path, xpath + "[3]")  + ";" \
+               + findEntry(path, xpath + "[4]")  + ";" \
+               + findEntry(path, xpath + "[5]")  + ";" \
+               + findEntry(path, xpath + "[6]")  + ";" \
+               + findEntry(path, xpath + "[7]")  + ";" \
+               + findEntry(path, xpath + "[8]")  + ";" \
+               + findEntry(path, xpath + "[9]")  + ";" \
+               + findEntry(path, xpath + "[10]") + ";" \
+               + findEntry(path, xpath + "[11]") + ";" \
+               + findEntry(path, xpath + "[12]")
+        try:
+            month13 = findEntry(path, xpath + "[13]")
+            result = result + ";" + month13
+        except:
+            pass
+        return result
+
+    def getDays(path, calendar, context, width):
+        xpath = "dates/calendars/calendar[" + calendar + "]/days/dayContext[" + context + "]/dayWidth[" + width + "]/day"
+        return findEntry(path, xpath + "[sun]") + ";" \
+             + findEntry(path, xpath + "[mon]") + ";" \
+             + findEntry(path, xpath + "[tue]") + ";" \
+             + findEntry(path, xpath + "[wed]") + ";" \
+             + findEntry(path, xpath + "[thu]") + ";" \
+             + findEntry(path, xpath + "[fri]") + ";" \
+             + findEntry(path, xpath + "[sat]")
+
+    def getQuarters(path, calendar, context, width):
+        xpath = "dates/calendars/calendar[" + calendar + "]/quarters/quarterContext[" + context + "]/quarterWidth[" + width + "]/quarter"
+        return findEntry(path, xpath + "[1]") + ";" \
+             + findEntry(path, xpath + "[2]") + ";" \
+             + findEntry(path, xpath + "[3]") + ";" \
+             + findEntry(path, xpath + "[4]")
+
+    def getDayPeriod(path, period, calendar, context, width):
+        return findEntry(path, "dates/calendars/calendar[" + calendar + "]/dayPeriods/dayPeriodContext[" + context + "]/dayPeriodWidth[" + width + "]/dayPeriod[" + period + "]", draft)
+
+    def getDateFormat(path, calendar, length):
+        return convert_date(findEntry(path, "dates/calendars/calendar[" + calendar + "]/dateFormats/dateFormatLength[" + length + "]/dateFormat/pattern"))
+
+    def getTimeFormat(path, calendar, length):
+        return convert_date(findEntry(path, "dates/calendars/calendar[" + calendar + "]/timeFormats/timeFormatLength[" + length + "]/timeFormat/pattern"))
+
+    def getDateTimeFormat(path, calendar, length):
+        try:
+            return parse_list_pattern_part_format(convert_date(findEntry(path, "dates/calendars/calendar["
+                                                               + calendar + "]/dateTimeFormats/dateTimeFormatLength["
+                                                               + length + "]/dateTimeFormat/pattern")))
+        except:
+            return "%1 %2"
+
     result['decimal'] = get_number_in_system(path, "numbers/symbols/decimal", numbering_system)
     result['group'] = get_number_in_system(path, "numbers/symbols/group", numbering_system)
     result['list'] = get_number_in_system(path, "numbers/symbols/list", numbering_system)
@@ -227,12 +286,65 @@ def generateLocaleInfo(path):
     result['listPatternPartMiddle'] = parse_list_pattern_part_format(findEntry(path, "listPatterns/listPattern/listPatternPart[middle]"))
     result['listPatternPartEnd'] = parse_list_pattern_part_format(findEntry(path, "listPatterns/listPattern/listPatternPart[end]"))
     result['listPatternPartTwo'] = parse_list_pattern_part_format(findEntry(path, "listPatterns/listPattern/listPatternPart[2]"))
-    result['am'] = findEntry(path, "dates/calendars/calendar[gregorian]/dayPeriods/dayPeriodContext[format]/dayPeriodWidth[wide]/dayPeriod[am]", draft)
-    result['pm'] = findEntry(path, "dates/calendars/calendar[gregorian]/dayPeriods/dayPeriodContext[format]/dayPeriodWidth[wide]/dayPeriod[pm]", draft)
-    result['longDateFormat'] = convert_date(findEntry(path, "dates/calendars/calendar[gregorian]/dateFormats/dateFormatLength[full]/dateFormat/pattern"))
-    result['shortDateFormat'] = convert_date(findEntry(path, "dates/calendars/calendar[gregorian]/dateFormats/dateFormatLength[short]/dateFormat/pattern"))
-    result['longTimeFormat'] = convert_date(findEntry(path, "dates/calendars/calendar[gregorian]/timeFormats/timeFormatLength[full]/timeFormat/pattern"))
-    result['shortTimeFormat'] = convert_date(findEntry(path, "dates/calendars/calendar[gregorian]/timeFormats/timeFormatLength[short]/timeFormat/pattern"))
+
+    cldrCalendars = set()
+    for calendarId in enumdata.calendar_list:
+        cldrCalendars.add(enumdata.calendar_list[calendarId][1])
+
+    for calendar in cldrCalendars:
+        result[calendar, 'calendarName'] = findEntryDef(path, "localeDisplayNames/types/type[type=%s]" % (calendar))
+        if (result[calendar, 'calendarName'] == ''):
+            result[calendar, 'calendarName'] = enumdata.calendar_list[enumdata.calendarCodeToId(calendar)][2]
+
+        result[calendar, 'monthsLong']             = getMonths(path, calendar, "format",      "wide")
+        result[calendar, 'monthsShort']            = getMonths(path, calendar, "format",      "abbreviated")
+        result[calendar, 'monthsNarrow']           = getMonths(path, calendar, "format",      "narrow")
+        result[calendar, 'monthsLongStandalone']   = getMonths(path, calendar, "stand-alone", "wide")
+        result[calendar, 'monthsShortStandalone']  = getMonths(path, calendar, "stand-alone", "abbreviated")
+        result[calendar, 'monthsNarrowStandalone'] = getMonths(path, calendar, "stand-alone", "narrow")
+
+        result[calendar, 'daysLong']             = getDays(path, calendar, "format",      "wide")
+        result[calendar, 'daysShort']            = getDays(path, calendar, "format",      "abbreviated")
+        result[calendar, 'daysNarrow']           = getDays(path, calendar, "format",      "narrow")
+        result[calendar, 'daysLongStandalone']   = getDays(path, calendar, "stand-alone", "wide")
+        result[calendar, 'daysShortStandalone']  = getDays(path, calendar, "stand-alone", "abbreviated")
+        result[calendar, 'daysNarrowStandalone'] = getDays(path, calendar, "stand-alone", "narrow")
+
+        result[calendar, 'quartersLong']             = getQuarters(path, calendar, "format",      "wide")
+        result[calendar, 'quartersShort']            = getQuarters(path, calendar, "format",      "abbreviated")
+        result[calendar, 'quartersNarrow']           = getQuarters(path, calendar, "format",      "narrow")
+        result[calendar, 'quartersLongStandalone']   = getQuarters(path, calendar, "stand-alone", "wide")
+        result[calendar, 'quartersShortStandalone']  = getQuarters(path, calendar, "stand-alone", "abbreviated")
+        result[calendar, 'quartersNarrowStandalone'] = getQuarters(path, calendar, "stand-alone", "narrow")
+
+        result[calendar, 'amLong']             = getDayPeriod(path, "am", calendar, "format",      "wide")
+        result[calendar, 'amShort']            = getDayPeriod(path, "am", calendar, "format",      "abbreviated")
+        result[calendar, 'amNarrow']           = getDayPeriod(path, "am", calendar, "format",      "narrow")
+        result[calendar, 'amLongStandalone']   = getDayPeriod(path, "am", calendar, "stand-alone", "wide")
+        result[calendar, 'amShortStandalone']  = getDayPeriod(path, "am", calendar, "stand-alone", "abbreviated")
+        result[calendar, 'amNarrowStandalone'] = getDayPeriod(path, "am", calendar, "stand-alone", "narrow")
+
+        result[calendar, 'pmLong']             = getDayPeriod(path, "pm", calendar, "format",      "wide")
+        result[calendar, 'pmShort']            = getDayPeriod(path, "pm", calendar, "format",      "abbreviated")
+        result[calendar, 'pmNarrow']           = getDayPeriod(path, "pm", calendar, "format",      "narrow")
+        result[calendar, 'pmLongStandalone']   = getDayPeriod(path, "pm", calendar, "stand-alone", "wide")
+        result[calendar, 'pmShortStandalone']  = getDayPeriod(path, "pm", calendar, "stand-alone", "abbreviated")
+        result[calendar, 'pmNarrowStandalone'] = getDayPeriod(path, "pm", calendar, "stand-alone", "narrow")
+
+        result[calendar, 'dateFormatFull']     = getDateFormat(path, calendar, "full")
+        result[calendar, 'dateFormatLong']     = getDateFormat(path, calendar, "long")
+        result[calendar, 'dateFormatMedium']   = getDateFormat(path, calendar, "medium")
+        result[calendar, 'dateFormatShort']    = getDateFormat(path, calendar, "short")
+
+        result[calendar, 'timeFormatFull']     = getTimeFormat(path, calendar, "full")
+        result[calendar, 'timeFormatLong']     = getTimeFormat(path, calendar, "long")
+        result[calendar, 'timeFormatMedium']   = getTimeFormat(path, calendar, "medium")
+        result[calendar, 'timeFormatShort']    = getTimeFormat(path, calendar, "short")
+
+        result[calendar, 'dateTimeFormatFull']     = getDateTimeFormat(path, calendar, "full")
+        result[calendar, 'dateTimeFormatLong']     = getDateTimeFormat(path, calendar, "long")
+        result[calendar, 'dateTimeFormatMedium']   = getDateTimeFormat(path, calendar, "medium")
+        result[calendar, 'dateTimeFormatShort']    = getDateTimeFormat(path, calendar, "short")
 
     endonym = None
     if country_code and script_code:
@@ -243,8 +355,9 @@ def generateLocaleInfo(path):
         endonym = findEntryDef(path, "localeDisplayNames/languages/language[type=%s_%s]" % (language_code, country_code))
     if not endonym:
         endonym = findEntryDef(path, "localeDisplayNames/languages/language[type=%s]" % (language_code))
-    result['language_endonym'] = endonym
-    result['country_endonym'] = findEntryDef(path, "localeDisplayNames/territories/territory[type=%s]" % (country_code))
+    result['languageEndonym'] = endonym
+    result['countryEndonym'] = findEntryDef(path, "localeDisplayNames/territories/territory[type=%s]" % (country_code))
+    result['scriptEndonym'] = findEntryDef(path, "localeDisplayNames/scripts/script[type=%s]" % (script_code))
 
     currency_format = get_number_in_system(path, "numbers/currencyFormats/currencyFormatLength/currencyFormat/pattern", numbering_system)
     currency_format = parse_number_format(currency_format, result)
@@ -267,156 +380,6 @@ def generateLocaleInfo(path):
             + findEntryDef(path, display_name_path + "[count=many]")  + ";" \
             + findEntryDef(path, display_name_path + "[count=other]") + ";"
 
-    standalone_long_month_path = "dates/calendars/calendar[gregorian]/months/monthContext[stand-alone]/monthWidth[wide]/month"
-    result['standaloneLongMonths'] \
-        = findEntry(path, standalone_long_month_path + "[1]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[2]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[3]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[4]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[5]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[6]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[7]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[8]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[9]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[10]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[11]") + ";" \
-        + findEntry(path, standalone_long_month_path + "[12]") + ";"
-
-    standalone_short_month_path = "dates/calendars/calendar[gregorian]/months/monthContext[stand-alone]/monthWidth[abbreviated]/month"
-    result['standaloneShortMonths'] \
-        = findEntry(path, standalone_short_month_path + "[1]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[2]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[3]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[4]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[5]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[6]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[7]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[8]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[9]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[10]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[11]") + ";" \
-        + findEntry(path, standalone_short_month_path + "[12]") + ";"
-
-    standalone_narrow_month_path = "dates/calendars/calendar[gregorian]/months/monthContext[stand-alone]/monthWidth[narrow]/month"
-    result['standaloneNarrowMonths'] \
-        = findEntry(path, standalone_narrow_month_path + "[1]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[2]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[3]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[4]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[5]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[6]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[7]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[8]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[9]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[10]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[11]") + ";" \
-        + findEntry(path, standalone_narrow_month_path + "[12]") + ";"
-
-    long_month_path = "dates/calendars/calendar[gregorian]/months/monthContext[format]/monthWidth[wide]/month"
-    result['longMonths'] \
-        = findEntry(path, long_month_path + "[1]") + ";" \
-        + findEntry(path, long_month_path + "[2]") + ";" \
-        + findEntry(path, long_month_path + "[3]") + ";" \
-        + findEntry(path, long_month_path + "[4]") + ";" \
-        + findEntry(path, long_month_path + "[5]") + ";" \
-        + findEntry(path, long_month_path + "[6]") + ";" \
-        + findEntry(path, long_month_path + "[7]") + ";" \
-        + findEntry(path, long_month_path + "[8]") + ";" \
-        + findEntry(path, long_month_path + "[9]") + ";" \
-        + findEntry(path, long_month_path + "[10]") + ";" \
-        + findEntry(path, long_month_path + "[11]") + ";" \
-        + findEntry(path, long_month_path + "[12]") + ";"
-
-    short_month_path = "dates/calendars/calendar[gregorian]/months/monthContext[format]/monthWidth[abbreviated]/month"
-    result['shortMonths'] \
-        = findEntry(path, short_month_path + "[1]") + ";" \
-        + findEntry(path, short_month_path + "[2]") + ";" \
-        + findEntry(path, short_month_path + "[3]") + ";" \
-        + findEntry(path, short_month_path + "[4]") + ";" \
-        + findEntry(path, short_month_path + "[5]") + ";" \
-        + findEntry(path, short_month_path + "[6]") + ";" \
-        + findEntry(path, short_month_path + "[7]") + ";" \
-        + findEntry(path, short_month_path + "[8]") + ";" \
-        + findEntry(path, short_month_path + "[9]") + ";" \
-        + findEntry(path, short_month_path + "[10]") + ";" \
-        + findEntry(path, short_month_path + "[11]") + ";" \
-        + findEntry(path, short_month_path + "[12]") + ";"
-
-    narrow_month_path = "dates/calendars/calendar[gregorian]/months/monthContext[format]/monthWidth[narrow]/month"
-    result['narrowMonths'] \
-        = findEntry(path, narrow_month_path + "[1]") + ";" \
-        + findEntry(path, narrow_month_path + "[2]") + ";" \
-        + findEntry(path, narrow_month_path + "[3]") + ";" \
-        + findEntry(path, narrow_month_path + "[4]") + ";" \
-        + findEntry(path, narrow_month_path + "[5]") + ";" \
-        + findEntry(path, narrow_month_path + "[6]") + ";" \
-        + findEntry(path, narrow_month_path + "[7]") + ";" \
-        + findEntry(path, narrow_month_path + "[8]") + ";" \
-        + findEntry(path, narrow_month_path + "[9]") + ";" \
-        + findEntry(path, narrow_month_path + "[10]") + ";" \
-        + findEntry(path, narrow_month_path + "[11]") + ";" \
-        + findEntry(path, narrow_month_path + "[12]") + ";"
-
-    long_day_path = "dates/calendars/calendar[gregorian]/days/dayContext[format]/dayWidth[wide]/day"
-    result['longDays'] \
-        = findEntry(path, long_day_path + "[sun]") + ";" \
-        + findEntry(path, long_day_path + "[mon]") + ";" \
-        + findEntry(path, long_day_path + "[tue]") + ";" \
-        + findEntry(path, long_day_path + "[wed]") + ";" \
-        + findEntry(path, long_day_path + "[thu]") + ";" \
-        + findEntry(path, long_day_path + "[fri]") + ";" \
-        + findEntry(path, long_day_path + "[sat]") + ";"
-
-    short_day_path = "dates/calendars/calendar[gregorian]/days/dayContext[format]/dayWidth[abbreviated]/day"
-    result['shortDays'] \
-        = findEntry(path, short_day_path + "[sun]") + ";" \
-        + findEntry(path, short_day_path + "[mon]") + ";" \
-        + findEntry(path, short_day_path + "[tue]") + ";" \
-        + findEntry(path, short_day_path + "[wed]") + ";" \
-        + findEntry(path, short_day_path + "[thu]") + ";" \
-        + findEntry(path, short_day_path + "[fri]") + ";" \
-        + findEntry(path, short_day_path + "[sat]") + ";"
-
-    narrow_day_path = "dates/calendars/calendar[gregorian]/days/dayContext[format]/dayWidth[narrow]/day"
-    result['narrowDays'] \
-        = findEntry(path, narrow_day_path + "[sun]") + ";" \
-        + findEntry(path, narrow_day_path + "[mon]") + ";" \
-        + findEntry(path, narrow_day_path + "[tue]") + ";" \
-        + findEntry(path, narrow_day_path + "[wed]") + ";" \
-        + findEntry(path, narrow_day_path + "[thu]") + ";" \
-        + findEntry(path, narrow_day_path + "[fri]") + ";" \
-        + findEntry(path, narrow_day_path + "[sat]") + ";"
-
-    standalone_long_day_path = "dates/calendars/calendar[gregorian]/days/dayContext[stand-alone]/dayWidth[wide]/day"
-    result['standaloneLongDays'] \
-        = findEntry(path, standalone_long_day_path + "[sun]") + ";" \
-        + findEntry(path, standalone_long_day_path + "[mon]") + ";" \
-        + findEntry(path, standalone_long_day_path + "[tue]") + ";" \
-        + findEntry(path, standalone_long_day_path + "[wed]") + ";" \
-        + findEntry(path, standalone_long_day_path + "[thu]") + ";" \
-        + findEntry(path, standalone_long_day_path + "[fri]") + ";" \
-        + findEntry(path, standalone_long_day_path + "[sat]") + ";"
-
-    standalone_short_day_path = "dates/calendars/calendar[gregorian]/days/dayContext[stand-alone]/dayWidth[abbreviated]/day"
-    result['standaloneShortDays'] \
-        = findEntry(path, standalone_short_day_path + "[sun]") + ";" \
-        + findEntry(path, standalone_short_day_path + "[mon]") + ";" \
-        + findEntry(path, standalone_short_day_path + "[tue]") + ";" \
-        + findEntry(path, standalone_short_day_path + "[wed]") + ";" \
-        + findEntry(path, standalone_short_day_path + "[thu]") + ";" \
-        + findEntry(path, standalone_short_day_path + "[fri]") + ";" \
-        + findEntry(path, standalone_short_day_path + "[sat]") + ";"
-
-    standalone_narrow_day_path = "dates/calendars/calendar[gregorian]/days/dayContext[stand-alone]/dayWidth[narrow]/day"
-    result['standaloneNarrowDays'] \
-        = findEntry(path, standalone_narrow_day_path + "[sun]") + ";" \
-        + findEntry(path, standalone_narrow_day_path + "[mon]") + ";" \
-        + findEntry(path, standalone_narrow_day_path + "[tue]") + ";" \
-        + findEntry(path, standalone_narrow_day_path + "[wed]") + ";" \
-        + findEntry(path, standalone_narrow_day_path + "[thu]") + ";" \
-        + findEntry(path, standalone_narrow_day_path + "[fri]") + ";" \
-        + findEntry(path, standalone_narrow_day_path + "[sat]") + ";"
-
     return result
 
 def addEscapes(s):
@@ -437,6 +400,27 @@ def unicodeStr(s):
 def usage():
     print "Usage: cldr2qlocalexml.py <path-to-cldr-main>"
     sys.exit()
+
+def integrateCalendarData(filePath):
+    if not filePath.endswith(".xml"):
+        return {}
+
+    orderingByCountryCode = {}
+
+    preferences = findTagsInFile(filePath, "calendarPreferenceData")
+    for pref in preferences:
+        ordering = pref[1][0][1].split(" ")
+        territories = pref[1][1][1].split(" ")
+        for countryCode in territories:
+            orderingByCountryCode[countryCode] = ordering
+
+    for (key,locale) in locale_database.iteritems():
+        countryCode = locale['countryCode']
+        if countryCode in orderingByCountryCode:
+            locale_database[key]['calendarPreference'] = ";".join(orderingByCountryCode[countryCode])
+        else:
+            locale_database[key]['calendarPreference'] = ";".join(orderingByCountryCode["001"])
+
 
 def integrateWeekData(filePath):
     if not filePath.endswith(".xml"):
@@ -514,7 +498,7 @@ def integrateWeekData(filePath):
         weekendEndByCountryCode[countryCode] = "sun"
 
     for (key,locale) in locale_database.iteritems():
-        countryCode = locale['country_code']
+        countryCode = locale['countryCode']
         if countryCode in firstDayByCountryCode:
             locale_database[key]['firstDayOfWeek'] = firstDayByCountryCode[countryCode]
         else:
@@ -546,9 +530,12 @@ for file in cldr_files:
     if not l:
         sys.stderr.write("skipping file \"" + file + "\"\n")
         continue
+    else:
+        sys.stderr.write(file + "\n")
 
-    locale_database[(l['language_id'], l['script_id'], l['country_id'], l['variant_code'])] = l
+    locale_database[(l['languageId'], l['scriptId'], l['countryId'], l['variantCode'])] = l
 
+integrateCalendarData(cldr_dir+"/../supplemental/supplementalData.xml")
 integrateWeekData(cldr_dir+"/../supplemental/supplementalData.xml")
 locale_keys = locale_database.keys()
 locale_keys.sort()
@@ -590,6 +577,16 @@ for id in enumdata.country_list:
     print "            <code>" + l[1] + "</code>"
     print "        </country>"
 print "    </countryList>"
+
+print "    <calendarList>"
+for id in enumdata.calendar_list:
+    l = enumdata.calendar_list[id]
+    print "        <calendar>"
+    print "            <name>" + l[0] + "</name>"
+    print "            <id>" + str(id) + "</id>"
+    print "            <code>" + l[1] + "</code>"
+    print "        </calendar>"
+print "    </calendarList>"
 
 print \
 "    <defaultCountryList>\n\
@@ -701,6 +698,7 @@ print \
             <language>C</language>\n\
             <languageEndonym></languageEndonym>\n\
             <script>AnyScript</script>\n\
+            <scriptEndonym></scriptEndonym>\n\
             <country>AnyCountry</country>\n\
             <countryEndonym></countryEndonym>\n\
             <decimal>46</decimal>\n\
@@ -719,27 +717,6 @@ print \
             <listPatternPartMiddle>%1, %2</listPatternPartMiddle>\n\
             <listPatternPartEnd>%1, %2</listPatternPartEnd>\n\
             <listPatternPartTwo>%1, %2</listPatternPartTwo>\n\
-            <am>AM</am>\n\
-            <pm>PM</pm>\n\
-            <firstDayOfWeek>mon</firstDayOfWeek>\n\
-            <weekendStart>sat</weekendStart>\n\
-            <weekendEnd>sun</weekendEnd>\n\
-            <longDateFormat>EEEE, d MMMM yyyy</longDateFormat>\n\
-            <shortDateFormat>d MMM yyyy</shortDateFormat>\n\
-            <longTimeFormat>HH:mm:ss z</longTimeFormat>\n\
-            <shortTimeFormat>HH:mm:ss</shortTimeFormat>\n\
-            <standaloneLongMonths>January;February;March;April;May;June;July;August;September;October;November;December;</standaloneLongMonths>\n\
-            <standaloneShortMonths>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec;</standaloneShortMonths>\n\
-            <standaloneNarrowMonths>J;F;M;A;M;J;J;A;S;O;N;D;</standaloneNarrowMonths>\n\
-            <longMonths>January;February;March;April;May;June;July;August;September;October;November;December;</longMonths>\n\
-            <shortMonths>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec;</shortMonths>\n\
-            <narrowMonths>1;2;3;4;5;6;7;8;9;10;11;12;</narrowMonths>\n\
-            <longDays>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday;</longDays>\n\
-            <shortDays>Sun;Mon;Tue;Wed;Thu;Fri;Sat;</shortDays>\n\
-            <narrowDays>7;1;2;3;4;5;6;</narrowDays>\n\
-            <standaloneLongDays>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday;</standaloneLongDays>\n\
-            <standaloneShortDays>Sun;Mon;Tue;Wed;Thu;Fri;Sat;</standaloneShortDays>\n\
-            <standaloneNarrowDays>S;M;T;W;T;F;S;</standaloneNarrowDays>\n\
             <currencyIsoCode></currencyIsoCode>\n\
             <currencySymbol></currencySymbol>\n\
             <currencyDisplayName>;;;;;;;</currencyDisplayName>\n\
@@ -747,64 +724,659 @@ print \
             <currencyRounding>1</currencyRounding>\n\
             <currencyFormat>%1%2</currencyFormat>\n\
             <currencyNegativeFormat></currencyNegativeFormat>\n\
+            <firstDayOfWeek>mon</firstDayOfWeek>\n\
+            <weekendStart>sat</weekendStart>\n\
+            <weekendEnd>sun</weekendEnd>\n\
+            <calendarPreference>gregorian</calendarPreference>\n\
+            <calendar type=\"gregorian\">\n\
+                <calendarName>Gregorian Calendar</calendarName>\n\
+                <monthsLong>January;February;March;April;May;June;July;August;September;October;November;December</monthsLong>\n\
+                <monthsShort>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec</monthsShort>\n\
+                <monthsNarrow>J;F;M;A;M;J;J;A;S;O;N;D</monthsNarrow>\n\
+                <monthsLongStandalone>January;February;March;April;May;June;July;August;September;October;November;December</monthsLongStandalone>\n\
+                <monthsShortStandalone>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>J;F;M;A;M;J;J;A;S;O;N;D</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, d MMMM yyyy</dateFormatFull>\n\
+                <dateFormatLong>d MMMM yyyy</dateFormatLong>\n\
+                <dateFormatMedium>d MMM yyyy</dateFormatMedium>\n\
+                <dateFormatShort>dd/MM/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"buddhist\">\n\
+                <calendarName>Buddhist Calendar</calendarName>\n\
+                <monthsLong>January;February;March;April;May;June;July;August;September;October;November;December</monthsLong>\n\
+                <monthsShort>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec</monthsShort>\n\
+                <monthsNarrow>J;F;M;A;M;J;J;A;S;O;N;D</monthsNarrow>\n\
+                <monthsLongStandalone>January;February;March;April;May;June;July;August;September;October;November;December</monthsLongStandalone>\n\
+                <monthsShortStandalone>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>J;F;M;A;M;J;J;A;S;O;N;D</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, MMMM d, yyyy</dateFormatFull>\n\
+                <dateFormatLong>MMMM d, yyyy</dateFormatLong>\n\
+                <dateFormatMedium>MMM d, yyyy</dateFormatMedium>\n\
+                <dateFormatShort>M/d/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"chinese\">\n\
+                <calendarName>Chinese Calendar</calendarName>\n\
+                <monthsLong>1;2;3;4;5;6;7;8;9;10;11;12</monthsLong>\n\
+                <monthsShort>1;2;3;4;5;6;7;8;9;10;11;12</monthsShort>\n\
+                <monthsNarrow>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrow>\n\
+                <monthsLongStandalone>1;2;3;4;5;6;7;8;9;10;11;12</monthsLongStandalone>\n\
+                <monthsShortStandalone>1;2;3;4;5;6;7;8;9;10;11;12</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd yyyy'x'-M-d</dateFormatFull>\n\
+                <dateFormatLong>yyyy'x'-M-d</dateFormatLong>\n\
+                <dateFormatMedium>yyyy'x'-M-d</dateFormatMedium>\n\
+                <dateFormatShort>yyyy'x'-M-d</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"coptic\">\n\
+                <calendarName>Coptic Calendar</calendarName>\n\
+                <monthsLong>Tout;Baba;Hator;Kiahk;Toba;Amshir;Baramhat;Baramouda;Bashans;Paona;Epep;Mesra;Nasie</monthsLong>\n\
+                <monthsShort>Tout;Baba;Hator;Kiahk;Toba;Amshir;Baramhat;Baramouda;Bashans;Paona;Epep;Mesra;Nasie</monthsShort>\n\
+                <monthsNarrow>1;2;3;4;5;6;7;8;9;10;11;12;13</monthsNarrow>\n\
+                <monthsLongStandalone>Tout;Baba;Hator;Kiahk;Toba;Amshir;Baramhat;Baramouda;Bashans;Paona;Epep;Mesra;Nasie</monthsLongStandalone>\n\
+                <monthsShortStandalone>Tout;Baba;Hator;Kiahk;Toba;Amshir;Baramhat;Baramouda;Bashans;Paona;Epep;Mesra;Nasie</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>1;2;3;4;5;6;7;8;9;10;11;12;13</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, d MMMM yyyy</dateFormatFull>\n\
+                <dateFormatLong>d MMMM yyyy</dateFormatLong>\n\
+                <dateFormatMedium>d MMM yyyy</dateFormatMedium>\n\
+                <dateFormatShort>dd/MM/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"ethiopic\">\n\
+                <calendarName>Ethiopic Calendar</calendarName>\n\
+                <monthsLong>Meskerem;Tekemt;Hedar;Tahsas;Ter;Yekatit;Megabit;Miazia;Genbot;Sene;Hamle;Nehasse;Pagumen</monthsLong>\n\
+                <monthsShort>Meskerem;Tekemt;Hedar;Tahsas;Ter;Yekatit;Megabit;Miazia;Genbot;Sene;Hamle;Nehasse;Pagumen</monthsShort>\n\
+                <monthsNarrow>1;2;3;4;5;6;7;8;9;10;11;12;13</monthsNarrow>\n\
+                <monthsLongStandalone>Meskerem;Tekemt;Hedar;Tahsas;Ter;Yekatit;Megabit;Miazia;Genbot;Sene;Hamle;Nehasse;Pagumen</monthsLongStandalone>\n\
+                <monthsShortStandalone>Meskerem;Tekemt;Hedar;Tahsas;Ter;Yekatit;Megabit;Miazia;Genbot;Sene;Hamle;Nehasse;Pagumen</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>1;2;3;4;5;6;7;8;9;10;11;12;13</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, d MMMM yyyy</dateFormatFull>\n\
+                <dateFormatLong>d MMMM yyyy</dateFormatLong>\n\
+                <dateFormatMedium>d MMM yyyy</dateFormatMedium>\n\
+                <dateFormatShort>dd/MM/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"hebrew\">\n\
+                <calendarName>Hebrew Calendar</calendarName>\n\
+                <monthsLong>Tishri;Heshvan;Kislev;Tevet;Shevat;Adar I;Adar;Nisan;Iyar;Sivan;Tamuz;Av;Elul</monthsLong>\n\
+                <monthsShort>Tishri;Heshvan;Kislev;Tevet;Shevat;Adar I;Adar;Nisan;Iyar;Sivan;Tamuz;Av;Elul</monthsShort>\n\
+                <monthsNarrow>Tishri;Heshvan;Kislev;Tevet;Shevat;Adar I;Adar;Nisan;Iyar;Sivan;Tamuz;Av;Elul</monthsNarrow>\n\
+                <monthsLongStandalone>Tishri;Heshvan;Kislev;Tevet;Shevat;Adar I;Adar;Nisan;Iyar;Sivan;Tamuz;Av;Elul</monthsLongStandalone>\n\
+                <monthsShortStandalone>Tishri;Heshvan;Kislev;Tevet;Shevat;Adar I;Adar;Nisan;Iyar;Sivan;Tamuz;Av;Elul</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>Tishri;Heshvan;Kislev;Tevet;Shevat;Adar I;Adar;Nisan;Iyar;Sivan;Tamuz;Av;Elul</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, d MMMM yyyy</dateFormatFull>\n\
+                <dateFormatLong>d MMMM yyyy</dateFormatLong>\n\
+                <dateFormatMedium>d MMM yyyy</dateFormatMedium>\n\
+                <dateFormatShort>dd/MM/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"indian\">\n\
+                <calendarName>Indian National Calendar</calendarName>\n\
+                <monthsLong>Chaitra;Vaisakha;Jyaistha;Asadha;Sravana;Bhadra;Asvina;Kartika;Agrahayana;Pausa;Magha;Phalguna</monthsLong>\n\
+                <monthsShort>Chaitra;Vaisakha;Jyaistha;Asadha;Sravana;Bhadra;Asvina;Kartika;Agrahayana;Pausa;Magha;Phalguna</monthsShort>\n\
+                <monthsNarrow>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrow>\n\
+                <monthsLongStandalone>Chaitra;Vaisakha;Jyaistha;Asadha;Sravana;Bhadra;Asvina;Kartika;Agrahayana;Pausa;Magha;Phalguna</monthsLongStandalone>\n\
+                <monthsShortStandalone>Chaitra;Vaisakha;Jyaistha;Asadha;Sravana;Bhadra;Asvina;Kartika;Agrahayana;Pausa;Magha;Phalguna</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, d MMMM yyyy</dateFormatFull>\n\
+                <dateFormatLong>d MMMM yyyy</dateFormatLong>\n\
+                <dateFormatMedium>d MMM yyyy</dateFormatMedium>\n\
+                <dateFormatShort>dd/MM/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"islamic\">\n\
+                <calendarName>Islamic Calendar</calendarName>\n\
+                <monthsLong>Muharram;Safar;Rabiʻ I;Rabiʻ II;Jumada I;Jumada II;Rajab;Shaʻban;Ramadan;Shawwal;Dhuʻl-Qiʻdah;Dhuʻl-Hijjah</monthsLong>\n\
+                <monthsShort>Muh.;Saf.;Rab. I;Rab. II;Jum. I;Jum. II;Raj.;Sha.;Ram.;Shaw.;Dhuʻl-Q.;Dhuʻl-H.</monthsShort>\n\
+                <monthsNarrow>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrow>\n\
+                <monthsLongStandalone>Muharram;Safar;Rabiʻ I;Rabiʻ II;Jumada I;Jumada II;Rajab;Shaʻban;Ramadan;Shawwal;Dhuʻl-Qiʻdah;Dhuʻl-Hijjah</monthsLongStandalone>\n\
+                <monthsShortStandalone>Muh.;Saf.;Rab. I;Rab. II;Jum. I;Jum. II;Raj.;Sha.;Ram.;Shaw.;Dhuʻl-Q.;Dhuʻl-H.</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, d MMMM yyyy</dateFormatFull>\n\
+                <dateFormatLong>d MMMM yyyy</dateFormatLong>\n\
+                <dateFormatMedium>d MMM yyyy</dateFormatMedium>\n\
+                <dateFormatShort>dd/MM/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"islamic-civil\">\n\
+                <calendarName>Islamic-Civil Calendar</calendarName>\n\
+                <monthsLong>Muharram;Safar;Rabiʻ I;Rabiʻ II;Jumada I;Jumada II;Rajab;Shaʻban;Ramadan;Shawwal;Dhuʻl-Qiʻdah;Dhuʻl-Hijjah</monthsLong>\n\
+                <monthsShort>Muh.;Saf.;Rab. I;Rab. II;Jum. I;Jum. II;Raj.;Sha.;Ram.;Shaw.;Dhuʻl-Q.;Dhuʻl-H.</monthsShort>\n\
+                <monthsNarrow>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrow>\n\
+                <monthsLongStandalone>Muharram;Safar;Rabiʻ I;Rabiʻ II;Jumada I;Jumada II;Rajab;Shaʻban;Ramadan;Shawwal;Dhuʻl-Qiʻdah;Dhuʻl-Hijjah</monthsLongStandalone>\n\
+                <monthsShortStandalone>Muh.;Saf.;Rab. I;Rab. II;Jum. I;Jum. II;Raj.;Sha.;Ram.;Shaw.;Dhuʻl-Q.;Dhuʻl-H.</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, d MMMM yyyy</dateFormatFull>\n\
+                <dateFormatLong>d MMMM yyyy</dateFormatLong>\n\
+                <dateFormatMedium>d MMM yyyy</dateFormatMedium>\n\
+                <dateFormatShort>dd/MM/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"japanese\">\n\
+                <calendarName>Japanese Calendar</calendarName>\n\
+                <monthsLong>January;February;March;April;May;June;July;August;September;October;November;December</monthsLong>\n\
+                <monthsShort>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec</monthsShort>\n\
+                <monthsNarrow>J;F;M;A;M;J;J;A;S;O;N;D</monthsNarrow>\n\
+                <monthsLongStandalone>January;February;March;April;May;June;July;August;September;October;November;December</monthsLongStandalone>\n\
+                <monthsShortStandalone>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>J;F;M;A;M;J;J;A;S;O;N;D</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, yyyy MMMM dd</dateFormatFull>\n\
+                <dateFormatLong>yyyy MMMM d</dateFormatLong>\n\
+                <dateFormatMedium>yyyy MMM d</dateFormatMedium>\n\
+                <dateFormatShort>yy-MM-dd</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"persian\">\n\
+                <calendarName>Persian Calendar</calendarName>\n\
+                <monthsLong>Farvardin;Ordibehesht;Khordad;Tir;Mordad;Shahrivar;Mehr;Aban;Azar;Dey;Bahman;Esfand</monthsLong>\n\
+                <monthsShort>Farvardin;Ordibehesht;Khordad;Tir;Mordad;Shahrivar;Mehr;Aban;Azar;Dey;Bahman;Esfand</monthsShort>\n\
+                <monthsNarrow>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrow>\n\
+                <monthsLongStandalone>Farvardin;Ordibehesht;Khordad;Tir;Mordad;Shahrivar;Mehr;Aban;Azar;Dey;Bahman;Esfand</monthsLongStandalone>\n\
+                <monthsShortStandalone>Farvardin;Ordibehesht;Khordad;Tir;Mordad;Shahrivar;Mehr;Aban;Azar;Dey;Bahman;Esfand</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>1;2;3;4;5;6;7;8;9;10;11;12</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, d MMMM yyyy</dateFormatFull>\n\
+                <dateFormatLong>d MMMM yyyy</dateFormatLong>\n\
+                <dateFormatMedium>d MMM yyyy</dateFormatMedium>\n\
+                <dateFormatShort>dd/MM/yyyy</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull>%2 %1</dateTimeFormatFull>\n\
+                <dateTimeFormatLong>%2 %1</dateTimeFormatLong>\n\
+                <dateTimeFormatMedium>%2 %1</dateTimeFormatMedium>\n\
+                <dateTimeFormatShort>%2 %1</dateTimeFormatShort>\n\
+            </calendar>\n\
+            <calendar type=\"roc\">\n\
+                <calendarName>Republic of China Calendar</calendarName>\n\
+                <monthsLong>January;February;March;April;May;June;July;August;September;October;November;December</monthsLong>\n\
+                <monthsShort>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec</monthsShort>\n\
+                <monthsNarrow>J;F;M;A;M;J;J;A;S;O;N;D</monthsNarrow>\n\
+                <monthsLongStandalone>January;February;March;April;May;June;July;August;September;October;November;December</monthsLongStandalone>\n\
+                <monthsShortStandalone>Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec</monthsShortStandalone>\n\
+                <monthsNarrowStandalone>J;F;M;A;M;J;J;A;S;O;N;D</monthsNarrowStandalone>\n\
+                <daysLong>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLong>\n\
+                <daysShort>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShort>\n\
+                <daysNarrow>S;M;T;W;T;F;S</daysNarrow>\n\
+                <daysLongStandalone>Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday</daysLongStandalone>\n\
+                <daysShortStandalone>Sun;Mon;Tue;Wed;Thu;Fri;Sat</daysShortStandalone>\n\
+                <daysNarrowStandalone>S;M;T;W;T;F;S</daysNarrowStandalone>\n\
+                <quartersLong>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLong>\n\
+                <quartersShort>Q1;Q2;Q3;Q4</quartersShort>\n\
+                <quartersNarrow>1;2;3;4</quartersNarrow>\n\
+                <quartersLongStandalone>1st quarter;2nd quarter;3rd quarter;4th quarter</quartersLongStandalone>\n\
+                <quartersShortStandalone>Q1;Q2;Q3;Q4</quartersShortStandalone>\n\
+                <quartersNarrowStandalone>1;2;3;4</quartersNarrowStandalone>\n\
+                <amLong>AM</amLong>\n\
+                <amShort>AM</amShort>\n\
+                <amNarrow>AM</amNarrow>\n\
+                <amLongStandalone>AM</amLongStandalone>\n\
+                <amShortStandalone>AM</amShortStandalone>\n\
+                <amNarrowStandalone>AM</amNarrowStandalone>\n\
+                <pmLong>PM</pmLong>\n\
+                <pmShort>PM</pmShort>\n\
+                <pmNarrow>PM</pmNarrow>\n\
+                <pmLongStandalone>PM</pmLongStandalone>\n\
+                <pmShortStandalone>PM</pmShortStandalone>\n\
+                <pmNarrowStandalone>PM</pmNarrowStandalone>\n\
+                <dateFormatFull>dddd, MMMM d, yyyy</dateFormatFull>\n\
+                <dateFormatLong>MMMM d, yyyy</dateFormatLong>\n\
+                <dateFormatMedium>MMM d, yyyy</dateFormatMedium>\n\
+                <dateFormatShort>yyyy/M/d</dateFormatShort>\n\
+                <timeFormatFull>HH:mm:ss t</timeFormatFull>\n\
+                <timeFormatLong>HH:mm:ss t</timeFormatLong>\n\
+                <timeFormatMedium>HH:mm:ss</timeFormatMedium>\n\
+                <timeFormatShort>HH:mm</timeFormatShort>\n\
+                <dateTimeFormatFull></dateTimeFormatFull>\n\
+                <dateTimeFormatLong></dateTimeFormatLong>\n\
+                <dateTimeFormatMedium></dateTimeFormatMedium>\n\
+                <dateTimeFormatShort></dateTimeFormatShort>\n\
+            </calendar>\n\
         </locale>"
+
+def printTagData(tag, data):
+    print "            <" + tag + ">" + data + "</" + tag + ">"
+
+def printTag(key, tag):
+    print "            <" + tag + ">" + locale_database[key][tag] + "</" + tag + ">"
+
+def printStrTag(key, tag):
+    print "            <" + tag + ">" + str(locale_database[key][tag]) + "</" + tag + ">"
+
+def printUnicodeTag(key, tag):
+    print "            <" + tag + ">" + locale_database[key][tag].encode('utf-8') + "</" + tag + ">"
+
+def printCalendarUnicodeTag(key, calendar, tag):
+    print "                <" + tag + ">" + locale_database[key][calendar, tag].encode('utf-8') + "</" + tag + ">"
 
 for key in locale_keys:
     l = locale_database[key]
 
     print "        <locale>"
-    print "            <language>" + l['language']        + "</language>"
-    print "            <languageEndonym>" + l['language_endonym'].encode('utf-8') + "</languageEndonym>"
-    print "            <script>" + l['script']        + "</script>"
-    print "            <country>"  + l['country']         + "</country>"
-    print "            <countryEndonym>"  + l['country_endonym'].encode('utf-8') + "</countryEndonym>"
-    print "            <languagecode>" + l['language_code']        + "</languagecode>"
-    print "            <scriptcode>" + l['script_code']        + "</scriptcode>"
-    print "            <countrycode>"  + l['country_code']         + "</countrycode>"
-    print "            <decimal>"  + ordStr(l['decimal']) + "</decimal>"
-    print "            <group>"    + ordStr(l['group'])   + "</group>"
-    print "            <list>"     + fixOrdStrList(l['list'])    + "</list>"
-    print "            <percent>"  + fixOrdStrPercent(l['percent']) + "</percent>"
-    print "            <zero>"     + ordStr(l['zero'])    + "</zero>"
-    print "            <minus>"    + ordStr(l['minus'])   + "</minus>"
-    print "            <plus>"     + ordStr(l['plus'])   + "</plus>"
-    print "            <exp>"      + fixOrdStrExp(l['exp'])     + "</exp>"
-    print "            <quotationStart>" + l['quotationStart'].encode('utf-8') + "</quotationStart>"
-    print "            <quotationEnd>" + l['quotationEnd'].encode('utf-8')   + "</quotationEnd>"
-    print "            <alternateQuotationStart>" + l['alternateQuotationStart'].encode('utf-8') + "</alternateQuotationStart>"
-    print "            <alternateQuotationEnd>" + l['alternateQuotationEnd'].encode('utf-8')   + "</alternateQuotationEnd>"
-    print "            <listPatternPartStart>" + l['listPatternPartStart'].encode('utf-8')   + "</listPatternPartStart>"
-    print "            <listPatternPartMiddle>" + l['listPatternPartMiddle'].encode('utf-8')   + "</listPatternPartMiddle>"
-    print "            <listPatternPartEnd>" + l['listPatternPartEnd'].encode('utf-8')   + "</listPatternPartEnd>"
-    print "            <listPatternPartTwo>" + l['listPatternPartTwo'].encode('utf-8')   + "</listPatternPartTwo>"
-    print "            <am>"       + l['am'].encode('utf-8') + "</am>"
-    print "            <pm>"       + l['pm'].encode('utf-8') + "</pm>"
-    print "            <firstDayOfWeek>"  + l['firstDayOfWeek'].encode('utf-8') + "</firstDayOfWeek>"
-    print "            <weekendStart>"  + l['weekendStart'].encode('utf-8') + "</weekendStart>"
-    print "            <weekendEnd>"  + l['weekendEnd'].encode('utf-8') + "</weekendEnd>"
-    print "            <longDateFormat>"  + l['longDateFormat'].encode('utf-8')  + "</longDateFormat>"
-    print "            <shortDateFormat>" + l['shortDateFormat'].encode('utf-8') + "</shortDateFormat>"
-    print "            <longTimeFormat>"  + l['longTimeFormat'].encode('utf-8')  + "</longTimeFormat>"
-    print "            <shortTimeFormat>" + l['shortTimeFormat'].encode('utf-8') + "</shortTimeFormat>"
-    print "            <standaloneLongMonths>" + l['standaloneLongMonths'].encode('utf-8')      + "</standaloneLongMonths>"
-    print "            <standaloneShortMonths>"+ l['standaloneShortMonths'].encode('utf-8')      + "</standaloneShortMonths>"
-    print "            <standaloneNarrowMonths>"+ l['standaloneNarrowMonths'].encode('utf-8')      + "</standaloneNarrowMonths>"
-    print "            <longMonths>"      + l['longMonths'].encode('utf-8')      + "</longMonths>"
-    print "            <shortMonths>"     + l['shortMonths'].encode('utf-8')     + "</shortMonths>"
-    print "            <narrowMonths>"     + l['narrowMonths'].encode('utf-8')     + "</narrowMonths>"
-    print "            <longDays>"        + l['longDays'].encode('utf-8')        + "</longDays>"
-    print "            <shortDays>"       + l['shortDays'].encode('utf-8')       + "</shortDays>"
-    print "            <narrowDays>"       + l['narrowDays'].encode('utf-8')       + "</narrowDays>"
-    print "            <standaloneLongDays>" + l['standaloneLongDays'].encode('utf-8')        + "</standaloneLongDays>"
-    print "            <standaloneShortDays>" + l['standaloneShortDays'].encode('utf-8')       + "</standaloneShortDays>"
-    print "            <standaloneNarrowDays>" + l['standaloneNarrowDays'].encode('utf-8')       + "</standaloneNarrowDays>"
-    print "            <currencyIsoCode>" + l['currencyIsoCode'].encode('utf-8') + "</currencyIsoCode>"
-    print "            <currencySymbol>" + l['currencySymbol'].encode('utf-8') + "</currencySymbol>"
-    print "            <currencyDisplayName>" + l['currencyDisplayName'].encode('utf-8') + "</currencyDisplayName>"
-    print "            <currencyDigits>" + str(l['currencyDigits']) + "</currencyDigits>"
-    print "            <currencyRounding>" + str(l['currencyRounding']) + "</currencyRounding>"
-    print "            <currencyFormat>" + l['currencyFormat'].encode('utf-8') + "</currencyFormat>"
-    print "            <currencyNegativeFormat>" + l['currencyNegativeFormat'].encode('utf-8') + "</currencyNegativeFormat>"
+    printTag(key, 'languageCode')
+    printTag(key, 'language')
+    printUnicodeTag(key, 'languageEndonym')
+    printTag(key, 'scriptCode')
+    printTag(key, 'script')
+    printUnicodeTag(key, 'scriptEndonym')
+    printTag(key, 'countryCode')
+    printTag(key, 'country')
+    printUnicodeTag(key, 'countryEndonym')
+    printTagData('decimal', ordStr(l['decimal']))
+    printTagData('group', ordStr(l['group']))
+    printTagData('list', fixOrdStrList(l['list']))
+    printTagData('percent', fixOrdStrPercent(l['percent']))
+    printTagData('zero', ordStr(l['zero']))
+    printTagData('minus', ordStr(l['minus']))
+    printTagData('plus', ordStr(l['plus']))
+    printTagData('exp', fixOrdStrExp(l['exp']))
+    printUnicodeTag(key, 'quotationStart')
+    printUnicodeTag(key, 'quotationEnd')
+    printUnicodeTag(key, 'alternateQuotationStart')
+    printUnicodeTag(key, 'alternateQuotationEnd')
+    printUnicodeTag(key, 'listPatternPartStart')
+    printUnicodeTag(key, 'listPatternPartMiddle')
+    printUnicodeTag(key, 'listPatternPartEnd')
+    printUnicodeTag(key, 'listPatternPartTwo')
+    printUnicodeTag(key, 'currencyIsoCode')
+    printUnicodeTag(key, 'currencySymbol')
+    printUnicodeTag(key, 'currencyDisplayName')
+    printStrTag(key, 'currencyDigits')
+    printStrTag(key, 'currencyRounding')
+    printUnicodeTag(key, 'currencyFormat')
+    printUnicodeTag(key, 'currencyNegativeFormat')
+    printUnicodeTag(key, 'firstDayOfWeek')
+    printUnicodeTag(key, 'weekendStart')
+    printUnicodeTag(key, 'weekendEnd')
+    printUnicodeTag(key, 'calendarPreference')
+
+    cldrCalendars = set()
+    for calendarId in enumdata.calendar_list:
+        cldrCalendars.add(enumdata.calendar_list[calendarId][1])
+
+    for calendar in cldrCalendars:
+        print "            <calendar type=\"" + calendar + "\">"
+        printCalendarUnicodeTag(key, calendar, 'calendarName')
+        printCalendarUnicodeTag(key, calendar, 'monthsLong')
+        printCalendarUnicodeTag(key, calendar, 'monthsShort')
+        printCalendarUnicodeTag(key, calendar, 'monthsNarrow')
+        printCalendarUnicodeTag(key, calendar, 'monthsLongStandalone')
+        printCalendarUnicodeTag(key, calendar, 'monthsShortStandalone')
+        printCalendarUnicodeTag(key, calendar, 'monthsNarrowStandalone')
+        printCalendarUnicodeTag(key, calendar, 'daysLong')
+        printCalendarUnicodeTag(key, calendar, 'daysShort')
+        printCalendarUnicodeTag(key, calendar, 'daysNarrow')
+        printCalendarUnicodeTag(key, calendar, 'daysLongStandalone')
+        printCalendarUnicodeTag(key, calendar, 'daysShortStandalone')
+        printCalendarUnicodeTag(key, calendar, 'daysNarrowStandalone')
+        printCalendarUnicodeTag(key, calendar, 'quartersLong')
+        printCalendarUnicodeTag(key, calendar, 'quartersShort')
+        printCalendarUnicodeTag(key, calendar, 'quartersNarrow')
+        printCalendarUnicodeTag(key, calendar, 'quartersLongStandalone')
+        printCalendarUnicodeTag(key, calendar, 'quartersShortStandalone')
+        printCalendarUnicodeTag(key, calendar, 'quartersNarrowStandalone')
+        printCalendarUnicodeTag(key, calendar, 'amLong')
+        printCalendarUnicodeTag(key, calendar, 'amShort')
+        printCalendarUnicodeTag(key, calendar, 'amNarrow')
+        printCalendarUnicodeTag(key, calendar, 'amLongStandalone')
+        printCalendarUnicodeTag(key, calendar, 'amShortStandalone')
+        printCalendarUnicodeTag(key, calendar, 'amNarrowStandalone')
+        printCalendarUnicodeTag(key, calendar, 'pmLong')
+        printCalendarUnicodeTag(key, calendar, 'pmShort')
+        printCalendarUnicodeTag(key, calendar, 'pmNarrow')
+        printCalendarUnicodeTag(key, calendar, 'pmLongStandalone')
+        printCalendarUnicodeTag(key, calendar, 'pmShortStandalone')
+        printCalendarUnicodeTag(key, calendar, 'pmNarrowStandalone')
+        printCalendarUnicodeTag(key, calendar, 'dateFormatFull')
+        printCalendarUnicodeTag(key, calendar, 'dateFormatLong')
+        printCalendarUnicodeTag(key, calendar, 'dateFormatMedium')
+        printCalendarUnicodeTag(key, calendar, 'dateFormatShort')
+        printCalendarUnicodeTag(key, calendar, 'timeFormatFull')
+        printCalendarUnicodeTag(key, calendar, 'timeFormatLong')
+        printCalendarUnicodeTag(key, calendar, 'timeFormatMedium')
+        printCalendarUnicodeTag(key, calendar, 'timeFormatShort')
+        printCalendarUnicodeTag(key, calendar, 'dateTimeFormatFull')
+        printCalendarUnicodeTag(key, calendar, 'dateTimeFormatLong')
+        printCalendarUnicodeTag(key, calendar, 'dateTimeFormatMedium')
+        printCalendarUnicodeTag(key, calendar, 'dateTimeFormatShort')
+        print "            </calendar>"
+
     print "        </locale>"
 print "    </localeList>"
 print "</localeDatabase>"

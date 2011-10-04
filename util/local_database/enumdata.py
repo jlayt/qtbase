@@ -525,6 +525,26 @@ script_list = {
     9   : [ "Tifinagh",          "Tfng" ]
 }
 
+# List of QLocale supported calendars and their CLDR equivalents
+
+calendar_list = {
+    0   : [ "GregorianCalendar",         "gregorian",       "Gregorian Calendar"],
+    1   : [ "ChineseCalendar",           "chinese",         "Chinese Calendar"],
+    2   : [ "CopticCalendar",            "coptic",          "Coptic Calendar"],
+    3   : [ "EthiopicCalendar",          "ethiopic",        "Ethiopic Calendar"],
+    4   : [ "EthiopicAmeteAlemCalendar", "ethiopic",        "Ethiopic Amete Alem Calendar"],
+    5   : [ "HebrewCalendar",            "hebrew",          "Hebrew Calendar"],
+    6   : [ "IndianNationalCalendar",    "indian",          "indian National Calendar"],
+    7   : [ "IslamicCalendar",           "islamic",         "Islamic Calendar"],
+    8   : [ "IslamicCivilCalendar",      "islamic-civil",   "Islamic Civil Calendar"],
+    9   : [ "ISO8601Calendar",           "gregorian",       "ISO 8601 Calendar"],
+   10   : [ "JapaneseCalendar",          "japanese",        "Japanese Calendar"],
+   11   : [ "JulianCalendar",            "gregorian",       "Julian Calendar"],
+   12   : [ "PersianCalendar",           "persian",         "Persian Calendar"],
+   13   : [ "ROCCalendar",               "roc",             "Republic of China Calendar"],
+   14   : [ "ThaiCalendar",              "buddhist",        "Thai Calendar"]
+}
+
 def countryCodeToId(code):
     for country_id in country_list:
         if country_list[country_id][1] == code:
@@ -541,4 +561,10 @@ def scriptCodeToId(code):
     for script_id in script_list:
         if script_list[script_id][1] == code:
             return script_id
+    return -1
+
+def calendarCodeToId(code):
+    for calendarId in calendar_list:
+        if calendar_list[calendarId][1] == code:
+            return calendarId
     return -1

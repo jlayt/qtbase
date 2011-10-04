@@ -1402,12 +1402,12 @@ QString QLocale::dateFormat(FormatType format) const
     quint32 idx, size;
     switch (format) {
     case LongFormat:
-        idx = d()->m_long_date_format_idx;
-        size = d()->m_long_date_format_size;
+        idx = d()->m_date_format_full_idx;
+        size = d()->m_date_format_full_size;
         break;
     default:
-        idx = d()->m_short_date_format_idx;
-        size = d()->m_short_date_format_size;
+        idx = d()->m_date_format_short_idx;
+        size = d()->m_date_format_short_size;
         break;
     }
     return getLocaleData(date_format_data + idx, size);
@@ -1439,12 +1439,12 @@ QString QLocale::timeFormat(FormatType format) const
     quint32 idx, size;
     switch (format) {
     case LongFormat:
-        idx = d()->m_long_time_format_idx;
-        size = d()->m_long_time_format_size;
+        idx = d()->m_time_format_full_idx;
+        size = d()->m_time_format_full_size;
         break;
     default:
-        idx = d()->m_short_time_format_idx;
-        size = d()->m_short_time_format_size;
+        idx = d()->m_time_format_short_idx;
+        size = d()->m_time_format_short_size;
         break;
     }
     return getLocaleData(time_format_data + idx, size);
@@ -1463,6 +1463,31 @@ QString QLocale::timeFormat(FormatType format) const
 
 QString QLocale::dateTimeFormat(FormatType format) const
 {
+#ifndef QT_NO_CALENDAR_SYSTEMS
+    if (calendar != DefaultCalendar && calendar != calendarSystem()) {
+        QString pattern;
+        switch (format) {
+        case FullFormat:
+            pattern = getCalendarData(date_time_format_data, QLocalePrivate::DateTimeFormatFull,
+                                   calendar, d()->m_calendar_data_index);
+        case LongFormat:
+            pattern = getCalendarData(date_time_format_data, QLocalePrivate::DateTimeFormatLong,
+                                   calendar, d()->m_calendar_data_index);
+        case MediumFormat:
+            pattern = getCalendarData(date_time_format_data, QLocalePrivate::DateTimeFormatMedium,
+                                   calendar, d()->m_calendar_data_index);
+        case ShortFormat:
+            pattern = getCalendarData(date_time_format_data, QLocalePrivate::DateTimeFormatShort,
+                                   calendar, d()->m_calendar_data_index);
+        default:
+            pattern = QString("%2 %1");
+        }
+        return pattern.arg(timeFormat(format, calendar), dateFormat(format, calendar));
+    }
+#else
+    Q_UNUSED(calendar);
+#endif
+
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
         QVariant res = systemLocale()->query(format == LongFormat
@@ -1474,7 +1499,29 @@ QString QLocale::dateTimeFormat(FormatType format) const
         }
     }
 #endif
-    return dateFormat(format) + QLatin1Char(' ') + timeFormat(format);
+
+    quint32 idx, size;
+    switch (format) {
+    case FullFormat:
+        idx = d()->m_date_time_format_full_idx;
+        size = d()->m_date_time_format_full_size;
+        break;
+    case LongFormat:
+        idx = d()->m_date_time_format_long_idx;
+        size = d()->m_date_time_format_long_size;
+        break;
+    case MediumFormat:
+        idx = d()->m_date_time_format_medium_idx;
+        size = d()->m_date_time_format_medium_size;
+        break;
+    case ShortFormat:
+    default:
+        idx = d()->m_date_time_format_short_idx;
+        size = d()->m_date_time_format_short_size;
+        break;
+    }
+    QString pattern = getLocaleData(date_time_format_data + idx, size);
+    return pattern.arg(timeFormat(format, calendar), dateFormat(format, calendar));
 }
 
 /*!
@@ -1860,16 +1907,16 @@ QString QLocale::monthName(int month, FormatType type) const
     quint32 idx, size;
     switch (type) {
     case QLocale::LongFormat:
-        idx = d()->m_long_month_names_idx;
-        size = d()->m_long_month_names_size;
+        idx = d()->m_month_names_long_idx;
+        size = d()->m_month_names_long_size;
         break;
     case QLocale::ShortFormat:
-        idx = d()->m_short_month_names_idx;
-        size = d()->m_short_month_names_size;
+        idx = d()->m_month_names_short_idx;
+        size = d()->m_month_names_short_size;
         break;
     case QLocale::NarrowFormat:
-        idx = d()->m_narrow_month_names_idx;
-        size = d()->m_narrow_month_names_size;
+        idx = d()->m_month_names_narrow_idx;
+        size = d()->m_month_names_narrow_size;
         break;
     default:
         return QString();
@@ -1906,21 +1953,21 @@ QString QLocale::standaloneMonthName(int month, FormatType type) const
     quint32 idx, size;
     switch (type) {
     case QLocale::LongFormat:
-        idx = d()->m_standalone_long_month_names_idx;
-        size = d()->m_standalone_long_month_names_size;
+        idx = d()->m_month_names_long_standalone_idx;
+        size = d()->m_month_names_long_standalone_size;
         break;
     case QLocale::ShortFormat:
-        idx = d()->m_standalone_short_month_names_idx;
-        size = d()->m_standalone_short_month_names_size;
+        idx = d()->m_month_names_short_standalone_idx;
+        size = d()->m_month_names_short_standalone_size;
         break;
     case QLocale::NarrowFormat:
-        idx = d()->m_standalone_narrow_month_names_idx;
-        size = d()->m_standalone_narrow_month_names_size;
+        idx = d()->m_month_names_narrow_standalone_idx;
+        size = d()->m_month_names_narrow_standalone_size;
         break;
     default:
         return QString();
     }
-    QString name = getLocaleListData(standalone_months_data + idx, size, month - 1);
+    QString name = getLocaleListData(months_data + idx, size, month - 1);
     if (name.isEmpty())
         return monthName(month, type);
     return name;
@@ -1955,16 +2002,16 @@ QString QLocale::dayName(int day, FormatType type) const
     quint32 idx, size;
     switch (type) {
     case QLocale::LongFormat:
-        idx = d()->m_long_day_names_idx;
-        size = d()->m_long_day_names_size;
+        idx = d()->m_day_names_long_idx;
+        size = d()->m_day_names_long_size;
         break;
     case QLocale::ShortFormat:
-        idx = d()->m_short_day_names_idx;
-        size = d()->m_short_day_names_size;
+        idx = d()->m_day_names_short_idx;
+        size = d()->m_day_names_short_size;
         break;
     case QLocale::NarrowFormat:
-        idx = d()->m_narrow_day_names_idx;
-        size = d()->m_narrow_day_names_size;
+        idx = d()->m_day_names_narrow_idx;
+        size = d()->m_day_names_narrow_size;
         break;
     default:
         return QString();
@@ -2004,16 +2051,16 @@ QString QLocale::standaloneDayName(int day, FormatType type) const
     quint32 idx, size;
     switch (type) {
     case QLocale::LongFormat:
-        idx = d()->m_standalone_long_day_names_idx;
-        size = d()->m_standalone_long_day_names_size;
+        idx = d()->m_day_names_long_standalone_idx;
+        size = d()->m_day_names_long_standalone_size;
         break;
     case QLocale::ShortFormat:
-        idx = d()->m_standalone_short_day_names_idx;
-        size = d()->m_standalone_short_day_names_size;
+        idx = d()->m_day_names_short_standalone_idx;
+        size = d()->m_day_names_short_standalone_size;
         break;
     case QLocale::NarrowFormat:
-        idx = d()->m_standalone_narrow_day_names_idx;
-        size = d()->m_standalone_narrow_day_names_size;
+        idx = d()->m_day_names_narrow_standalone_idx;
+        size = d()->m_day_names_narrow_standalone_size;
         break;
     default:
         return QString();
@@ -2167,7 +2214,7 @@ QString QLocale::amText() const
             return res.toString();
     }
 #endif
-    return getLocaleData(am_data + d()->m_am_idx, d()->m_am_size);
+    return getLocaleData(day_periods_data + d()->m_am_long_idx, d()->m_am_long_size);
 }
 
 /*!
@@ -2187,7 +2234,7 @@ QString QLocale::pmText() const
             return res.toString();
     }
 #endif
-    return getLocaleData(pm_data + d()->m_pm_idx, d()->m_pm_size);
+    return getLocaleData(day_periods_data + d()->m_pm_long_idx, d()->m_pm_long_size);
 }
 
 QString QLocalePrivate::doubleToString(double d,
