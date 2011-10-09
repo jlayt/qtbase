@@ -218,10 +218,10 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                     result.append(zeroPad(date->month(), 2));
                     break;
                 case 3:
-                    result.append(q->monthName(date->month(), QLocale::ShortFormat));
+                    result.append(q->monthName(date->month(), QLocale::ShortName));
                     break;
                 case 4:
-                    result.append(q->monthName(date->month(), QLocale::LongFormat));
+                    result.append(q->monthName(date->month(), QLocale::LongName));
                     break;
                 }
                 break;
@@ -237,10 +237,10 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                     result.append(zeroPad(date->day(), 2));
                     break;
                 case 3:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::ShortFormat));
+                    result.append(q->dayName(date->dayOfWeek(), QLocale::ShortName));
                     break;
                 case 4:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::LongFormat));
+                    result.append(q->dayName(date->dayOfWeek(), QLocale::LongName));
                     break;
                 }
                 break;
@@ -312,7 +312,7 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                 } else {
                     repeat = 1;
                 }
-                result.append(am_pm == AM ? q->amText().toLower() : q->pmText().toLower());
+                result.append(q->dayPeriodName((am_pm == AM ? QTime(0,0,0) : QTime(12,0,0))).toLower());
                 break;
 
             case 'A':
@@ -322,7 +322,7 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                 } else {
                     repeat = 1;
                 }
-                result.append(am_pm == AM ? q->amText().toUpper() : q->pmText().toUpper());
+                result.append(q->dayPeriodName((am_pm == AM ? QTime(0,0,0) : QTime(12,0,0))).toUpper());
                 break;
 
             case 'z':

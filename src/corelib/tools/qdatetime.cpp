@@ -593,9 +593,9 @@ QString QDate::shortMonthName(int month, QDate::MonthNameType type)
     }
     switch (type) {
     case QDate::DateFormat:
-        return QLocale::system().monthName(month, QLocale::ShortFormat);
+        return QLocale::system().monthName(month, QLocale::ShortName, QLocale::FormatContext, QLocale::StandardYear, QLocale::GregorianCalendar);
     case QDate::StandaloneFormat:
-        return QLocale::system().standaloneMonthName(month, QLocale::ShortFormat);
+        return QLocale::system().monthName(month, QLocale::ShortName, QLocale::StandaloneContext, QLocale::StandardYear, QLocale::GregorianCalendar);
     default:
         break;
     }
@@ -638,9 +638,9 @@ QString QDate::longMonthName(int month, MonthNameType type)
     }
     switch (type) {
     case QDate::DateFormat:
-        return QLocale::system().monthName(month, QLocale::LongFormat);
+        return QLocale::system().monthName(month, QLocale::LongName, QLocale::FormatContext, QLocale::StandardYear, QLocale::GregorianCalendar);
     case QDate::StandaloneFormat:
-        return QLocale::system().standaloneMonthName(month, QLocale::LongFormat);
+        return QLocale::system().monthName(month, QLocale::LongName, QLocale::StandaloneContext, QLocale::StandardYear, QLocale::GregorianCalendar);
     default:
         break;
     }
@@ -678,9 +678,9 @@ QString QDate::shortDayName(int weekday, MonthNameType type)
     }
     switch (type) {
     case QDate::DateFormat:
-        return QLocale::system().dayName(weekday, QLocale::ShortFormat);
+        return QLocale::system().dayName(weekday, QLocale::ShortName, QLocale::FormatContext, QLocale::GregorianCalendar);
     case QDate::StandaloneFormat:
-        return QLocale::system().standaloneDayName(weekday, QLocale::ShortFormat);
+        return QLocale::system().dayName(weekday, QLocale::ShortName, QLocale::StandaloneContext, QLocale::GregorianCalendar);
     default:
         break;
     }
@@ -718,13 +718,13 @@ QString QDate::longDayName(int weekday, MonthNameType type)
     }
     switch (type) {
     case QDate::DateFormat:
-        return QLocale::system().dayName(weekday, QLocale::LongFormat);
+        return QLocale::system().dayName(weekday, QLocale::LongName, QLocale::FormatContext, QLocale::GregorianCalendar);
     case QDate::StandaloneFormat:
-        return QLocale::system().standaloneDayName(weekday, QLocale::LongFormat);
+        return QLocale::system().dayName(weekday, QLocale::LongName, QLocale::StandaloneContext, QLocale::GregorianCalendar);
     default:
         break;
     }
-    return QLocale::system().dayName(weekday, QLocale::LongFormat);
+    return QLocale::system().dayName(weekday, QLocale::LongName, QLocale::FormatContext, QLocale::GregorianCalendar);
 }
 
 #endif //QT_NO_TEXTDATE
@@ -783,12 +783,12 @@ QString QDate::toString(Qt::DateFormat f) const
     case Qt::SystemLocaleDate:
     case Qt::SystemLocaleShortDate:
     case Qt::SystemLocaleLongDate:
-        return QLocale::system().toString(*this, f == Qt::SystemLocaleLongDate ? QLocale::LongFormat
+        return QLocale::system().toString(*this, f == Qt::SystemLocaleLongDate ? QLocale::FullFormat
                                                                                : QLocale::ShortFormat);
     case Qt::LocaleDate:
     case Qt::DefaultLocaleShortDate:
     case Qt::DefaultLocaleLongDate:
-        return QLocale().toString(*this, f == Qt::DefaultLocaleLongDate ? QLocale::LongFormat
+        return QLocale().toString(*this, f == Qt::DefaultLocaleLongDate ? QLocale::FullFormat
                                                                         : QLocale::ShortFormat);
     default:
 #ifndef QT_NO_TEXTDATE
@@ -1154,12 +1154,12 @@ QDate QDate::fromString(const QString& s, Qt::DateFormat f)
     case Qt::SystemLocaleDate:
     case Qt::SystemLocaleShortDate:
     case Qt::SystemLocaleLongDate:
-        return fromString(s, QLocale::system().dateFormat(f == Qt::SystemLocaleLongDate ? QLocale::LongFormat
+        return fromString(s, QLocale::system().dateFormat(f == Qt::SystemLocaleLongDate ? QLocale::FullFormat
                                                                                         : QLocale::ShortFormat));
     case Qt::LocaleDate:
     case Qt::DefaultLocaleShortDate:
     case Qt::DefaultLocaleLongDate:
-        return fromString(s, QLocale().dateFormat(f == Qt::DefaultLocaleLongDate ? QLocale::LongFormat
+        return fromString(s, QLocale().dateFormat(f == Qt::DefaultLocaleLongDate ? QLocale::FullFormat
                                                                                  : QLocale::ShortFormat));
     default:
 #ifndef QT_NO_TEXTDATE
@@ -1554,12 +1554,12 @@ QString QTime::toString(Qt::DateFormat format) const
     case Qt::SystemLocaleDate:
     case Qt::SystemLocaleShortDate:
     case Qt::SystemLocaleLongDate:
-        return QLocale::system().toString(*this, format == Qt::SystemLocaleLongDate ? QLocale::LongFormat
+        return QLocale::system().toString(*this, format == Qt::SystemLocaleLongDate ? QLocale::FullFormat
                                           : QLocale::ShortFormat);
     case Qt::LocaleDate:
     case Qt::DefaultLocaleShortDate:
     case Qt::DefaultLocaleLongDate:
-        return QLocale().toString(*this, format == Qt::DefaultLocaleLongDate ? QLocale::LongFormat
+        return QLocale().toString(*this, format == Qt::DefaultLocaleLongDate ? QLocale::FullFormat
                                   : QLocale::ShortFormat);
 
     default:
@@ -1831,12 +1831,12 @@ QTime QTime::fromString(const QString& s, Qt::DateFormat f)
     case Qt::SystemLocaleDate:
     case Qt::SystemLocaleShortDate:
     case Qt::SystemLocaleLongDate:
-        return fromString(s, QLocale::system().timeFormat(f == Qt::SystemLocaleLongDate ? QLocale::LongFormat
+        return fromString(s, QLocale::system().timeFormat(f == Qt::SystemLocaleLongDate ? QLocale::FullFormat
                                                                                         : QLocale::ShortFormat));
     case Qt::LocaleDate:
     case Qt::DefaultLocaleShortDate:
     case Qt::DefaultLocaleLongDate:
-        return fromString(s, QLocale().timeFormat(f == Qt::DefaultLocaleLongDate ? QLocale::LongFormat
+        return fromString(s, QLocale().timeFormat(f == Qt::DefaultLocaleLongDate ? QLocale::FullFormat
                                                                                  : QLocale::ShortFormat));
     default:
         {
@@ -3380,12 +3380,12 @@ QDateTime QDateTime::fromString(const QString& s, Qt::DateFormat f)
     case Qt::SystemLocaleDate:
     case Qt::SystemLocaleShortDate:
     case Qt::SystemLocaleLongDate:
-        return fromString(s, QLocale::system().dateTimeFormat(f == Qt::SystemLocaleLongDate ? QLocale::LongFormat
+        return fromString(s, QLocale::system().dateTimeFormat(f == Qt::SystemLocaleLongDate ? QLocale::FullFormat
                                                                                             : QLocale::ShortFormat));
     case Qt::LocaleDate:
     case Qt::DefaultLocaleShortDate:
     case Qt::DefaultLocaleLongDate:
-        return fromString(s, QLocale().dateTimeFormat(f == Qt::DefaultLocaleLongDate ? QLocale::LongFormat
+        return fromString(s, QLocale().dateTimeFormat(f == Qt::DefaultLocaleLongDate ? QLocale::FullFormat
                                                                                      : QLocale::ShortFormat));
 #if !defined(QT_NO_TEXTDATE)
     case Qt::TextDate: {

@@ -74,7 +74,8 @@ extern "C" DWORD GetThreadLocale(void) {
 
 Q_DECLARE_METATYPE(qlonglong)
 Q_DECLARE_METATYPE(QDate)
-Q_DECLARE_METATYPE(QLocale::FormatType)
+Q_DECLARE_METATYPE(QLocale::StringFormat)
+Q_DECLARE_METATYPE(QLocale::FieldFormat)
 
 class tst_QLocale : public QObject
 {
@@ -111,22 +112,26 @@ private slots:
     void negativeNumbers();
     void numberOptions();
     void testNames();
+
+    void calendarSystems();
+    void monthName_data();
+    void monthName();
     void dayName_data();
     void dayName();
-    void standaloneDayName_data();
-    void standaloneDayName();
-    void underflowOverflow();
-
+    void quarterName_data();
+    void quarterName();
+    void dayPeriodName_data();
+    void dayPeriodName();
+    void ampm();
     void dateFormat();
     void timeFormat();
     void dateTimeFormat();
-    void monthName();
-    void standaloneMonthName();
+
+    void underflowOverflow();
 
     // QSystemLocale tests
     void queryDateTime();
 
-    void ampm();
     void currency();
     void quoteString();
     void uiLanguages();
@@ -139,7 +144,7 @@ private:
 
 tst_QLocale::tst_QLocale()
 {
-    qRegisterMetaType<QLocale::FormatType>("QLocale::FormatType");
+    qRegisterMetaType<QLocale::StringFormat>("QLocale::StringFormat");
 }
 
 void tst_QLocale::ctor()
@@ -1074,10 +1079,12 @@ void tst_QLocale::macDefaultLocale()
     QDate invalidDate;
     QCOMPARE(locale.toString(invalidTime, QLocale::ShortFormat), QString());
     QCOMPARE(locale.toString(invalidDate, QLocale::ShortFormat), QString());
-    QCOMPARE(locale.toString(invalidTime, QLocale::NarrowFormat), QString());
-    QCOMPARE(locale.toString(invalidDate, QLocale::NarrowFormat), QString());
+    QCOMPARE(locale.toString(invalidTime, QLocale::MediumFormat), QString());
+    QCOMPARE(locale.toString(invalidDate, QLocale::MediumFormat), QString());
     QCOMPARE(locale.toString(invalidTime, QLocale::LongFormat), QString());
     QCOMPARE(locale.toString(invalidDate, QLocale::LongFormat), QString());
+    QCOMPARE(locale.toString(invalidTime, QLocale::FullFormat), QString());
+    QCOMPARE(locale.toString(invalidDate, QLocale::FullFormat), QString());
     QCOMPARE(locale.decimalPoint(), QChar('.'));
     QCOMPARE(locale.groupSeparator(), QChar(','));
     QCOMPARE(locale.dateFormat(QLocale::ShortFormat), QString("M/d/yy"));
@@ -1088,10 +1095,8 @@ void tst_QLocale::macDefaultLocale()
     // make sure we are using the system to parse them
     QCOMPARE(locale.toString(1234.56), QString("1,234.56"));
     QCOMPARE(locale.toString(QDate(1974, 12, 1), QLocale::ShortFormat), QString("12/1/74"));
-    QCOMPARE(locale.toString(QDate(1974, 12, 1), QLocale::NarrowFormat), locale.toString(QDate(1974, 12, 1), QLocale::ShortFormat));
-    QCOMPARE(locale.toString(QDate(1974, 12, 1), QLocale::LongFormat), QString("December 1, 1974"));
+    QCOMPARE(locale.toString(QDate(1974, 12, 1), QLocale::FullFormat), QString("December 1, 1974"));
     QCOMPARE(locale.toString(QTime(1,2,3), QLocale::ShortFormat), QString("1:02 AM"));
-    QCOMPARE(locale.toString(QTime(1,2,3), QLocale::NarrowFormat), locale.toString(QTime(1,2,3), QLocale::ShortFormat));
 
     QTime currentTime = QTime::currentTime();
     QTime utcTime = QDateTime::currentDateTime().toUTC().time();
@@ -1218,7 +1223,7 @@ void tst_QLocale::windowsDefaultLocale()
     QCOMPARE(locale.decimalPoint(), QChar('@'));
     QCOMPARE(locale.groupSeparator(), QChar('?'));
     QCOMPARE(locale.dateFormat(QLocale::ShortFormat), QString("d*M*yyyy"));
-    QCOMPARE(locale.dateFormat(QLocale::LongFormat), QString("d@M@yyyy"));
+    QCOMPARE(locale.dateFormat(QLocale::FullFormat), QString("d@M@yyyy"));
     QCOMPARE(locale.timeFormat(QLocale::ShortFormat), QString("h^m^s"));
     QCOMPARE(locale.timeFormat(QLocale::LongFormat), QString("h^m^s"));
     QCOMPARE(locale.dateTimeFormat(QLocale::ShortFormat), QString("d*M*yyyy h^m^s"));
@@ -1227,15 +1232,11 @@ void tst_QLocale::windowsDefaultLocale()
     // make sure we are using the system to parse them
     QCOMPARE(locale.toString(1234.56), QString("1?234@56"));
     QCOMPARE(locale.toString(QDate(1974, 12, 1), QLocale::ShortFormat), QString("1*12*1974"));
-    QCOMPARE(locale.toString(QDate(1974, 12, 1), QLocale::NarrowFormat), locale.toString(QDate(1974, 12, 1), QLocale::ShortFormat));
     QCOMPARE(locale.toString(QDate(1974, 12, 1), QLocale::LongFormat), QString("1@12@1974"));
     QCOMPARE(locale.toString(QTime(1,2,3), QLocale::ShortFormat), QString("1^2^3"));
-    QCOMPARE(locale.toString(QTime(1,2,3), QLocale::NarrowFormat), locale.toString(QTime(1,2,3), QLocale::ShortFormat));
     QCOMPARE(locale.toString(QTime(1,2,3), QLocale::LongFormat), QString("1^2^3"));
     QCOMPARE(locale.toString(QDateTime(QDate(1974, 12, 1), QTime(1,2,3)), QLocale::ShortFormat),
              QString("1*12*1974 1^2^3"));
-    QCOMPARE(locale.toString(QDateTime(QDate(1974, 12, 1), QTime(1,2,3)), QLocale::NarrowFormat),
-             locale.toString(QDateTime(QDate(1974, 12, 1), QTime(1,2,3)), QLocale::ShortFormat));
     QCOMPARE(locale.toString(QDateTime(QDate(1974, 12, 1), QTime(1,2,3)), QLocale::LongFormat),
              QString("1@12@1974 1^2^3"));
     QCOMPARE(locale.toString(QTime(1,2,3), QLocale::LongFormat), QString("1^2^3"));
@@ -1690,76 +1691,6 @@ void tst_QLocale::testNames()
     }
 }
 
-void tst_QLocale::dayName_data()
-{
-    QTest::addColumn<QString>("locale_name");
-    QTest::addColumn<QString>("dayName");
-    QTest::addColumn<int>("day");
-    QTest::addColumn<QLocale::FormatType>("format");
-
-    QTest::newRow("no_NO")  << QString("no_NO") << QString("tirsdag") << 2 << QLocale::LongFormat;
-    QTest::newRow("nb_NO")  << QString("nb_NO") << QString("tirsdag") << 2 << QLocale::LongFormat;
-    QTest::newRow("nn_NO")  << QString("nn_NO") << QString("tysdag") << 2 << QLocale::LongFormat;
-
-    QTest::newRow("C long")  << QString("C") << QString("Sunday") << 7 << QLocale::LongFormat;
-    QTest::newRow("C short")  << QString("C") << QString("Sun") << 7 << QLocale::ShortFormat;
-    QTest::newRow("C narrow")  << QString("C") << QString("S") << 7 << QLocale::NarrowFormat;
-
-    QTest::newRow("ru_RU long")  << QString("ru_RU") << QString::fromUtf8("\320\262\320\276\321\201\320\272\321\200\320\265\321\201\320\265\320\275\321\214\320\265") << 7 << QLocale::LongFormat;
-    QTest::newRow("ru_RU short")  << QString("ru_RU") << QString::fromUtf8("\320\222\321\201") << 7 << QLocale::ShortFormat;
-    QTest::newRow("ru_RU narrow")  << QString("ru_RU") << QString::fromUtf8("\320\222") << 7 << QLocale::NarrowFormat;
-}
-
-void tst_QLocale::dayName()
-{
-    QFETCH(QString, locale_name);
-    QFETCH(QString, dayName);
-    QFETCH(int, day);
-    QFETCH(QLocale::FormatType, format);
-
-    QLocale l(locale_name);
-    QCOMPARE(l.dayName(day, format), dayName);
-}
-
-void tst_QLocale::standaloneDayName_data()
-{
-    QTest::addColumn<QString>("locale_name");
-    QTest::addColumn<QString>("dayName");
-    QTest::addColumn<int>("day");
-    QTest::addColumn<QLocale::FormatType>("format");
-
-    QTest::newRow("no_NO")  << QString("no_NO") << QString("tirsdag") << 2 << QLocale::LongFormat;
-    QTest::newRow("nb_NO")  << QString("nb_NO") << QString("tirsdag") << 2 << QLocale::LongFormat;
-    QTest::newRow("nn_NO")  << QString("nn_NO") << QString("tysdag") << 2 << QLocale::LongFormat;
-
-    QTest::newRow("C invalid: 0 long")  << QString("C") << QString() << 0 << QLocale::LongFormat;
-    QTest::newRow("C invalid: 0 short")  << QString("C") << QString() << 0 << QLocale::ShortFormat;
-    QTest::newRow("C invalid: 0 narrow")  << QString("C") << QString() << 0 << QLocale::NarrowFormat;
-    QTest::newRow("C invalid: 8 long")  << QString("C") << QString() << 8 << QLocale::LongFormat;
-    QTest::newRow("C invalid: 8 short")  << QString("C") << QString() << 8 << QLocale::ShortFormat;
-    QTest::newRow("C invalid: 8 narrow")  << QString("C") << QString() << 8 << QLocale::NarrowFormat;
-
-    QTest::newRow("C long")  << QString("C") << QString("Sunday") << 7 << QLocale::LongFormat;
-    QTest::newRow("C short")  << QString("C") << QString("Sun") << 7 << QLocale::ShortFormat;
-    QTest::newRow("C narrow")  << QString("C") << QString("S") << 7 << QLocale::NarrowFormat;
-
-    QTest::newRow("ru_RU long")  << QString("ru_RU") << QString::fromUtf8("\320\222\320\276\321\201\320\272\321\200\320\265\321\201\320\265\320\275\321\214\320\265") << 7 << QLocale::LongFormat;
-    QTest::newRow("ru_RU short")  << QString("ru_RU") << QString::fromUtf8("\320\222\321\201") << 7 << QLocale::ShortFormat;
-    QTest::newRow("ru_RU narrow")  << QString("ru_RU") << QString::fromUtf8("\320\222") << 7 << QLocale::NarrowFormat;
-}
-
-void tst_QLocale::standaloneDayName()
-{
-    QFETCH(QString, locale_name);
-    QFETCH(QString, dayName);
-    QFETCH(int, day);
-    QFETCH(QLocale::FormatType, format);
-
-    QLocale l(locale_name);
-
-    QCOMPARE(l.standaloneDayName(day, format), dayName);
-}
-
 void tst_QLocale::underflowOverflow()
 {
     QString
@@ -1799,8 +1730,6 @@ public:
     }
 };
 
-
-
 void tst_QLocale::queryDateTime()
 {
     SystemLocale loc;
@@ -1810,14 +1739,264 @@ void tst_QLocale::queryDateTime()
              loc.query(QSystemLocale::DateTimeFormatShort, QVariant()).toString());
     QCOMPARE(QLocale::system().toString(QDateTime(QDate(1974, 12, 1), QTime(1, 2, 3, 4)), QLocale::ShortFormat),
              QString("1127412"));
-    QCOMPARE(QLocale::system().toString(QDateTime(QDate(1974, 12, 1), QTime(1, 2, 3, 4)), QLocale::NarrowFormat),
-             QLocale::system().toString(QDateTime(QDate(1974, 12, 1), QTime(1, 2, 3, 4)), QLocale::ShortFormat));
     QCOMPARE(QLocale::system().toString(QDateTime(QDate(1974, 12, 1), QTime(1, 2, 3, 4)), QLocale::LongFormat),
              QString("01121974010203004"));
 }
 
+void tst_QLocale::calendarSystems()
+{
+    QList<QLocale::CalendarSystem> list;
+    list << QLocale::GregorianCalendar << QLocale::ChineseCalendar << QLocale::CopticCalendar
+         << QLocale::EthiopicCalendar << QLocale::EthiopicAmeteAlemCalendar << QLocale::HebrewCalendar
+         << QLocale::IndianNationalCalendar << QLocale::IslamicCalendar << QLocale::IslamicCivilCalendar
+         << QLocale::ISO8601Calendar
+                                                << QLocale::JapaneseCalendar
+                                                << QLocale::JulianCalendar
+                                                << QLocale::PersianCalendar
+                                                << QLocale::ROCCalendar
+                                                << QLocale::ThaiCalendar;
+    QCOMPARE(QLocale::allCalendarSystems(), list);
+
+    const QLocale c("C");
+    QCOMPARE(c.calendarSystem(),           QLocale::GregorianCalendar);
+    list.clear();
+    list << QLocale::GregorianCalendar;
+    QCOMPARE(c.preferredCalendarSystems(), list);
+    QCOMPARE(c.calendarSystemName(),       QString("Gregorian Calendar"));
+
+    const QLocale th("th_TH");
+    QCOMPARE(th.calendarSystem(),           QLocale::ThaiCalendar);
+    list.clear();
+    list << QLocale::ThaiCalendar << QLocale::GregorianCalendar;
+    QCOMPARE(th.preferredCalendarSystems(), list);
+    QCOMPARE(th.calendarSystemName(),       QString::fromUtf8("ปฏิทินพุทธ"));
+
+    const QLocale fa("fa_IR");
+    QCOMPARE(fa.calendarSystem(),           QLocale::GregorianCalendar);
+    list.clear();
+    list << QLocale::GregorianCalendar << QLocale::PersianCalendar << QLocale::IslamicCalendar << QLocale::IslamicCivilCalendar;
+    QCOMPARE(fa.preferredCalendarSystems(), list);
+    QCOMPARE(fa.calendarSystemName(),       QString::fromUtf8("تقویم میلادی"));
+
+    QCOMPARE(c.calendarSystemName(QLocale::DefaultCalendar),    QString("Gregorian Calendar"));
+    QCOMPARE(c.calendarSystemName(QLocale::GregorianCalendar),  QString("Gregorian Calendar"));
+    QCOMPARE(c.calendarSystemName(QLocale::ChineseCalendar),    QString("Chinese Calendar"));
+    QCOMPARE(th.calendarSystemName(QLocale::DefaultCalendar),   QString::fromUtf8("ปฏิทินพุทธ"));
+    QCOMPARE(th.calendarSystemName(QLocale::GregorianCalendar), QString::fromUtf8("ปฏิทินเกรกอเรียน"));
+    QCOMPARE(th.calendarSystemName(QLocale::IslamicCalendar),   QString::fromUtf8("ปฏิทินอิสลาม"));
+    QCOMPARE(fa.calendarSystemName(QLocale::DefaultCalendar),   QString::fromUtf8("تقویم میلادی"));
+    QCOMPARE(fa.calendarSystemName(QLocale::GregorianCalendar), QString::fromUtf8("تقویم میلادی"));
+    QCOMPARE(fa.calendarSystemName(QLocale::IslamicCalendar),   QString::fromUtf8("تقویم هجری قمری"));
+
+    const QLocale en("en_GB");
+    QCOMPARE(en.monthName(3, QLocale::LongName, QLocale::FormatContext, QLocale::StandardYear, QLocale::EthiopicCalendar), QString("Hedar"));
+    QCOMPARE(en.dayName(3, QLocale::LongName, QLocale::FormatContext, QLocale::EthiopicCalendar),                        QString("Wednesday"));
+    QCOMPARE(en.quarterName(3, QLocale::LongName, QLocale::FormatContext, QLocale::EthiopicCalendar),                    QString("3rd quarter"));
+    QCOMPARE(en.dayPeriodName(QTime(0,0,0), QLocale::LongName, QLocale::FormatContext, QLocale::EthiopicCalendar),       QString("AM"));
+    QCOMPARE(en.dateFormat(QLocale::LongFormat, QLocale::EthiopicCalendar),      QString("d MMMM yyyy"));
+    QCOMPARE(en.timeFormat(QLocale::LongFormat, QLocale::EthiopicCalendar),      QString("HH:mm:ss t"));
+    QCOMPARE(en.dateTimeFormat(QLocale::LongFormat, QLocale::EthiopicCalendar),  QString("d MMMM yyyy HH:mm:ss t"));
+}
+
+void tst_QLocale::monthName_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<int>("month");
+    QTest::addColumn<QString>("longName");
+    QTest::addColumn<QString>("shortName");
+    QTest::addColumn<QString>("narrowName");
+    QTest::addColumn<QString>("standaloneLongName");
+    QTest::addColumn<QString>("standaloneShortName");
+    QTest::addColumn<QString>("standaloneNarrowName");
+
+    QTest::newRow("Month 0")   << QString("C")     <<  0 << QString() << QString() << QString()
+                                                         << QString() << QString() << QString();
+    QTest::newRow("Month 13")  << QString("C")     << 13 << QString() << QString() << QString()
+                                                         << QString() << QString() << QString();
+    QTest::newRow("C Jan")     << QString("C")     <<  1 << QString("January")  << QString("Jan") << QString("J")
+                                                         << QString("January")  << QString("Jan") << QString("J");
+    QTest::newRow("de_DE Dec") << QString("de_DE") << 12 << QString("Dezember") << QString("Dez") << QString("D")
+                                                         << QString("Dezember") << QString("Dez") << QString("D");
+    QTest::newRow("ru_RU Jan") << QString("ru_RU") <<  1 << QString::fromUtf8("\321\217\320\275\320\262\320\260\321\200\321\217")
+                                                         << QString::fromUtf8("\321\217\320\275\320\262\56")
+                                                         << QString::fromUtf8("\320\257")
+                                                         << QString::fromUtf8("\320\257\320\275\320\262\320\260\321\200\321\214")
+                                                         << QString::fromUtf8("\321\217\320\275\320\262\56")
+                                                         << QString::fromUtf8("\320\257");
+    // check that our CLDR scripts handle surrogate pairs correctly
+    QTest::newRow("en-Dsrt-US") << QString("en-Dsrt-US") <<  1 << QString::fromUtf8("\xf0\x90\x90\x96\xf0\x90\x90\xb0\xf0\x90\x91\x8c\xf0\x90\x90\xb7\xf0\x90\x90\xad\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xa8")
+                                                               << QString::fromUtf8("𐐖𐐰𐑌")
+                                                               << QString::fromUtf8("𐐖")
+                                                               << QString::fromUtf8("𐐖𐐰𐑌𐐷𐐭𐐯𐑉𐐨")
+                                                               << QString::fromUtf8("𐐖𐐰𐑌")
+                                                               << QString::fromUtf8("𐐖");
+}
+
+void tst_QLocale::monthName()
+{
+    QFETCH(QString, locale);
+    QFETCH(int, month);
+    QFETCH(QString, longName);
+    QFETCH(QString, shortName);
+    QFETCH(QString, narrowName);
+    QFETCH(QString, standaloneLongName);
+    QFETCH(QString, standaloneShortName);
+    QFETCH(QString, standaloneNarrowName);
+
+    QLocale l(locale);
+    QCOMPARE(l.monthName(month, QLocale::LongName), longName);
+    QCOMPARE(l.monthName(month, QLocale::ShortName), shortName);
+    QCOMPARE(l.monthName(month, QLocale::NarrowName), narrowName);
+    QCOMPARE(l.monthName(month, QLocale::LongName, QLocale::StandaloneContext), standaloneLongName);
+    QCOMPARE(l.monthName(month, QLocale::ShortName, QLocale::StandaloneContext), standaloneShortName);
+    QCOMPARE(l.monthName(month, QLocale::NarrowName, QLocale::StandaloneContext), standaloneNarrowName);
+}
+
+void tst_QLocale::dayName_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<int>("day");
+    QTest::addColumn<QString>("longName");
+    QTest::addColumn<QString>("shortName");
+    QTest::addColumn<QString>("narrowName");
+    QTest::addColumn<QString>("standaloneLongName");
+    QTest::addColumn<QString>("standaloneShortName");
+    QTest::addColumn<QString>("standaloneNarrowName");
+
+    QTest::newRow("Day 0")     << QString("C")     <<  0 << QString() << QString() << QString()
+                                                         << QString() << QString() << QString();
+    QTest::newRow("Day 8")     << QString("C")     <<  8 << QString() << QString() << QString()
+                                                         << QString() << QString() << QString();
+    QTest::newRow("C Sun")     << QString("C")     <<  7 << QString("Sunday")  << QString("Sun") << QString("S")
+                                                         << QString("Sunday")  << QString("Sun") << QString("S");
+    QTest::newRow("de_DE Dec") << QString("de_DE") <<  7 << QString("Sonntag") << QString("So.") << QString("S")
+                                                         << QString("Sonntag") << QString("So")  << QString("S");
+    QTest::newRow("ru_RU Sun") << QString("ru_RU") <<  7 << QString::fromUtf8("\320\262\320\276\321\201\320\272\321\200\320\265\321\201\320\265\320\275\321\214\320\265")
+                                                         << QString::fromUtf8("\320\222\321\201")
+                                                         << QString::fromUtf8("\320\222")
+                                                         << QString::fromUtf8("\320\222\320\276\321\201\320\272\321\200\320\265\321\201\320\265\320\275\321\214\320\265")
+                                                         << QString::fromUtf8("\320\222\321\201")
+                                                         << QString::fromUtf8("\320\222");
+    // check that our CLDR scripts handle surrogate pairs correctly
+    QTest::newRow("en-Dsrt-US") << QString("en-Dsrt-US") <<  7 << QString::fromUtf8("𐐝𐐲𐑌𐐼𐐩")  << QString::fromUtf8("𐐝𐐲𐑌") << QString::fromUtf8("𐐝")
+                                                               << QString::fromUtf8("𐐝𐐲𐑌𐐼𐐩") << QString::fromUtf8("𐐝𐐲𐑌") << QString::fromUtf8("𐐝");
+}
+
+void tst_QLocale::dayName()
+{
+    QFETCH(QString, locale);
+    QFETCH(int, day);
+    QFETCH(QString, longName);
+    QFETCH(QString, shortName);
+    QFETCH(QString, narrowName);
+    QFETCH(QString, standaloneLongName);
+    QFETCH(QString, standaloneShortName);
+    QFETCH(QString, standaloneNarrowName);
+
+    QLocale l(locale);
+    QCOMPARE(l.dayName(day, QLocale::LongName), longName);
+    QCOMPARE(l.dayName(day, QLocale::ShortName), shortName);
+    QCOMPARE(l.dayName(day, QLocale::NarrowName), narrowName);
+    QCOMPARE(l.dayName(day, QLocale::LongName, QLocale::StandaloneContext), standaloneLongName);
+    QCOMPARE(l.dayName(day, QLocale::ShortName, QLocale::StandaloneContext), standaloneShortName);
+    QCOMPARE(l.dayName(day, QLocale::NarrowName, QLocale::StandaloneContext), standaloneNarrowName);
+}
+
+void tst_QLocale::quarterName_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<int>("quarter");
+    QTest::addColumn<QString>("longName");
+    QTest::addColumn<QString>("shortName");
+    QTest::addColumn<QString>("narrowName");
+    QTest::addColumn<QString>("standaloneLongName");
+    QTest::addColumn<QString>("standaloneShortName");
+    QTest::addColumn<QString>("standaloneNarrowName");
+
+    QTest::newRow("Qtr 0")     << QString("C")     <<  0 << QString() << QString() << QString()
+                                                         << QString() << QString() << QString();
+    QTest::newRow("Qtr 5")     << QString("C")     <<  5 << QString() << QString() << QString()
+                                                         << QString() << QString() << QString();
+    QTest::newRow("C Q1")      << QString("C")     <<  1 << QString("1st quarter") << QString("Q1") << QString("1")
+                                                         << QString("1st quarter") << QString("Q1") << QString("1");
+    QTest::newRow("de_DE Q4")  << QString("de_DE") <<  4 << QString("4. Quartal")  << QString("Q4") << QString("4")
+                                                         << QString("4. Quartal")  << QString("Q4") << QString("4");
+    QTest::newRow("ru_RU Q1")  << QString("ru_RU") <<  1 << QString::fromUtf8("1-й квартал") << QString::fromUtf8("1-й кв.") << QString("1")
+                                                         << QString::fromUtf8("1-й квартал") << QString::fromUtf8("1-й кв.") << QString("1");
+    // check that our CLDR scripts handle surrogate pairs correctly
+    QTest::newRow("en-Dsrt-US") << QString("en-Dsrt-US") <<  1 << QString::fromUtf8("1𐑅𐐻 𐐿𐐶𐐪𐑉𐐻𐐲𐑉") << QString::fromUtf8("𐐗1") << QString("1")
+                                                               << QString::fromUtf8("1𐑅𐐻 𐐿𐐶𐐪𐑉𐐻𐐲𐑉") << QString::fromUtf8("𐐗1") << QString("1");
+}
+
+void tst_QLocale::quarterName()
+{
+    QFETCH(QString, locale);
+    QFETCH(int, quarter);
+    QFETCH(QString, longName);
+    QFETCH(QString, shortName);
+    QFETCH(QString, narrowName);
+    QFETCH(QString, standaloneLongName);
+    QFETCH(QString, standaloneShortName);
+    QFETCH(QString, standaloneNarrowName);
+
+    QLocale l(locale);
+    QCOMPARE(l.quarterName(quarter, QLocale::LongName), longName);
+    QCOMPARE(l.quarterName(quarter, QLocale::ShortName), shortName);
+    QCOMPARE(l.quarterName(quarter, QLocale::NarrowName), narrowName);
+    QCOMPARE(l.quarterName(quarter, QLocale::LongName, QLocale::StandaloneContext), standaloneLongName);
+    QCOMPARE(l.quarterName(quarter, QLocale::ShortName, QLocale::StandaloneContext), standaloneShortName);
+    QCOMPARE(l.quarterName(quarter, QLocale::NarrowName, QLocale::StandaloneContext), standaloneNarrowName);
+}
+
+void tst_QLocale::dayPeriodName_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<QTime>("time");
+    QTest::addColumn<QString>("longName");
+    QTest::addColumn<QString>("shortName");
+    QTest::addColumn<QString>("narrowName");
+    QTest::addColumn<QString>("standaloneLongName");
+    QTest::addColumn<QString>("standaloneShortName");
+    QTest::addColumn<QString>("standaloneNarrowName");
+
+    QTest::newRow("Invalid")   << QString("C")     << QTime() << QString() << QString() << QString()
+                                                              << QString() << QString() << QString();
+    QTest::newRow("C AM")      << QString("C")     << QTime(0,0,0)  << QString("AM")  << QString("AM") << QString("AM")
+                                                                    << QString("AM")  << QString("AM") << QString("AM");
+    QTest::newRow("C PM")      << QString("C")     << QTime(12,0,0) << QString("PM")  << QString("PM") << QString("PM")
+                                                                    << QString("PM")  << QString("PM") << QString("PM");
+    QTest::newRow("pt_PT PM")  << QString("pt_PT") << QTime(12,0,0) << QString("Depois do meio-dia") << QString("p.m.") << QString("p.m.")
+                                                                    << QString("p.m.")               << QString("p.m.") << QString("p.m.");
+    QTest::newRow("sr_CS AM")  << QString("sr_CS") << QTime(0,0,0)  << QString::fromUtf8("пре подне") << QString::fromUtf8("пре подне") << QString::fromUtf8("пре подне")
+                                                                    << QString::fromUtf8("пре подне") << QString::fromUtf8("пре подне") << QString::fromUtf8("пре подне");
+    // check that our CLDR scripts handle surrogate pairs correctly
+    QTest::newRow("en-Dsrt-US") << QString("en-Dsrt-US") << QTime(0,0,0) << QString::fromUtf8("𐐈𐐣") << QString::fromUtf8("𐐈𐐣") << QString::fromUtf8("𐐈𐐣")
+                                                                         << QString::fromUtf8("𐐈𐐣") << QString::fromUtf8("𐐈𐐣") << QString::fromUtf8("𐐈𐐣");
+}
+
+void tst_QLocale::dayPeriodName()
+{
+    QFETCH(QString, locale);
+    QFETCH(QTime, time);
+    QFETCH(QString, longName);
+    QFETCH(QString, shortName);
+    QFETCH(QString, narrowName);
+    QFETCH(QString, standaloneLongName);
+    QFETCH(QString, standaloneShortName);
+    QFETCH(QString, standaloneNarrowName);
+
+    QLocale l(locale);
+    QCOMPARE(l.dayPeriodName(time, QLocale::LongName), longName);
+    QCOMPARE(l.dayPeriodName(time, QLocale::ShortName), shortName);
+    QCOMPARE(l.dayPeriodName(time, QLocale::NarrowName), narrowName);
+    QCOMPARE(l.dayPeriodName(time, QLocale::LongName, QLocale::StandaloneContext), standaloneLongName);
+    QCOMPARE(l.dayPeriodName(time, QLocale::ShortName, QLocale::StandaloneContext), standaloneShortName);
+    QCOMPARE(l.dayPeriodName(time, QLocale::NarrowName, QLocale::StandaloneContext), standaloneNarrowName);
+}
+
 void tst_QLocale::ampm()
 {
+#ifdef QT4_COMPAT
     QLocale c(QLocale::C);
     QCOMPARE(c.amText(), QLatin1String("AM"));
     QCOMPARE(c.pmText(), QLatin1String("PM"));
@@ -1837,100 +2016,34 @@ void tst_QLocale::ampm()
     QLocale ua("uk_UA");
     QCOMPARE(ua.amText(), QString::fromUtf8("\320\264\320\277"));
     QCOMPARE(ua.pmText(), QString::fromUtf8("\320\277\320\277"));
+#endif
 }
 
 void tst_QLocale::dateFormat()
 {
-    const QLocale c(QLocale::C);
-    // check that the NarrowFormat is the same as ShortFormat.
-    QCOMPARE(c.dateFormat(QLocale::NarrowFormat), c.dateFormat(QLocale::ShortFormat));
-
-    const QLocale no("no_NO");
-    QCOMPARE(no.dateFormat(QLocale::NarrowFormat), QLatin1String("dd.MM.yy"));
-    QCOMPARE(no.dateFormat(QLocale::ShortFormat), QLatin1String("dd.MM.yy"));
-    QCOMPARE(no.dateFormat(QLocale::LongFormat), QLatin1String("dddd d. MMMM yyyy"));
+    const QLocale de("de_DE");
+    QCOMPARE(de.dateFormat(QLocale::FullFormat),   QLatin1String("dddd, d. MMMM yyyy"));
+    QCOMPARE(de.dateFormat(QLocale::LongFormat),   QLatin1String("d. MMMM yyyy"));
+    QCOMPARE(de.dateFormat(QLocale::MediumFormat), QLatin1String("dd.MM.yyyy"));
+    QCOMPARE(de.dateFormat(QLocale::ShortFormat),  QLatin1String("dd.MM.yy"));
 }
 
 void tst_QLocale::timeFormat()
 {
-    const QLocale c(QLocale::C);
-    // check that the NarrowFormat is the same as ShortFormat.
-    QCOMPARE(c.timeFormat(QLocale::NarrowFormat), c.timeFormat(QLocale::ShortFormat));
-
-    const QLocale no("no_NO");
-    QCOMPARE(no.timeFormat(QLocale::NarrowFormat), QLatin1String("HH:mm"));
-    QCOMPARE(no.timeFormat(QLocale::ShortFormat), QLatin1String("HH:mm"));
-    QCOMPARE(no.timeFormat(QLocale::LongFormat), QLatin1String("'kl'. HH:mm:ss t"));
+    const QLocale de("de_DE");
+    QCOMPARE(de.timeFormat(QLocale::FullFormat),   QLatin1String("HH:mm:ss t"));
+    QCOMPARE(de.timeFormat(QLocale::LongFormat),   QLatin1String("HH:mm:ss t"));
+    QCOMPARE(de.timeFormat(QLocale::MediumFormat), QLatin1String("HH:mm:ss"));
+    QCOMPARE(de.timeFormat(QLocale::ShortFormat),  QLatin1String("HH:mm"));
 }
 
 void tst_QLocale::dateTimeFormat()
 {
-    const QLocale c(QLocale::C);
-    // check that the NarrowFormat is the same as ShortFormat.
-    QCOMPARE(c.dateTimeFormat(QLocale::NarrowFormat), c.dateTimeFormat(QLocale::ShortFormat));
-
-    const QLocale no("no_NO");
-    QCOMPARE(no.dateTimeFormat(QLocale::NarrowFormat), QLatin1String("dd.MM.yy HH:mm"));
-    QCOMPARE(no.dateTimeFormat(QLocale::ShortFormat), QLatin1String("dd.MM.yy HH:mm"));
-    QCOMPARE(no.dateTimeFormat(QLocale::LongFormat), QLatin1String("dddd d. MMMM yyyy 'kl'. HH:mm:ss t"));
-}
-
-void tst_QLocale::monthName()
-{
-    const QLocale c(QLocale::C);
-    QCOMPARE(c.monthName(0, QLocale::ShortFormat), QString());
-    QCOMPARE(c.monthName(0, QLocale::LongFormat), QString());
-    QCOMPARE(c.monthName(0, QLocale::NarrowFormat), QString());
-    QCOMPARE(c.monthName(13, QLocale::ShortFormat), QString());
-    QCOMPARE(c.monthName(13, QLocale::LongFormat), QString());
-    QCOMPARE(c.monthName(13, QLocale::NarrowFormat), QString());
-
-    QCOMPARE(c.monthName(1, QLocale::LongFormat), QLatin1String("January"));
-    QCOMPARE(c.monthName(1, QLocale::ShortFormat), QLatin1String("Jan"));
-    QCOMPARE(c.monthName(1, QLocale::NarrowFormat), QLatin1String("J"));
-
     const QLocale de("de_DE");
-    QCOMPARE(de.monthName(12, QLocale::LongFormat), QLatin1String("Dezember"));
-    QCOMPARE(de.monthName(12, QLocale::ShortFormat), QLatin1String("Dez"));
-    // 'de' locale doesn't have narrow month name
-    QCOMPARE(de.monthName(12, QLocale::NarrowFormat), QLatin1String("D"));
-
-    QLocale ru("ru_RU");
-    QCOMPARE(ru.monthName(1, QLocale::LongFormat), QString::fromUtf8("\321\217\320\275\320\262\320\260\321\200\321\217"));
-    QCOMPARE(ru.monthName(1, QLocale::ShortFormat), QString::fromUtf8("\321\217\320\275\320\262\56"));
-    QCOMPARE(ru.monthName(1, QLocale::NarrowFormat), QString::fromUtf8("\320\257"));
-
-    // check that our CLDR scripts handle surrogate pairs correctly
-    QLocale dsrt("en-Dsrt-US");
-    QCOMPARE(dsrt.monthName(1, QLocale::LongFormat), QString::fromUtf8("\xf0\x90\x90\x96\xf0\x90\x90\xb0\xf0\x90\x91\x8c\xf0\x90\x90\xb7\xf0\x90\x90\xad\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xa8"));
-}
-
-void tst_QLocale::standaloneMonthName()
-{
-    const QLocale c(QLocale::C);
-    QCOMPARE(c.monthName(0, QLocale::ShortFormat), QString());
-    QCOMPARE(c.monthName(0, QLocale::LongFormat), QString());
-    QCOMPARE(c.monthName(0, QLocale::NarrowFormat), QString());
-    QCOMPARE(c.monthName(13, QLocale::ShortFormat), QString());
-    QCOMPARE(c.monthName(13, QLocale::LongFormat), QString());
-    QCOMPARE(c.monthName(13, QLocale::NarrowFormat), QString());
-
-    QCOMPARE(c.standaloneMonthName(1, QLocale::LongFormat), QLatin1String("January"));
-    QCOMPARE(c.standaloneMonthName(1, QLocale::ShortFormat), QLatin1String("Jan"));
-    QCOMPARE(c.standaloneMonthName(1, QLocale::NarrowFormat), QLatin1String("J"));
-
-    const QLocale de("de_DE");
-    // For de_DE locale Unicode CLDR database doesn't contain standalone long months
-    // so just checking if the return value is the same as in monthName().
-    QCOMPARE(de.standaloneMonthName(12, QLocale::LongFormat), QLatin1String("Dezember"));
-    QCOMPARE(de.standaloneMonthName(12, QLocale::LongFormat), de.monthName(12, QLocale::LongFormat));
-    QCOMPARE(de.standaloneMonthName(12, QLocale::ShortFormat), QLatin1String("Dez"));
-    QCOMPARE(de.standaloneMonthName(12, QLocale::NarrowFormat), QLatin1String("D"));
-
-    QLocale ru("ru_RU");
-    QCOMPARE(ru.standaloneMonthName(1, QLocale::LongFormat), QString::fromUtf8("\320\257\320\275\320\262\320\260\321\200\321\214"));
-    QCOMPARE(ru.standaloneMonthName(1, QLocale::ShortFormat), QString::fromUtf8("\321\217\320\275\320\262\56"));
-    QCOMPARE(ru.standaloneMonthName(1, QLocale::NarrowFormat), QString::fromUtf8("\320\257"));
+    QCOMPARE(de.dateTimeFormat(QLocale::FullFormat),   QLatin1String("dddd, d. MMMM yyyy HH:mm:ss t"));
+    QCOMPARE(de.dateTimeFormat(QLocale::LongFormat),   QLatin1String("d. MMMM yyyy HH:mm:ss t"));
+    QCOMPARE(de.dateTimeFormat(QLocale::MediumFormat), QLatin1String("dd.MM.yyyy HH:mm:ss"));
+    QCOMPARE(de.dateTimeFormat(QLocale::ShortFormat),  QLatin1String("dd.MM.yy HH:mm"));
 }
 
 void tst_QLocale::currency()

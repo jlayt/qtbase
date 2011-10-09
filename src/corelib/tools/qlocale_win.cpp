@@ -92,14 +92,14 @@ struct QSystemLocalePrivate
     QChar groupSeparator();
     QChar negativeSign();
     QChar positiveSign();
-    QVariant dateFormat(QLocale::FormatType);
-    QVariant timeFormat(QLocale::FormatType);
-    QVariant dateTimeFormat(QLocale::FormatType);
-    QVariant dayName(int, QLocale::FormatType);
-    QVariant monthName(int, QLocale::FormatType);
-    QVariant toString(const QDate &, QLocale::FormatType);
-    QVariant toString(const QTime &, QLocale::FormatType);
-    QVariant toString(const QDateTime &, QLocale::FormatType);
+    QVariant dateFormat(QLocale::StringFormat);
+    QVariant timeFormat(QLocale::StringFormat);
+    QVariant dateTimeFormat(QLocale::StringFormat);
+    QVariant dayName(int, QLocale::FieldFormat);
+    QVariant monthName(int, QLocale::FieldFormat);
+    QVariant toString(const QDate &, QLocale::StringFormat);
+    QVariant toString(const QTime &, QLocale::StringFormat);
+    QVariant toString(const QDateTime &, QLocale::StringFormat);
     QVariant measurementSystem();
     QVariant amText();
     QVariant pmText();
@@ -244,38 +244,38 @@ QChar QSystemLocalePrivate::positiveSign()
     return getLocaleInfo_qchar(LOCALE_SPOSITIVESIGN);
 }
 
-QVariant QSystemLocalePrivate::dateFormat(QLocale::FormatType type)
+QVariant QSystemLocalePrivate::dateFormat(QLocale::StringFormat format)
 {
-    switch (type) {
+    switch (format) {
+    case QLocale::MediumFormat:
     case QLocale::ShortFormat:
         return winToQtFormat(getLocaleInfo(LOCALE_SSHORTDATE));
+    case QLocale::FullFormat:
     case QLocale::LongFormat:
+    default:
         return winToQtFormat(getLocaleInfo(LOCALE_SLONGDATE));
-    case QLocale::NarrowFormat:
-        break;
     }
-    return QVariant();
 }
 
-QVariant QSystemLocalePrivate::timeFormat(QLocale::FormatType type)
+QVariant QSystemLocalePrivate::timeFormat(QLocale::StringFormat format)
 {
-    switch (type) {
+    switch (format) {
+    case QLocale::MediumFormat:
     case QLocale::ShortFormat:
         return winToQtFormat(getLocaleInfo(LOCALE_STIMEFORMAT)); //###
+    case QLocale::FullFormat:
     case QLocale::LongFormat:
+    default:
         return winToQtFormat(getLocaleInfo(LOCALE_STIMEFORMAT));
-    case QLocale::NarrowFormat:
-        break;
     }
-    return QVariant();
 }
 
-QVariant QSystemLocalePrivate::dateTimeFormat(QLocale::FormatType type)
+QVariant QSystemLocalePrivate::dateTimeFormat(QLocale::StringFormat format)
 {
-    return QString(dateFormat(type).toString() + QLatin1Char(' ') + timeFormat(type).toString());
+    return QString(dateFormat(format).toString() + QLatin1Char(' ') + timeFormat(format).toString());
 }
 
-QVariant QSystemLocalePrivate::dayName(int day, QLocale::FormatType type)
+QVariant QSystemLocalePrivate::dayName(int day, QLocale::FieldFormat format)
 {
     static const LCTYPE short_day_map[]
         = { LOCALE_SABBREVDAYNAME1, LOCALE_SABBREVDAYNAME2,
@@ -295,14 +295,14 @@ QVariant QSystemLocalePrivate::dayName(int day, QLocale::FormatType type)
 
     day -= 1;
 
-    if (type == QLocale::LongFormat)
+    if (format == QLocale::LongName)
         return getLocaleInfo(long_day_map[day]);
-    else if (type == QLocale::NarrowFormat && QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
+    else if (format == QLocale::NarrowName && QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
         return getLocaleInfo(narrow_day_map[day]);
     return getLocaleInfo(short_day_map[day]);
 }
 
-QVariant QSystemLocalePrivate::monthName(int month, QLocale::FormatType type)
+QVariant QSystemLocalePrivate::monthName(int month, QLocale::FormatType format)
 {
     static const LCTYPE short_month_map[]
         = { LOCALE_SABBREVMONTHNAME1, LOCALE_SABBREVMONTHNAME2, LOCALE_SABBREVMONTHNAME3,
@@ -320,12 +320,12 @@ QVariant QSystemLocalePrivate::monthName(int month, QLocale::FormatType type)
     if (month < 0 || month > 11)
     return QString();
 
-    LCTYPE lctype = (type == QLocale::ShortFormat || type == QLocale::NarrowFormat)
+    LCTYPE lctype = (format == QLocale::ShortName || format == QLocale::NarrowName)
             ? short_month_map[month] : long_month_map[month];
     return getLocaleInfo(lctype);
 }
 
-QVariant QSystemLocalePrivate::toString(const QDate &date, QLocale::FormatType type)
+QVariant QSystemLocalePrivate::toString(const QDate &date, QLocale::StringFormat format)
 {
     SYSTEMTIME st;
     memset(&st, 0, sizeof(SYSTEMTIME));
@@ -333,7 +333,7 @@ QVariant QSystemLocalePrivate::toString(const QDate &date, QLocale::FormatType t
     st.wMonth = date.month();
     st.wDay = date.day();
 
-    DWORD flags = (type == QLocale::LongFormat ? DATE_LONGDATE : DATE_SHORTDATE);
+    DWORD flags = ((format == QLocale::FullFormat || format == QLocale::LongFormat) ? DATE_LONGDATE : DATE_SHORTDATE);
     wchar_t buf[255];
     if (GetDateFormat(lcid, flags, &st, NULL, buf, 255)) {
         QString format = QString::fromWCharArray(buf);
@@ -344,7 +344,7 @@ QVariant QSystemLocalePrivate::toString(const QDate &date, QLocale::FormatType t
     return QString();
 }
 
-QVariant QSystemLocalePrivate::toString(const QTime &time, QLocale::FormatType)
+QVariant QSystemLocalePrivate::toString(const QTime &time, QLocale::StringFormat)
 {
     SYSTEMTIME st;
     memset(&st, 0, sizeof(SYSTEMTIME));
@@ -365,9 +365,9 @@ QVariant QSystemLocalePrivate::toString(const QTime &time, QLocale::FormatType)
     return QString();
 }
 
-QVariant QSystemLocalePrivate::toString(const QDateTime &dt, QLocale::FormatType type)
+QVariant QSystemLocalePrivate::toString(const QDateTime &dt, QLocale::StringFormat format)
 {
-    return QString(toString(dt.date(), type).toString() + QLatin1Char(' ') + toString(dt.time(), type).toString());
+    return QString(toString(dt.date(), format).toString() + QLatin1Char(' ') + toString(dt.time(), format).toString());
 }
 
 QVariant QSystemLocalePrivate::measurementSystem()
@@ -670,38 +670,84 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
         return d->negativeSign();
     case PositiveSign:
         return d->positiveSign();
+    case DateFormatFull:
+        return d->dateFormat(QLocale::FullFormat);
     case DateFormatLong:
         return d->dateFormat(QLocale::LongFormat);
+    case DateFormatMedium:
+        return d->dateFormat(QLocale::MediumFormat);
     case DateFormatShort:
         return d->dateFormat(QLocale::ShortFormat);
+    case TimeFormatFull:
+        return d->timeFormat(QLocale::FullFormat);
     case TimeFormatLong:
         return d->timeFormat(QLocale::LongFormat);
+    case TimeFormatMedium:
+        return d->timeFormat(QLocale::MediumFormat);
     case TimeFormatShort:
         return d->timeFormat(QLocale::ShortFormat);
+    case DateTimeFormatFull:
+        return d->dateTimeFormat(QLocale::FullFormat);
     case DateTimeFormatLong:
         return d->dateTimeFormat(QLocale::LongFormat);
+    case DateTimeFormatMedium:
+        return d->dateTimeFormat(QLocale::MediumFormat);
     case DateTimeFormatShort:
         return d->dateTimeFormat(QLocale::ShortFormat);
     case DayNameLong:
-        return d->dayName(in.toInt(), QLocale::LongFormat);
+    case DayNameLongStandalone:
+        return d->dayName(in.toInt(), QLocale::LongName);
     case DayNameShort:
-        return d->dayName(in.toInt(), QLocale::ShortFormat);
+    case DayNameShortStandalone:
+        return d->dayName(in.toInt(), QLocale::ShortName);
+    case DayNameNarrow:
+    case DayNameNarrowStandalone:
+        return d->dayName(in.toInt(), QLocale::NarrowName);
     case MonthNameLong:
-        return d->monthName(in.toInt(), QLocale::LongFormat);
+    case MonthNameLongStandalone:
+        return d->monthName(in.toInt(), QLocale::LongName);
     case MonthNameShort:
-        return d->monthName(in.toInt(), QLocale::ShortFormat);
-    case DateToStringShort:
-        return d->toString(in.toDate(), QLocale::ShortFormat);
+    case MonthNameShortStandalone:
+        return d->monthName(in.toInt(), QLocale::ShortName);
+    case MonthNameShort:
+    case MonthNameShortStandalone:
+        return d->monthName(in.toInt(), QLocale::NarrowName);
+    case DayPeriodNameLong:
+    case DayPeriodNameLongStandalone:
+    case DayPeriodNameShort:
+    case DayPeriodNameShortStandalone:
+    case DayPeriodNameNarrow:
+    case DayPeriodNameNarrowStandalone:
+    {
+        if (in.toTime() < QTime(12,0,0))
+            return d->amText();
+        else
+            return d->pmText();
+    }
+    case DateToStringFull:
+        return d->toString(in.toDate(), QLocale::FullFormat);
     case DateToStringLong:
         return d->toString(in.toDate(), QLocale::LongFormat);
-    case TimeToStringShort:
-        return d->toString(in.toTime(), QLocale::ShortFormat);
+    case DateToStringMedium:
+        return d->toString(in.toDate(), QLocale::MediumFormat);
+    case DateToStringShort:
+        return d->toString(in.toDate(), QLocale::ShortFormat);
+    case TimeToStringFull:
+        return d->toString(in.toTime(), QLocale::FullFormat);
     case TimeToStringLong:
         return d->toString(in.toTime(), QLocale::LongFormat);
-    case DateTimeToStringShort:
-        return d->toString(in.toDateTime(), QLocale::ShortFormat);
+    case TimeToStringMedium:
+        return d->toString(in.toTime(), QLocale::MediumFormat);
+    case TimeToStringShort:
+        return d->toString(in.toTime(), QLocale::ShortFormat);
+    case DateTimeToStringFull:
+        return d->toString(in.toDateTime(), QLocale::FullFormat);
     case DateTimeToStringLong:
         return d->toString(in.toDateTime(), QLocale::LongFormat);
+    case DateTimeToStringMedium:
+        return d->toString(in.toDateTime(), QLocale::MediumFormat);
+    case DateTimeToStringShort:
+        return d->toString(in.toDateTime(), QLocale::ShortFormat);
     case ZeroDigit:
         return d->zeroDigit();
     case LanguageId:
@@ -721,10 +767,6 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
         return QVariant(QLocale::AnyScript);
     case MeasurementSystem:
         return d->measurementSystem();
-    case AMText:
-        return d->amText();
-    case PMText:
-        return d->pmText();
     case FirstDayOfWeek:
         return d->firstDayOfWeek();
     case CurrencySymbol:

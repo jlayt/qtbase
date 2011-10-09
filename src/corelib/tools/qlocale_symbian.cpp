@@ -860,31 +860,63 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
 
         case DayNameLong:
         case DayNameShort:
-            return symbianDayName(in.toInt(), (type == DayNameShort) );
+        case DayNameNarrow:
+        case DayNameLongStandalone:
+        case DayNameShortStandalone:
+        case DayNameNarrowStandalone:
+            return symbianDayName(in.toInt(), !(type == DayNameLong || type == DayNameLongStandalone));
 
         case MonthNameLong:
         case MonthNameShort:
-            return symbianMonthName(in.toInt(), (type == MonthNameShort) );
+        case MonthNameNarrow:
+        case MonthNameLongStandalone:
+        case MonthNameShortStandalone:
+        case MonthNameNarrowStandalone:
+            return symbianMonthName(in.toInt(), !(type == MonthNameLong || type == MonthNameLongStandalone));
 
+        case DayPeriodNameLong:
+        case DayPeriodNameLongStandalone:
+        case DayPeriodNameShort:
+        case DayPeriodNameShortStandalone:
+        case DayPeriodNameNarrow:
+        case DayPeriodNameNarrowStandalone: {
+                if (in.toTime() < QTime(12,0,0))
+                    return qt_TDes2QString(TAmPmName(TAmPm(EAm)));
+                else
+                    return qt_TDes2QString(TAmPmName(TAmPm(EPm)));
+            }
+
+        case DateFormatFull:
         case DateFormatLong:
+        case DateFormatMedium:
         case DateFormatShort:
-            return symbianDateFormat( (type == DateFormatShort) );
+            return symbianDateFormat( (type == DateFormatShort || type == DateFormatMedium) );
+        case TimeFormatFull:
         case TimeFormatLong:
+        case TimeFormatMedium:
         case TimeFormatShort:
             return symbianTimeFormat();
+        case DateTimeFormatFull:
         case DateTimeFormatLong:
+        case DateTimeFormatMedium:
         case DateTimeFormatShort:
-            return QString(symbianDateFormat( (type == DateTimeFormatShort) ) + QLatin1Char(' ') + symbianTimeFormat());
-        case DateToStringShort:
+            return QString(symbianDateFormat( (type == DateTimeFormatShort || type == DateFormatMedium) ) + QLatin1Char(' ') + symbianTimeFormat());
+        case DateToStringFull:
         case DateToStringLong:
-             return symbianDateToString(in.toDate(), (type == DateToStringShort) );
-        case TimeToStringShort:
+        case DateToStringMedium:
+        case DateToStringShort:
+             return symbianDateToString(in.toDate(), (type == DateToStringShort || type == DateToStringMedium) );
+        case TimeToStringFull:
         case TimeToStringLong:
+        case TimeToStringMedium:
+        case TimeToStringShort:
              return symbianTimeToString(in.toTime());
-        case DateTimeToStringShort:
-        case DateTimeToStringLong: {
+        case DateTimeToStringFull:
+        case DateTimeToStringLong:
+        case DateTimeToStringMedium:
+        case DateTimeToStringShort: {
                 const QDateTime dt = in.toDateTime();
-                return QString(symbianDateToString(dt.date(), (type == DateTimeToStringShort) )
+                return QString(symbianDateToString(dt.date(), (type == DateTimeToStringShort || type == DateToStringMedium) )
                        + QLatin1Char(' ') + symbianTimeToString(dt.time()));
             }
         case MeasurementSystem:
@@ -910,10 +942,6 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
         case NegativeSign:
         case PositiveSign:
             break;
-        case AMText:
-            return qt_TDes2QString(TAmPmName(TAmPm(EAm)));
-        case PMText:
-            return qt_TDes2QString(TAmPmName(TAmPm(EPm)));
         case UILanguages:
             return QVariant(symbianUILanguages());
         default:

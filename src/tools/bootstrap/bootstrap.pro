@@ -2,7 +2,7 @@ TEMPLATE = lib
 TARGET = bootstrap
 CONFIG += staticlib
 
-CONFIG += console qtinc 
+CONFIG += console qtinc
 CONFIG -= qt
 build_all:!build_pass {
     CONFIG -= build_all
@@ -22,6 +22,7 @@ DEFINES += \
         QT_NO_QOBJECT \
         QT_NO_STL \
         QT_NO_SYSTEMLOCALE \
+        QT_NO_CALENDAR_SYSTEMS \
         QT_NO_TEXTSTREAM \
         QT_NO_THREAD \
         QT_NO_UNICODETABLES \

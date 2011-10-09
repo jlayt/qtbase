@@ -54,6 +54,7 @@ QT_MODULE(Core)
 
 class QDataStream;
 class QDate;
+class QDateCalculator;
 class QDateTime;
 class QTime;
 class QVariant;
@@ -81,30 +82,61 @@ public:
     enum QueryType {
         LanguageId, // uint
         CountryId, // uint
+        ScriptId, // uint
         DecimalPoint, // QString
         GroupSeparator, // QString
         ZeroDigit, // QString
+        PositiveSign, // QString
         NegativeSign, // QString
+        DateFormatFull, // QString
         DateFormatLong, // QString
+        DateFormatMedium, // QString
         DateFormatShort, // QString
+        TimeFormatFull, // QString
         TimeFormatLong, // QString
+        TimeFormatMedium, // QString
         TimeFormatShort, // QString
+        DateTimeFormatFull, // QString
+        DateTimeFormatLong, // QString
+        DateTimeFormatMedium, // QString
+        DateTimeFormatShort, // QString
         DayNameLong, // QString, in: int
         DayNameShort, // QString, in: int
+        DayNameNarrow, // QString, in: int
+        DayNameLongStandalone, // QString, in: int
+        DayNameShortStandalone, // QString, in: int
+        DayNameNarrowStandalone, // QString, in: int
         MonthNameLong, // QString, in: int
         MonthNameShort, // QString, in: int
+        MonthNameNarrow, // QString, in: int
+        MonthNameLongStandalone, // QString, in: int
+        MonthNameShortStandalone, // QString, in: int
+        MonthNameNarrowStandalone, // QString, in: int
+        QuarterNameLong, // QString, in: int
+        QuarterNameShort, // QString, in: int
+        QuarterNameNarrow, // QString, in: int
+        QuarterNameLongStandalone, // QString, in: int
+        QuarterNameShortStandalone, // QString, in: int
+        QuarterNameNarrowStandalone, // QString, in: int
+        DayPeriodNameLong, // QString in: QTime
+        DayPeriodNameShort, // QString in: QTime
+        DayPeriodNameNarrow, // QString in: QTime
+        DayPeriodNameLongStandalone, // QString in: QTime
+        DayPeriodNameShortStandalone, // QString in: QTime
+        DayPeriodNameNarrowStandalone, // QString in: QTime
+        DateToStringFull, // QString, in: QDate
         DateToStringLong, // QString, in: QDate
+        DateToStringMedium, // QString in: QDate
         DateToStringShort, // QString in: QDate
+        TimeToStringFull, // QString in: QTime
         TimeToStringLong, // QString in: QTime
+        TimeToStringMedium, // QString in: QTime
         TimeToStringShort, // QString in: QTime
-        DateTimeFormatLong, // QString
-        DateTimeFormatShort, // QString
+        DateTimeToStringFull, // QString in: QDateTime
         DateTimeToStringLong, // QString in: QDateTime
+        DateTimeToStringMedium, // QString in: QDateTime
         DateTimeToStringShort, // QString in: QDateTime
         MeasurementSystem, // uint
-        PositiveSign, // QString
-        AMText, // QString
-        PMText, // QString
         FirstDayOfWeek, // Qt::DayOfWeek
         Weekdays, // QList<Qt::DayOfWeek>
         CurrencySymbol, // QString in: CurrencyToStringArgument
@@ -112,7 +144,6 @@ public:
         UILanguages, // QStringList
         StringToStandardQuotation, // QString in: QStringRef to quote
         StringToAlternateQuotation, // QString in: QStringRef to quote
-        ScriptId, // uint
         ListToSeparatedString, // QString
         LocaleChanged, // system locale changed
         NativeLanguageName, // QString
@@ -658,9 +689,36 @@ public:
 
 // GENERATED PART ENDS HERE
 
-    enum MeasurementSystem { MetricSystem, ImperialSystem };
+    // CLDR format length attribute for date/time/number/currency
+    enum StringFormat {
+        FullFormat,
+        LongFormat,
+        MediumFormat,
+        ShortFormat
+    };
 
-    enum FormatType { LongFormat, ShortFormat, NarrowFormat };
+    // CLDR field width attribute
+    enum FieldFormat {
+        LongName,      // e.g. January
+        ShortName,     // e.g. Jan
+        NarrowName,    // e.g. J
+        LongNumber,    // e.g. 01
+        ShortNumber    // e.g. 1
+    };
+
+    // CLDR context attribute
+    enum FieldContext {
+        FormatContext,        // Use in a format
+        StandaloneContext     // Use standalone
+    };
+
+    // CLDR year type attribute
+    enum YearType {
+        StandardYear,
+        LeapYear
+    };
+
+    enum MeasurementSystem { MetricSystem, ImperialSystem };
 
     enum NumberOption {
         OmitGroupSeparator = 0x01,
@@ -709,19 +767,16 @@ public:
     QString toString(double i, char f = 'g', int prec = 6) const;
     inline QString toString(float i, char f = 'g', int prec = 6) const;
     QString toString(const QDate &date, const QString &formatStr) const;
-    QString toString(const QDate &date, FormatType format = LongFormat) const;
+    QString toString(const QDate &date, StringFormat format = FullFormat) const;
     QString toString(const QTime &time, const QString &formatStr) const;
-    QString toString(const QTime &time, FormatType format = LongFormat) const;
-    QString toString(const QDateTime &dateTime, FormatType format = LongFormat) const;
+    QString toString(const QTime &time, StringFormat format = FullFormat) const;
+    QString toString(const QDateTime &dateTime, StringFormat format = FullFormat) const;
     QString toString(const QDateTime &dateTime, const QString &format) const;
 
-    QString dateFormat(FormatType format = LongFormat) const;
-    QString timeFormat(FormatType format = LongFormat) const;
-    QString dateTimeFormat(FormatType format = LongFormat) const;
 #ifndef QT_NO_DATESTRING
-    QDate toDate(const QString &string, FormatType = LongFormat) const;
-    QTime toTime(const QString &string, FormatType = LongFormat) const;
-    QDateTime toDateTime(const QString &string, FormatType format = LongFormat) const;
+    QDate toDate(const QString &string, StringFormat = FullFormat) const;
+    QTime toTime(const QString &string, StringFormat = FullFormat) const;
+    QDateTime toDateTime(const QString &string, StringFormat format = FullFormat) const;
     QDate toDate(const QString &string, const QString &format) const;
     QTime toTime(const QString &string, const QString &format) const;
     QDateTime toDateTime(const QString &string, const QString &format) const;
@@ -737,16 +792,45 @@ public:
     QChar positiveSign() const;
     QChar exponential() const;
 
-    QString monthName(int, FormatType format = LongFormat) const;
-    QString standaloneMonthName(int, FormatType format = LongFormat) const;
-    QString dayName(int, FormatType format = LongFormat) const;
-    QString standaloneDayName(int, FormatType format = LongFormat) const;
+#ifndef QT_BOOTSTRAPPED
+    QDateCalculator calendar();
+#endif
+#ifndef QT_NO_CALENDAR_SYSTEMS
+    CalendarSystem calendarSystem() const;
+    QList<CalendarSystem> preferredCalendarSystems() const;
+    static QList<CalendarSystem> allCalendarSystems();
+    QString calendarSystemName(CalendarSystem calendar = QLocale::DefaultCalendar) const;
+#endif
+
+    QString monthName(int month,
+                      FieldFormat format = LongName,
+                      FieldContext context = FormatContext,
+                      YearType yearType = StandardYear,
+                      CalendarSystem calendar = DefaultCalendar) const;
+    QString dayName(int weekday,
+                    FieldFormat format = LongName,
+                    FieldContext context = FormatContext,
+                    CalendarSystem calendar = DefaultCalendar) const;
+    QString quarterName(int quarter,
+                        FieldFormat format = LongName,
+                        FieldContext context = FormatContext,
+                        CalendarSystem calendar = DefaultCalendar) const;
+    QString dayPeriodName(QTime time,
+                          FieldFormat format = LongName,
+                          FieldContext context = FormatContext,
+                          CalendarSystem calendar = DefaultCalendar) const;
+
+#ifdef QT4_COMPAT
+    QString amText() const {return dayPeriodName(QTime(0,0,0));}
+    QString pmText() const {return dayPeriodName(QTime(12,0,0));}
+#endif
+
+    QString dateFormat(StringFormat format = FullFormat, CalendarSystem calendar = DefaultCalendar) const;
+    QString timeFormat(StringFormat format = FullFormat, CalendarSystem calendar = DefaultCalendar) const;
+    QString dateTimeFormat(StringFormat format = LongFormat, CalendarSystem calendar = DefaultCalendar) const;
 
     Qt::DayOfWeek firstDayOfWeek() const;
     QList<Qt::DayOfWeek> weekdays() const;
-
-    QString amText() const;
-    QString pmText() const;
 
     MeasurementSystem measurementSystem() const;
 

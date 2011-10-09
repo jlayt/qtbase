@@ -592,8 +592,8 @@ int QDateTimeParser::sectionMaxSize(Section s, int count) const
             const QLocale l = locale();
             for (int i=1; i<=mcount; ++i) {
                 const QString str = (s == MonthSection
-                                     ? l.monthName(i, count == 4 ? QLocale::LongFormat : QLocale::ShortFormat)
-                                     : l.dayName(i, count == 4 ? QLocale::LongFormat : QLocale::ShortFormat));
+                                     ? l.monthName(i, count == 4 ? QLocale::LongName : QLocale::ShortName)
+                                     : l.dayName(i, count == 4 ? QLocale::LongName : QLocale::ShortName));
                 ret = qMax(str.size(), ret);
             }
             return ret;
@@ -1222,11 +1222,11 @@ int QDateTimeParser::findMonth(const QString &str1, int startMonth, int sectionI
             return -1;
         }
 
-        QLocale::FormatType type = sn.count == 3 ? QLocale::ShortFormat : QLocale::LongFormat;
+        QLocale::FieldFormat format = (sn.count == 3) ? QLocale::ShortName : QLocale::LongName;
         QLocale l = locale();
 
         for (int month=startMonth; month<=12; ++month) {
-            QString str2 = l.monthName(month, type).toLower();
+            QString str2 = l.monthName(month, format).toLower();
 
             if (str1.startsWith(str2)) {
                 if (used) {
@@ -1234,7 +1234,7 @@ int QDateTimeParser::findMonth(const QString &str1, int startMonth, int sectionI
                     *used = str2.size();
                 }
                 if (usedMonth)
-                    *usedMonth = l.monthName(month, type);
+                    *usedMonth = l.monthName(month, format);
 
                 return month;
             }
@@ -1259,12 +1259,12 @@ int QDateTimeParser::findMonth(const QString &str1, int startMonth, int sectionI
                 if (used)
                     *used = limit;
                 if (usedMonth)
-                    *usedMonth = l.monthName(month, type);
+                    *usedMonth = l.monthName(month, format);
                 return month;
             }
         }
         if (usedMonth && bestMatch != -1)
-            *usedMonth = l.monthName(bestMatch, type);
+            *usedMonth = l.monthName(bestMatch, format);
     }
     if (used) {
         QDTPDEBUG << "used is set to" << bestCount;
@@ -1285,7 +1285,7 @@ int QDateTimeParser::findDay(const QString &str1, int startDay, int sectionIndex
         }
         const QLocale l = locale();
         for (int day=startDay; day<=7; ++day) {
-            const QString str2 = l.dayName(day, sn.count == 4 ? QLocale::LongFormat : QLocale::ShortFormat);
+            const QString str2 = l.dayName(day, (sn.count == 4) ? QLocale::LongName : QLocale::ShortName);
 
             if (str1.startsWith(str2.toLower())) {
                 if (used)
@@ -1321,7 +1321,7 @@ int QDateTimeParser::findDay(const QString &str1, int startDay, int sectionIndex
             }
         }
         if (usedDay && bestMatch != -1) {
-            *usedDay = l.dayName(bestMatch, sn.count == 4 ? QLocale::LongFormat : QLocale::ShortFormat);
+            *usedDay = l.dayName(bestMatch, (sn.count == 4) ? QLocale::LongName : QLocale::ShortName);
         }
     }
     if (used)
