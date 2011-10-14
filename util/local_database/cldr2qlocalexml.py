@@ -46,7 +46,6 @@ import sys
 import enumdata
 import xpathlite
 from  xpathlite import DraftResolution
-from dateconverter import convert_date
 import re
 
 findEntry = xpathlite.findEntry
@@ -257,16 +256,16 @@ def generateLocaleInfo(path):
         return findEntry(path, "dates/calendars/calendar[" + calendar + "]/dayPeriods/dayPeriodContext[" + context + "]/dayPeriodWidth[" + width + "]/dayPeriod[" + period + "]", draft)
 
     def getDateFormat(path, calendar, length):
-        return convert_date(findEntry(path, "dates/calendars/calendar[" + calendar + "]/dateFormats/dateFormatLength[" + length + "]/dateFormat/pattern"))
+        return findEntry(path, "dates/calendars/calendar[" + calendar + "]/dateFormats/dateFormatLength[" + length + "]/dateFormat/pattern")
 
     def getTimeFormat(path, calendar, length):
-        return convert_date(findEntry(path, "dates/calendars/calendar[" + calendar + "]/timeFormats/timeFormatLength[" + length + "]/timeFormat/pattern"))
+        return findEntry(path, "dates/calendars/calendar[" + calendar + "]/timeFormats/timeFormatLength[" + length + "]/timeFormat/pattern")
 
     def getDateTimeFormat(path, calendar, length):
         try:
-            return parse_list_pattern_part_format(convert_date(findEntry(path, "dates/calendars/calendar["
-                                                               + calendar + "]/dateTimeFormats/dateTimeFormatLength["
-                                                               + length + "]/dateTimeFormat/pattern")))
+            return parse_list_pattern_part_format(findEntry(path, "dates/calendars/calendar["
+                                                            + calendar + "]/dateTimeFormats/dateTimeFormatLength["
+                                                            + length + "]/dateTimeFormat/pattern"))
         except:
             return "%1 %2"
 

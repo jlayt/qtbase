@@ -45,12 +45,14 @@
 #include "qstring.h"
 #include "qlocale.h"
 #include "qdatetime.h"
+#include "qdatecalculator.h"
 #include "qdebug.h"
 
 QT_BEGIN_NAMESPACE
 
 #ifndef QT_BOOTSTRAPPED
 
+#ifdef QT4_COMPAT
 static bool timeFormatContainsAP(const QString &format)
 {
     int i = 0;
@@ -67,6 +69,7 @@ static bool timeFormatContainsAP(const QString &format)
     }
     return false;
 }
+#endif
 
 QString qt_readEscapedFormatString(const QString &format, int *idx)
 {
@@ -114,9 +117,9 @@ int qt_repeatCount(const QString &s, int i)
 static QString zeroPad(long value, int width)
 {
     if ( value < 0 )
-        return QString::number(abs(value)).rightJustified(width, QLatin1Char('0'), true).prepend(QLatin1Char('-'));
+        return QString::number(abs(value)).rightJustified(width, QLatin1Char('0')).prepend(QLatin1Char('-'));
     else
-        return QString::number(value).rightJustified(width, QLatin1Char('0'), true);
+        return QString::number(value).rightJustified(width, QLatin1Char('0'));
 }
 
 static QString timeZone()
@@ -152,8 +155,10 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                                              const QLocale *q)
 {
     Q_ASSERT(date || time);
-    if ((date && !date->isValid()) || (time && !time->isValid()))
+    if ((date && !q->calendar().isValid(*date)) || (time && !time->isValid()))
         return QString();
+
+#ifdef QT4_COMPAT
     const bool format_am_pm = time && timeFormatContainsAP(format);
 
     enum { AM, PM } am_pm = AM;
@@ -171,6 +176,7 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
             hour12 -= 12;
         }
     }
+#endif
 
     QString result;
 
@@ -186,13 +192,15 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
         bool used = false;
         if (date) {
             switch (c.unicode()) {
-            case 'y':
+            // Year 1..n
+            case 'y': {
                 used = true;
+#ifdef QT4_COMPAT
+                // Year 2,4
                 if (repeat >= 4)
                     repeat = 4;
                 else if (repeat >= 2)
                     repeat = 2;
-
                 switch (repeat) {
                 case 4:
                     result.append(zeroPad(date->year(), 4));
@@ -206,56 +214,256 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                     break;
                 }
                 break;
+#else
+                int year = q->calendar().year(*date);
+                if (repeat == 2)
+                    year = year % 100;
+                result.append(zeroPad(year, repeat));
+                break;
+#endif
+            }
 
-            case 'M':
+            // Week Year 1..n
+            case 'Y': {
+                used = true;
+                int weekYear = 0;
+                q->calendar().weekNumber(*date, &weekYear);
+                if (repeat == 2)
+                    weekYear = weekYear % 100;
+                result.append(zeroPad(weekYear, repeat));
+                break;
+            }
+
+            // Quarter 1..4
+            case 'Q': {
                 used = true;
                 repeat = qMin(repeat, 4);
+                int quarter = q->calendar().quarter(*date);
                 switch (repeat) {
                 case 1:
-                    result.append(QString::number(date->month()));
+                    result.append(QString::number(quarter));
                     break;
                 case 2:
-                    result.append(zeroPad(date->month(), 2));
+                    result.append(zeroPad(quarter, repeat));
                     break;
                 case 3:
-                    result.append(q->monthName(date->month(), QLocale::ShortName));
+                    result.append(q->quarterName(quarter, QLocale::ShortName));
                     break;
                 case 4:
-                    result.append(q->monthName(date->month(), QLocale::LongName));
+                    result.append(q->quarterName(quarter, QLocale::LongName));
                     break;
                 }
                 break;
+            }
 
-            case 'd':
+            // Quarter Standalone 1..4
+            case 'q': {
                 used = true;
                 repeat = qMin(repeat, 4);
+                int quarter = q->calendar().quarter(*date);
                 switch (repeat) {
                 case 1:
-                    result.append(QString::number(date->day()));
+                    result.append(QString::number(quarter));
                     break;
                 case 2:
-                    result.append(zeroPad(date->day(), 2));
+                    result.append(zeroPad(quarter, repeat));
                     break;
                 case 3:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::ShortName));
+                    result.append(q->quarterName(quarter, QLocale::ShortName, QLocale::StandaloneContext));
                     break;
                 case 4:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::LongName));
+                    result.append(q->quarterName(quarter, QLocale::LongName, QLocale::StandaloneContext));
                     break;
                 }
                 break;
+            }
+
+            // Month 1..5
+            case 'M': {
+                used = true;
+                repeat = qMin(repeat, 5);
+                int month = q->calendar().month(*date);
+                switch (repeat) {
+                case 1:
+                    result.append(QString::number(month));
+                    break;
+                case 2:
+                    result.append(zeroPad(month, repeat));
+                    break;
+                case 3:
+                    result.append(q->monthName(month, QLocale::ShortName));
+                    break;
+                case 4:
+                    result.append(q->monthName(month, QLocale::LongName));
+                    break;
+                case 5:
+                    result.append(q->monthName(month, QLocale::NarrowName));
+                    break;
+                }
+                break;
+            }
+
+            // Month Standalone 1..5
+            case 'L': {
+                used = true;
+                repeat = qMin(repeat, 5);
+                int month = q->calendar().month(*date);
+                switch (repeat) {
+                case 1:
+                    result.append(QString::number(month));
+                    break;
+                case 2:
+                    result.append(zeroPad(month, repeat));
+                    break;
+                case 3:
+                    result.append(q->monthName(month, QLocale::ShortName, QLocale::StandaloneContext));
+                    break;
+                case 4:
+                    result.append(q->monthName(month, QLocale::LongName, QLocale::StandaloneContext));
+                    break;
+                case 5:
+                    result.append(q->monthName(month, QLocale::NarrowName, QLocale::StandaloneContext));
+                    break;
+                }
+                break;
+            }
+
+            // Week 1..2
+            case 'w':
+                used = true;
+                repeat = qMin(repeat, 2);
+                result.append(zeroPad(q->calendar().weekNumber(*date, 0), repeat));
+                break;
+
+            // Day 1..2
+            case 'd': {
+                used = true;
+#ifdef QT4_COMPAT
+                repeat = qMin(repeat, 4);
+#else
+                repeat = qMin(repeat, 2);
+#endif
+                int day = q->calendar().day(*date);
+                switch (repeat) {
+                case 1:
+                    result.append(QString::number(day));
+                    break;
+                case 2:
+                    result.append(zeroPad(day, repeat));
+                    break;
+#ifdef QT4_COMPAT
+                case 3:
+                    result.append(q->dayName(day, QLocale::ShortName));
+                    break;
+                case 4:
+                    result.append(q->dayName(day, QLocale::LongName));
+                    break;
+#endif
+                }
+                break;
+            }
+
+            // Day of Year 1..3
+            case 'D':
+                used = true;
+                repeat = qMin(repeat, 3);
+                result.append(zeroPad(q->calendar().dayOfYear(*date), repeat));
+                break;
+
+            // Day of Week 1..5
+            case 'E': {
+                used = true;
+                repeat = qMin(repeat, 5);
+                int dayOfWeek = q->calendar().dayOfWeek(*date);
+                switch (repeat) {
+                case 1:
+                case 2:
+                case 3:
+                    result.append(q->dayName(dayOfWeek, QLocale::ShortName));
+                    break;
+                case 4:
+                    result.append(q->dayName(dayOfWeek, QLocale::LongName));
+                    break;
+                case 5:
+                    result.append(q->dayName(dayOfWeek, QLocale::NarrowName));
+                    break;
+                }
+                break;
+            }
+
+            // Local Day of Week 1..5
+            case 'e': {
+                used = true;
+                repeat = qMin(repeat, 5);
+                int dayOfWeek = q->calendar().dayOfWeek(*date);
+                switch (repeat) {
+                case 1:
+                    //TODO This may need localising based on firstDayOfWeek()???
+                    result.append(QString::number(dayOfWeek));
+                    break;
+                case 2:
+                    //TODO This may need localising based on firstDayOfWeek()???
+                    result.append(zeroPad(dayOfWeek, repeat));
+                    break;
+                case 3:
+                    result.append(q->dayName(dayOfWeek, QLocale::ShortName));
+                    break;
+                case 4:
+                    result.append(q->dayName(dayOfWeek, QLocale::LongName));
+                    break;
+                case 5:
+                    result.append(q->dayName(dayOfWeek, QLocale::NarrowName));
+                    break;
+                }
+                break;
+            }
+
+            // Local Day of Week Standalone 1..5
+            case 'c': {
+                used = true;
+                repeat = qMin(repeat, 5);
+                int dayOfWeek = q->calendar().dayOfWeek(*date);
+                switch (repeat) {
+                case 1:
+                    result.append(QString::number(dayOfWeek));
+                    break;
+                case 2:
+                    //TODO This may need localising based on firstDayOfWeek()???
+                    result.append(zeroPad(dayOfWeek, repeat));
+                    break;
+                case 3:
+                    result.append(q->dayName(dayOfWeek, QLocale::ShortName, QLocale::StandaloneContext));
+                    break;
+                case 4:
+                    result.append(q->dayName(dayOfWeek, QLocale::LongName, QLocale::StandaloneContext));
+                    break;
+                case 5:
+                    result.append(q->dayName(dayOfWeek, QLocale::NarrowName, QLocale::StandaloneContext));
+                    break;
+                }
+                break;
+            }
 
             default:
                 break;
             }
         }
+
         if (!used && time) {
             switch (c.unicode()) {
+            // Hour 1 to 12 1..2
             case 'h': {
                 used = true;
                 repeat = qMin(repeat, 2);
-                const int hour = format_am_pm ? hour12 : time->hour();
-
+#ifdef QT4_COMPAT
+                int hour = format_am_pm ? hour12 : time->hour();
+#else
+                int hour = time->hour();
+                if (hour > 12)
+                    hour -= 12;
+                else if (hour == 0)
+                    hour = 12;
+#endif
                 switch (repeat) {
                 case 1:
                     result.append(QString::number(hour));
@@ -266,7 +474,9 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                 }
                 break;
             }
-            case 'H':
+
+            // Hour 0 to 23 1..2
+            case 'H': {
                 used = true;
                 repeat = qMin(repeat, 2);
                 switch (repeat) {
@@ -278,8 +488,44 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                     break;
                 }
                 break;
+            }
 
-            case 'm':
+            // Hour 0 to 11 1..2
+            case 'K': {
+                used = true;
+                repeat = qMin(repeat, 2);
+                int hour = time->hour();
+                if (hour > 11)
+                    hour = hour - 12;
+                switch (repeat) {
+                case 1:
+                    result.append(QString::number(hour));
+                    break;
+                case 2:
+                    result.append(zeroPad(hour, 2));
+                    break;
+                }
+                break;
+            }
+
+            // Hour 1 to 24 1..2
+            case 'k': {
+                used = true;
+                repeat = qMin(repeat, 2);
+                int hour = time->hour() + 1;
+                switch (repeat) {
+                case 1:
+                    result.append(QString::number(hour));
+                    break;
+                case 2:
+                    result.append(zeroPad(hour, 2));
+                    break;
+                }
+                break;
+            }
+
+            // Minute 1..2
+            case 'm': {
                 used = true;
                 repeat = qMin(repeat, 2);
                 switch (repeat) {
@@ -291,8 +537,10 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                     break;
                 }
                 break;
+            }
 
-            case 's':
+            // Second 1..2
+            case 's': {
                 used = true;
                 repeat = qMin(repeat, 2);
                 switch (repeat) {
@@ -304,7 +552,23 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                     break;
                 }
                 break;
+            }
 
+            // Fractional seconds 1..n
+            case 'S': {
+                used = true;
+                QString frac = zeroPad(time->msec(), 3);
+                if (repeat > 3)
+                    frac = frac.leftJustified(repeat, QLatin1Char('0'), true);
+                else if (repeat < 3)
+                    frac = frac.left(repeat);
+                //TODO Find if leading 0's get stripped
+                result.append(frac);
+                break;
+            }
+
+#ifdef QT4_COMPAT
+            // AM/PM Lowercase 1..2 a or ap
             case 'a':
                 used = true;
                 if (i + 1 < format.length() && format.at(i + 1).unicode() == 'p') {
@@ -312,9 +576,10 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                 } else {
                     repeat = 1;
                 }
-                result.append(q->dayPeriodName((am_pm == AM ? QTime(0,0,0) : QTime(12,0,0))).toLower());
+                result.append(q->dayPeriodName(time).toLower());
                 break;
 
+            // AM/PM Uppercase 1..2 A or AP
             case 'A':
                 used = true;
                 if (i + 1 < format.length() && format.at(i + 1).unicode() == 'P') {
@@ -322,10 +587,22 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                 } else {
                     repeat = 1;
                 }
-                result.append(q->dayPeriodName((am_pm == AM ? QTime(0,0,0) : QTime(12,0,0))).toUpper());
+                result.append(q->dayPeriodName(time).toUpper());
+                break;
+#else
+            // AM/PM 1
+            case 'a':
+                used = true;
+                repeat = qMin(repeat, 1);
+                //TODO Confirm is LongName not ShortName
+                result.append(q->dayPeriodName(*time));
                 break;
 
-            case 'z':
+#endif
+
+#ifdef QT4_COMPAT
+            // Milliseconds 1..3, replaced by SSS
+            case 'z': {
                 used = true;
                 if (repeat >= 3) {
                     repeat = 3;
@@ -341,12 +618,46 @@ QString QDateTimeFormatter::dateTimeToString(const QString &format,
                     break;
                 }
                 break;
+            }
+#else
+            // Time Zone 1..4
+            //TODO Proper support to come with new QTimeZone
+            case 'z':
+                used = true;
+                repeat = qMin(repeat, 4);
+                result.append(timeZone());
+                break;
+#endif
 
+            // Time Zone 1..4
+            //TODO Proper support to come with new QTimeZone
+            case 'Z':
+                used = true;
+                repeat = qMin(repeat, 4);
+                result.append(timeZone());
+                break;
+
+            // Time Zone 1,2,4
+            //TODO Proper support to come with new QTimeZone
+            case 'v':
+            case 'V':
+                used = true;
+                if (repeat < 4)
+                    repeat = qMin(repeat, 1);
+                else
+                    repeat = 4;
+                result.append(timeZone());
+                break;
+
+#ifdef QT4_COMPAT
+            // Time Zone 1
             case 't':
                 used = true;
                 repeat = 1;
                 result.append(timeZone());
                 break;
+#endif
+
             default:
                 break;
             }

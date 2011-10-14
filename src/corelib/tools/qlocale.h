@@ -793,7 +793,7 @@ public:
     QChar exponential() const;
 
 #ifndef QT_BOOTSTRAPPED
-    QDateCalculator calendar();
+    QDateCalculator calendar() const;
 #endif
 #ifndef QT_NO_CALENDAR_SYSTEMS
     CalendarSystem calendarSystem() const;

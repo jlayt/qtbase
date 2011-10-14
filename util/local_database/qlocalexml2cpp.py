@@ -46,6 +46,7 @@ import tempfile
 import datetime
 import xml.dom.minidom
 import enumdata
+from dateconverter import convert_date
 
 class Error:
     def __init__(self, msg):
@@ -192,41 +193,6 @@ def countryNameToId(name, country_map):
             return key
     return -1
 
-def convertFormat(format):
-    result = ""
-    i = 0
-    while i < len(format):
-        if format[i] == "'":
-            result += "'"
-            i += 1
-            while i < len(format) and format[i] != "'":
-                result += format[i]
-                i += 1
-            if i < len(format):
-                result += "'"
-                i += 1
-        else:
-            s = format[i:]
-            if s.startswith("EEEE"):
-                result += "dddd"
-                i += 4
-            elif s.startswith("EEE"):
-                result += "ddd"
-                i += 3
-            elif s.startswith("a"):
-                result += "AP"
-                i += 1
-            elif s.startswith("z"):
-                result += "t"
-                i += 1
-            elif s.startswith("v"):
-                i += 1
-            else:
-                result += format[i]
-                i += 1
-
-    return result
-
 def convertToQtDayOfWeek(firstDay):
     qtDayOfWeek = {"mon":1, "tue":2, "wed":3, "thu":4, "fri":5, "sat":6, "sun":7}
     return qtDayOfWeek[firstDay]
@@ -353,18 +319,18 @@ class Locale:
             self.pmLongStandalone[calendarType]   = eltText(firstChildElt(calendarElt, "pmLongStandalone"))
             self.pmShortStandalone[calendarType]  = eltText(firstChildElt(calendarElt, "pmShortStandalone"))
             self.pmNarrowStandalone[calendarType] = eltText(firstChildElt(calendarElt, "pmNarrowStandalone"))
-            self.dateFormatFull[calendarType]   = convertFormat(eltText(firstChildElt(calendarElt, "dateFormatFull")))
-            self.dateFormatLong[calendarType]   = convertFormat(eltText(firstChildElt(calendarElt, "dateFormatLong")))
-            self.dateFormatMedium[calendarType] = convertFormat(eltText(firstChildElt(calendarElt, "dateFormatMedium")))
-            self.dateFormatShort[calendarType]  = convertFormat(eltText(firstChildElt(calendarElt, "dateFormatShort")))
-            self.timeFormatFull[calendarType]   = convertFormat(eltText(firstChildElt(calendarElt, "timeFormatFull")))
-            self.timeFormatLong[calendarType]   = convertFormat(eltText(firstChildElt(calendarElt, "timeFormatLong")))
-            self.timeFormatMedium[calendarType] = convertFormat(eltText(firstChildElt(calendarElt, "timeFormatMedium")))
-            self.timeFormatShort[calendarType]  = convertFormat(eltText(firstChildElt(calendarElt, "timeFormatShort")))
-            self.dateTimeFormatFull[calendarType]   = convertFormat(eltText(firstChildElt(calendarElt, "dateTimeFormatFull")))
-            self.dateTimeFormatLong[calendarType]   = convertFormat(eltText(firstChildElt(calendarElt, "dateTimeFormatLong")))
-            self.dateTimeFormatMedium[calendarType] = convertFormat(eltText(firstChildElt(calendarElt, "dateTimeFormatMedium")))
-            self.dateTimeFormatShort[calendarType]  = convertFormat(eltText(firstChildElt(calendarElt, "dateTimeFormatShort")))
+            self.dateFormatFull[calendarType]   = convert_date(eltText(firstChildElt(calendarElt, "dateFormatFull")))
+            self.dateFormatLong[calendarType]   = convert_date(eltText(firstChildElt(calendarElt, "dateFormatLong")))
+            self.dateFormatMedium[calendarType] = convert_date(eltText(firstChildElt(calendarElt, "dateFormatMedium")))
+            self.dateFormatShort[calendarType]  = convert_date(eltText(firstChildElt(calendarElt, "dateFormatShort")))
+            self.timeFormatFull[calendarType]   = convert_date(eltText(firstChildElt(calendarElt, "timeFormatFull")))
+            self.timeFormatLong[calendarType]   = convert_date(eltText(firstChildElt(calendarElt, "timeFormatLong")))
+            self.timeFormatMedium[calendarType] = convert_date(eltText(firstChildElt(calendarElt, "timeFormatMedium")))
+            self.timeFormatShort[calendarType]  = convert_date(eltText(firstChildElt(calendarElt, "timeFormatShort")))
+            self.dateTimeFormatFull[calendarType]   = convert_date(eltText(firstChildElt(calendarElt, "dateTimeFormatFull")))
+            self.dateTimeFormatLong[calendarType]   = convert_date(eltText(firstChildElt(calendarElt, "dateTimeFormatLong")))
+            self.dateTimeFormatMedium[calendarType] = convert_date(eltText(firstChildElt(calendarElt, "dateTimeFormatMedium")))
+            self.dateTimeFormatShort[calendarType]  = convert_date(eltText(firstChildElt(calendarElt, "dateTimeFormatShort")))
             calendarElt = nextSiblingElt(calendarElt, "calendar")
 
 def loadLocaleMap(doc, language_map, script_map, country_map):

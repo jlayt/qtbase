@@ -186,10 +186,7 @@ static QString macToQtFormat(const QString &sys_fmt)
 
         switch (c.unicode()) {
             case 'G': // Qt doesn't support these :(
-            case 'Y':
-            case 'D':
             case 'F':
-            case 'w':
             case 'W':
             case 'g':
                 break;
@@ -200,38 +197,14 @@ static QString macToQtFormat(const QString &sys_fmt)
                 else
                     result += QLatin1String("yyyy");
                 break;
-            case 'S': // fractional second
-                if (repeat < 3)
-                    result += QLatin1Char('z');
-                else
-                    result += QLatin1String("zzz");
-                break;
-            case 'E':
-                if (repeat <= 3)
-                    result += QLatin1String("ddd");
-                else
-                    result += QLatin1String("dddd");
-                break;
-            case 'e':
-                if (repeat >= 2)
-                    result += QLatin1String("dd");
-                else
-                    result += QLatin1Char('d');
-                break;
+#ifdef QT4_COMPAT
             case 'a':
                 result += QLatin1String("AP");
                 break;
-            case 'k':
-                result += QString(repeat, QLatin1Char('H'));
-                break;
-            case 'K':
-                result += QString(repeat, QLatin1Char('h'));
-                break;
             case 'z':
-            case 'Z':
-            case 'v':
                 result += QLatin1Char('t');
                 break;
+#endif
             default:
                 result += QString(repeat, c);
                 break;

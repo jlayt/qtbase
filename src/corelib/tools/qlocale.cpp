@@ -392,6 +392,44 @@ static const QLocalePrivate *findLocale(const QString &name)
 static const QLocalePrivate *default_lp = 0;
 static uint default_number_options = 0;
 
+#ifdef QT4_COMPAT
+static QString cldrToQt4Format(const QString &sys_fmt)
+{
+    QString result;
+    int i = 0;
+
+    while (i < sys_fmt.size()) {
+        if (sys_fmt.at(i).unicode() == '\'') {
+            QString text = qt_readEscapedFormatString(sys_fmt, &i);
+            if (text == QLatin1String("'"))
+                result += QLatin1String("''");
+            else
+                result += QLatin1Char('\'') + text + QLatin1Char('\'');
+            continue;
+        }
+
+        QChar c = sys_fmt.at(i);
+        int repeat = qt_repeatCount(sys_fmt, i);
+
+        switch (c.unicode()) {
+            case 'a':
+                result += QLatin1String("AP");
+                break;
+            case 'z':
+                result += QLatin1Char('t');
+                break;
+            default:
+                result += QString(repeat, c);
+                break;
+        }
+
+        i += repeat;
+    }
+
+    return result;
+}
+#endif
+
 #ifndef QT_NO_SYSTEMLOCALE
 
 
@@ -1448,22 +1486,32 @@ QString QLocale::dateFormat(StringFormat format, CalendarSystem calendar) const
 {
 #ifndef QT_NO_CALENDAR_SYSTEMS
     if (calendar != DefaultCalendar && calendar != calendarSystem()) {
+        QString pattern;
         switch (format) {
         case FullFormat:
-            return getCalendarData(date_format_data, QLocalePrivate::DateFormatFull,
-                                   calendar, d()->m_calendar_data_index);
+            pattern = getCalendarData(date_format_data, QLocalePrivate::DateFormatFull,
+                                      calendar, d()->m_calendar_data_index);
+            break;
         case LongFormat:
-            return getCalendarData(date_format_data, QLocalePrivate::DateFormatLong,
-                                   calendar, d()->m_calendar_data_index);
+            pattern = getCalendarData(date_format_data, QLocalePrivate::DateFormatLong,
+                                      calendar, d()->m_calendar_data_index);
+            break;
         case MediumFormat:
-            return getCalendarData(date_format_data, QLocalePrivate::DateFormatMedium,
-                                   calendar, d()->m_calendar_data_index);
+            pattern = getCalendarData(date_format_data, QLocalePrivate::DateFormatMedium,
+                                      calendar, d()->m_calendar_data_index);
+            break;
         case ShortFormat:
-            return getCalendarData(date_format_data, QLocalePrivate::DateFormatShort,
-                                   calendar, d()->m_calendar_data_index);
+            pattern = getCalendarData(date_format_data, QLocalePrivate::DateFormatShort,
+                                      calendar, d()->m_calendar_data_index);
+            break;
         default:
-            return QString();
+            break;
         }
+#ifdef QT4_compat
+        return cldrToQt4Format(pattern);
+#else
+        return pattern;
+#endif
     }
 #else
     Q_UNUSED(calendar);
@@ -1512,7 +1560,11 @@ QString QLocale::dateFormat(StringFormat format, CalendarSystem calendar) const
         size = d()->m_date_format_short_size;
         break;
     }
+#ifdef QT4_compat
+    return cldrToQt4Format(getLocaleData(date_format_data + idx, size));
+#else
     return getLocaleData(date_format_data + idx, size);
+#endif
 }
 
 /*!
@@ -1530,22 +1582,32 @@ QString QLocale::timeFormat(StringFormat format, CalendarSystem calendar) const
 {
 #ifndef QT_NO_CALENDAR_SYSTEMS
     if (calendar != DefaultCalendar && calendar != calendarSystem()) {
+        QString pattern;
         switch (format) {
         case FullFormat:
-            return getCalendarData(time_format_data, QLocalePrivate::TimeFormatFull,
-                                   calendar, d()->m_calendar_data_index);
+            pattern = getCalendarData(time_format_data, QLocalePrivate::TimeFormatFull,
+                                      calendar, d()->m_calendar_data_index);
+            break;
         case LongFormat:
-            return getCalendarData(time_format_data, QLocalePrivate::TimeFormatLong,
-                                   calendar, d()->m_calendar_data_index);
+            pattern = getCalendarData(time_format_data, QLocalePrivate::TimeFormatLong,
+                                      calendar, d()->m_calendar_data_index);
+            break;
         case MediumFormat:
-            return getCalendarData(time_format_data, QLocalePrivate::TimeFormatMedium,
-                                   calendar, d()->m_calendar_data_index);
+            pattern = getCalendarData(time_format_data, QLocalePrivate::TimeFormatMedium,
+                                      calendar, d()->m_calendar_data_index);
+            break;
         case ShortFormat:
-            return getCalendarData(time_format_data, QLocalePrivate::TimeFormatShort,
-                                   calendar, d()->m_calendar_data_index);
+            pattern = getCalendarData(time_format_data, QLocalePrivate::TimeFormatShort,
+                                      calendar, d()->m_calendar_data_index);
+            break;
         default:
-            return QString();
+            break;
         }
+#ifdef QT4_compat
+        return cldrToQt4Format(pattern);
+#else
+        return pattern;
+#endif
     }
 #else
     Q_UNUSED(calendar);
@@ -1594,7 +1656,11 @@ QString QLocale::timeFormat(StringFormat format, CalendarSystem calendar) const
         size = d()->m_time_format_short_size;
         break;
     }
+#ifdef QT4_compat
+    return cldrToQt4Format(getLocaleData(time_format_data + idx, size));
+#else
     return getLocaleData(time_format_data + idx, size);
+#endif
 }
 
 /*!
@@ -2041,7 +2107,7 @@ QList<QLocale::Country> QLocale::countriesForLanguage(Language language)
 }
 
 #ifndef QT_BOOTSTRAPPED
-QDateCalculator QLocale::calendar()
+QDateCalculator QLocale::calendar() const
 {
     //TODO Better way, perhaps member?
     QDateCalculator calc;

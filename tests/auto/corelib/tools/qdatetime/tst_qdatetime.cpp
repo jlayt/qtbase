@@ -127,7 +127,6 @@ private slots:
 
     void getDate();
 
-    void fewDigitsInYear() const;
     void printNegativeYear() const;
     void roundtripGermanLocale() const;
     void utcOffsetLessThan() const;
@@ -1188,37 +1187,6 @@ void tst_QDateTime::toString_strformat_data()
     QTest::addColumn<QString>("str");
 
     QTest::newRow( "datetime0" ) << QDateTime() << QString("dd-MM-yyyy hh:mm:ss") << QString();
-    QTest::newRow( "datetime1" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("dd-'mmddyy'MM-yyyy hh:mm:ss.zzz")
-                                 << QString("31-mmddyy12-1999 23:59:59.999");
-    QTest::newRow( "datetime2" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("dd-'apAP'MM-yyyy hh:mm:ss.zzz")
-                                 << QString("31-apAP12-1999 23:59:59.999");
-    QTest::newRow( "datetime3" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("Apdd-MM-yyyy hh:mm:ss.zzz")
-                                 << QString("PMp31-12-1999 11:59:59.999");
-    QTest::newRow( "datetime4" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("'ap'apdd-MM-yyyy 'AP'hh:mm:ss.zzz")
-                                 << QString("appm31-12-1999 AP11:59:59.999");
-    QTest::newRow( "datetime5" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("'''") << QString("'");
-    QTest::newRow( "datetime6" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("'ap") << QString("ap");
-    QTest::newRow( "datetime7" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("' ' 'hh' hh") << QString("  hh 23");
-    QTest::newRow( "datetime8" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("d'foobar'") << QString("31foobar");
-    QTest::newRow( "datetime9" ) << QDateTime(QDate(1999, 12, 31), QTime(3, 59, 59, 999))
-                                 << QString("hhhhh") << QString("03033");
-    QTest::newRow( "datetime10" ) << QDateTime(QDate(1999, 12, 31), QTime(3, 59, 59, 999))
-                                 << QString("hhhhhaA") << QString("03033amAM");
-    QTest::newRow( "datetime11" ) << QDateTime(QDate(1999, 12, 31), QTime(23, 59, 59, 999))
-                                 << QString("HHHhhhAaAPap") << QString("23231111PMpmPMpm");
-    QTest::newRow( "datetime12" ) << QDateTime(QDate(1999, 12, 31), QTime(3, 59, 59, 999))
-                                 << QString("HHHhhhAaAPap") << QString("033033AMamAMam");
-    QTest::newRow( "datetime13" ) << QDateTime(QDate(1974, 12, 1), QTime(14, 14, 20))
-                                 << QString("hh''mm''ss dd''MM''yyyy")
-                                 << QString("14'14'20 01'12'1974");
 }
 
 void tst_QDateTime::toString_strformat()
@@ -1658,21 +1626,6 @@ void tst_QDateTime::getDate()
     QVERIFY(date.month() == m);
     QVERIFY(date.day() == d);
     }
-}
-
-void tst_QDateTime::fewDigitsInYear() const
-{
-    const QDateTime three(QDate(300, 10, 11), QTime());
-    QCOMPARE(three.toString(QLatin1String("yyyy-MM-dd")), QString::fromLatin1("0300-10-11"));
-
-    const QDateTime two(QDate(20, 10, 11), QTime());
-    QCOMPARE(two.toString(QLatin1String("yyyy-MM-dd")), QString::fromLatin1("0020-10-11"));
-
-    const QDateTime yyTwo(QDate(30, 10, 11), QTime());
-    QCOMPARE(yyTwo.toString(QLatin1String("yy-MM-dd")), QString::fromLatin1("30-10-11"));
-
-    const QDateTime yyOne(QDate(4, 10, 11), QTime());
-    QCOMPARE(yyOne.toString(QLatin1String("yy-MM-dd")), QString::fromLatin1("04-10-11"));
 }
 
 void tst_QDateTime::printNegativeYear() const
