@@ -555,8 +555,12 @@ void tst_QTime::fromStringFormat_data()
     QTest::addColumn<QString>("format");
     QTest::addColumn<QTime>("t");
 
+#ifdef QT4_COMPAT
     QTest::newRow( "data0" ) << QString("02:23PM") << QString("hh:mmAP") << QTime(14,23,0,0);
     QTest::newRow( "data1" ) << QString("02:23pm") << QString("hh:mmap") << QTime(14,23,0,0);
+#else
+    QTest::newRow( "data0" ) << QString("02:23PM") << QString("hh:mma") << QTime(14,23,0,0);
+#endif
 }
 
 void tst_QTime::fromStringFormat()
