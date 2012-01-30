@@ -788,7 +788,33 @@ public:
         ImperialSystem = ImperialUSSystem // Qt 4 compatibility
     };
 
+    enum CalendarSystem {
+        DefaultCalendar = 0,
+        GregorianCalendar = 1,
+        ChineseCalendar = 2,
+        CopticCalendar = 3,
+        EthiopicCalendar = 4,
+        EthiopicAmeteAlemCalendar = 5,
+        HebrewCalendar = 6,
+        IndianNationalCalendar = 7,
+        IslamicCalendar = 8,
+        IslamicCivilCalendar = 9,
+        ISO8601Calendar = 10,
+        JapaneseCalendar = 11,
+        JulianCalendar = 12,
+        PersianCalendar = 13,
+        ROCCalendar = 14,
+        ThaiCalendar = 15,
+        LastCalendar = ThaiCalendar
+    };
+
+    enum WeekNumberSystem {
+        DefaultWeekNumber = 0,
+        IsoWeekNumber = 1
+    }
+
     enum FormatType { LongFormat, ShortFormat, NarrowFormat };
+
     enum NumberOption {
         OmitGroupSeparator = 0x01,
         RejectGroupSeparator = 0x02

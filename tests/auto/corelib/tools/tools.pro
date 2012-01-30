@@ -10,6 +10,7 @@ SUBDIRS=\
     qbytearraymatcher \
     qbytedatabuffer \
     qcache \
+    qcalendarsystem \
     qchar \
     qcollator \
     qcommandlineparser \
