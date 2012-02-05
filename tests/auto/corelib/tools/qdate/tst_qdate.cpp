@@ -91,6 +91,7 @@ private slots:
     void negativeYear() const;
     void printNegativeYear() const;
     void roundtripGermanLocale() const;
+#if QT_DEPRECATED_SINCE(5,0)
     void shortDayName() const;
     void standaloneShortDayName() const;
     void longDayName() const;
@@ -99,6 +100,7 @@ private slots:
     void standaloneShortMonthName() const;
     void longMonthName() const;
     void standaloneLongMonthName() const;
+#endif
     void roundtrip() const;
 };
 
@@ -1043,6 +1045,7 @@ void tst_QDate::roundtripGermanLocale() const
     theDateTime.fromString(theDateTime.toString(Qt::TextDate), Qt::TextDate);
 }
 
+#if QT_DEPRECATED_SINCE(5,0)
 void tst_QDate::shortDayName() const
 {
     QCOMPARE(QDate::shortDayName(0), QString());
@@ -1054,7 +1057,7 @@ void tst_QDate::shortDayName() const
 
     QLocale locale = QLocale::system();
     for(int i = 1; i <= 7; ++i) {
-        QCOMPARE(QDate::shortDayName(i), locale.dayName(i, QLocale::ShortFormat));
+        QCOMPARE(QDate::shortDayName(i), locale.dayName(i, QLocale::ShortName));
     }
 }
 
@@ -1069,7 +1072,7 @@ void tst_QDate::standaloneShortDayName() const
 
     QLocale locale = QLocale::system();
     for(int i = 1; i <= 7; ++i) {
-        QCOMPARE(QDate::shortDayName(i, QDate::StandaloneFormat), locale.standaloneDayName(i, QLocale::ShortFormat));
+        QCOMPARE(QDate::shortDayName(i, QDate::StandaloneFormat), locale.dayName(i, QLocale::ShortName, QLocale::StandaloneContext));
     }
 }
 
@@ -1084,7 +1087,7 @@ void tst_QDate::longDayName() const
 
     QLocale locale = QLocale::system();
     for(int i = 1; i <= 7; ++i) {
-        QCOMPARE(QDate::longDayName(i), locale.dayName(i, QLocale::LongFormat));
+        QCOMPARE(QDate::longDayName(i), locale.dayName(i, QLocale::LongName));
     }
 }
 
@@ -1099,7 +1102,7 @@ void tst_QDate::standaloneLongDayName() const
 
     QLocale locale = QLocale::system();
     for(int i = 1; i <= 7; ++i) {
-        QCOMPARE(QDate::longDayName(i, QDate::StandaloneFormat), locale.standaloneDayName(i, QLocale::LongFormat));
+        QCOMPARE(QDate::longDayName(i, QDate::StandaloneFormat), locale.dayName(i, QLocale::LongName, QLocale::StandaloneContext));
     }
 }
 
@@ -1114,7 +1117,7 @@ void tst_QDate::shortMonthName() const
 
     QLocale locale = QLocale::system();
     for(int i = 1; i <= 12; ++i) {
-        QCOMPARE(QDate::shortMonthName(i), locale.monthName(i, QLocale::ShortFormat));
+        QCOMPARE(QDate::shortMonthName(i), locale.monthName(i, QLocale::ShortName));
     }
 }
 
@@ -1129,7 +1132,7 @@ void tst_QDate::standaloneShortMonthName() const
 
     QLocale locale = QLocale::system();
     for(int i = 1; i <= 12; ++i) {
-        QCOMPARE(QDate::shortMonthName(i, QDate::StandaloneFormat), locale.standaloneMonthName(i, QLocale::ShortFormat));
+        QCOMPARE(QDate::shortMonthName(i, QDate::StandaloneFormat), locale.monthName(i, QLocale::ShortName, QLocale::StandaloneContext));
     }
 }
 
@@ -1144,7 +1147,7 @@ void tst_QDate::longMonthName() const
 
     QLocale locale = QLocale::system();
     for(int i = 1; i <= 12; ++i) {
-        QCOMPARE(QDate::longMonthName(i), locale.monthName(i, QLocale::LongFormat));
+        QCOMPARE(QDate::longMonthName(i), locale.monthName(i, QLocale::LongName));
     }
 }
 
@@ -1159,9 +1162,10 @@ void tst_QDate::standaloneLongMonthName() const
 
     QLocale locale = QLocale::system();
     for(int i = 1; i <= 12; ++i) {
-        QCOMPARE(QDate::longMonthName(i, QDate::StandaloneFormat), locale.standaloneMonthName(i, QLocale::LongFormat));
+        QCOMPARE(QDate::longMonthName(i, QDate::StandaloneFormat), locale.monthName(i, QLocale::LongName, QLocale::StandaloneContext));
     }
 }
+#endif
 
 void tst_QDate::roundtrip() const
 {

@@ -84,21 +84,53 @@ public:
         GroupSeparator, // QString
         ZeroDigit, // QString
         NegativeSign, // QString
+        DateFormatFull, // QString
         DateFormatLong, // QString
+        DateFormatMedium, // QString
         DateFormatShort, // QString
+        TimeFormatFull, // QString
         TimeFormatLong, // QString
+        TimeFormatMedium, // QString
         TimeFormatShort, // QString
+        DateTimeFormatFull, // QString
+        DateTimeFormatLong, // QString
+        DateTimeFormatMedium, // QString
+        DateTimeFormatShort, // QString
         DayNameLong, // QString, in: int
         DayNameShort, // QString, in: int
+        DayNameNarrow, // QString, in: int
+        DayNameLongStandalone, // QString, in: int
+        DayNameShortStandalone, // QString, in: int
+        DayNameNarrowStandalone, // QString, in: int
         MonthNameLong, // QString, in: int
         MonthNameShort, // QString, in: int
+        MonthNameNarrow, // QString, in: int
+        MonthNameLongStandalone, // QString, in: int
+        MonthNameShortStandalone, // QString, in: int
+        MonthNameNarrowStandalone, // QString, in: int
+        QuarterNameLong, // QString, in: int
+        QuarterNameShort, // QString, in: int
+        QuarterNameNarrow, // QString, in: int
+        QuarterNameLongStandalone, // QString, in: int
+        QuarterNameShortStandalone, // QString, in: int
+        QuarterNameNarrowStandalone, // QString, in: int
+        DayPeriodNameLong, // QString in: QTime
+        DayPeriodNameShort, // QString in: QTime
+        DayPeriodNameNarrow, // QString in: QTime
+        DayPeriodNameLongStandalone, // QString in: QTime
+        DayPeriodNameShortStandalone, // QString in: QTime
+        DayPeriodNameNarrowStandalone, // QString in: QTime
+        DateToStringFull, // QString, in: QDate
         DateToStringLong, // QString, in: QDate
+        DateToStringMedium, // QString in: QDate
         DateToStringShort, // QString in: QDate
+        TimeToStringFull, // QString in: QTime
         TimeToStringLong, // QString in: QTime
+        TimeToStringMedium, // QString in: QTime
         TimeToStringShort, // QString in: QTime
-        DateTimeFormatLong, // QString
-        DateTimeFormatShort, // QString
+        DateTimeToStringFull, // QString in: QDateTime
         DateTimeToStringLong, // QString in: QDateTime
+        DateTimeToStringMedium, // QString in: QDateTime
         DateTimeToStringShort, // QString in: QDateTime
         MeasurementSystem, // uint
         PositiveSign, // QString

@@ -1271,16 +1271,29 @@ QString QLocale::toString(const QDate &date, const QString &format) const
     to the specified \a format.
 */
 
-QString QLocale::toString(const QDate &date, FormatType format) const
+QString QLocale::toString(const QDate &date, StringFormat format) const
 {
     if (!date.isValid())
         return QString();
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(format == LongFormat
-                                             ? QSystemLocale::DateToStringLong : QSystemLocale::DateToStringShort,
-                                             date);
+        QVariant res;
+        switch (format) {
+        case FullFormat:
+            res = systemLocale()->query(QSystemLocale::DateToStringFull, date);
+            break;
+        case LongFormat:
+            res = systemLocale()->query(QSystemLocale::DateToStringLong, date);
+            break;
+        case MediumFormat:
+            res = systemLocale()->query(QSystemLocale::DateToStringMedium, date);
+            break;
+        case ShortFormat:
+        default:
+            res = systemLocale()->query(QSystemLocale::DateToStringShort, date);
+            break;
+        }
         if (!res.isNull())
             return res.toString();
     }
@@ -1366,17 +1379,29 @@ QString QLocale::toString(const QDateTime &dateTime, const QString &format) cons
     to the specified \a format.
 */
 
-QString QLocale::toString(const QDateTime &dateTime, FormatType format) const
+QString QLocale::toString(const QDateTime &dateTime, StringFormat format) const
 {
     if (!dateTime.isValid())
         return QString();
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(format == LongFormat
-                                             ? QSystemLocale::DateTimeToStringLong
-                                             : QSystemLocale::DateTimeToStringShort,
-                                             dateTime);
+        QVariant res;
+        switch (format) {
+        case FullFormat:
+            res = systemLocale()->query(QSystemLocale::DateTimeToStringFull, dateTime);
+            break;
+        case LongFormat:
+            res = systemLocale()->query(QSystemLocale::DateTimeToStringLong, dateTime);
+            break;
+        case MediumFormat:
+            res = systemLocale()->query(QSystemLocale::DateTimeToStringMedium, dateTime);
+            break;
+        case ShortFormat:
+        default:
+            res = systemLocale()->query(QSystemLocale::DateTimeToStringShort, dateTime);
+            break;
+        }
         if (!res.isNull())
             return res.toString();
     }
@@ -1392,16 +1417,29 @@ QString QLocale::toString(const QDateTime &dateTime, FormatType format) const
     specified \a format.
 */
 
-QString QLocale::toString(const QTime &time, FormatType format) const
+QString QLocale::toString(const QTime &time, StringFormat format) const
 {
     if (!time.isValid())
         return QString();
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(format == LongFormat
-                                             ? QSystemLocale::TimeToStringLong : QSystemLocale::TimeToStringShort,
-                                             time);
+        QVariant res;
+        switch (format) {
+        case FullFormat:
+            res = systemLocale()->query(QSystemLocale::TimeToStringFull, time);
+            break;
+        case LongFormat:
+            res = systemLocale()->query(QSystemLocale::TimeToStringLong, time);
+            break;
+        case MediumFormat:
+            res = systemLocale()->query(QSystemLocale::TimeToStringMedium, time);
+            break;
+        case ShortFormat:
+        default:
+            res = systemLocale()->query(QSystemLocale::TimeToStringShort, time);
+            break;
+        }
         if (!res.isNull())
             return res.toString();
     }
@@ -1422,13 +1460,26 @@ QString QLocale::toString(const QTime &time, FormatType format) const
     \sa QDate::toString(), QDate::fromString()
 */
 
-QString QLocale::dateFormat(FormatType format) const
+QString QLocale::dateFormat(StringFormat format) const
 {
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(format == LongFormat
-                                             ? QSystemLocale::DateFormatLong : QSystemLocale::DateFormatShort,
-                                             QVariant());
+        QVariant res;
+        switch (format) {
+        case FullFormat:
+            res = systemLocale()->query(QSystemLocale::DateFormatFull, QVariant());
+            break;
+        case LongFormat:
+            res = systemLocale()->query(QSystemLocale::DateFormatLong, QVariant());
+            break;
+        case MediumFormat:
+            res = systemLocale()->query(QSystemLocale::DateFormatMedium, QVariant());
+            break;
+        case ShortFormat:
+        default:
+            res = systemLocale()->query(QSystemLocale::DateFormatShort, QVariant());
+            break;
+        }
         if (!res.isNull())
             return res.toString();
     }
@@ -1436,10 +1487,13 @@ QString QLocale::dateFormat(FormatType format) const
 
     quint32 idx, size;
     switch (format) {
+    case FullFormat:
     case LongFormat:
         idx = d()->m_long_date_format_idx;
         size = d()->m_long_date_format_size;
         break;
+    case MediumFormat:
+    case ShortFormat:
     default:
         idx = d()->m_short_date_format_idx;
         size = d()->m_short_date_format_size;
@@ -1459,13 +1513,26 @@ QString QLocale::dateFormat(FormatType format) const
     \sa QTime::toString(), QTime::fromString()
 */
 
-QString QLocale::timeFormat(FormatType format) const
+QString QLocale::timeFormat(StringFormat format) const
 {
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(format == LongFormat
-                                             ? QSystemLocale::TimeFormatLong : QSystemLocale::TimeFormatShort,
-                                             QVariant());
+        QVariant res;
+        switch (format) {
+        case FullFormat:
+            res = systemLocale()->query(QSystemLocale::TimeFormatFull, QVariant());
+            break;
+        case LongFormat:
+            res = systemLocale()->query(QSystemLocale::TimeFormatLong, QVariant());
+            break;
+        case MediumFormat:
+            res = systemLocale()->query(QSystemLocale::TimeFormatMedium, QVariant());
+            break;
+        case ShortFormat:
+        default:
+            res = systemLocale()->query(QSystemLocale::TimeFormatShort, QVariant());
+            break;
+        }
         if (!res.isNull())
             return res.toString();
     }
@@ -1473,10 +1540,13 @@ QString QLocale::timeFormat(FormatType format) const
 
     quint32 idx, size;
     switch (format) {
+    case FullFormat:
     case LongFormat:
         idx = d()->m_long_time_format_idx;
         size = d()->m_long_time_format_size;
         break;
+    case MediumFormat:
+    case ShortFormat:
     default:
         idx = d()->m_short_time_format_idx;
         size = d()->m_short_time_format_size;
@@ -1496,14 +1566,26 @@ QString QLocale::timeFormat(FormatType format) const
     \sa QDateTime::toString(), QDateTime::fromString()
 */
 
-QString QLocale::dateTimeFormat(FormatType format) const
+QString QLocale::dateTimeFormat(StringFormat format) const
 {
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(format == LongFormat
-                                             ? QSystemLocale::DateTimeFormatLong
-                                             : QSystemLocale::DateTimeFormatShort,
-                                             QVariant());
+        QVariant res;
+        switch (format) {
+        case FullFormat:
+            res = systemLocale()->query(QSystemLocale::DateTimeFormatFull, QVariant());
+            break;
+        case LongFormat:
+            res = systemLocale()->query(QSystemLocale::DateTimeFormatLong, QVariant());
+            break;
+        case MediumFormat:
+            res = systemLocale()->query(QSystemLocale::DateTimeFormatMedium, QVariant());
+            break;
+        case ShortFormat:
+        default:
+            res = systemLocale()->query(QSystemLocale::DateTimeFormatShort, QVariant());
+            break;
+        }
         if (!res.isNull()) {
             return res.toString();
         }
@@ -1524,7 +1606,7 @@ QString QLocale::dateTimeFormat(FormatType format) const
     \sa timeFormat(), toDate(), toDateTime(), QTime::fromString()
 */
 #ifndef QT_NO_DATESTRING
-QTime QLocale::toTime(const QString &string, FormatType format) const
+QTime QLocale::toTime(const QString &string, StringFormat format) const
 {
     return toTime(string, timeFormat(format));
 }
@@ -1542,7 +1624,7 @@ QTime QLocale::toTime(const QString &string, FormatType format) const
     \sa dateFormat(), toTime(), toDateTime(), QDate::fromString()
 */
 #ifndef QT_NO_DATESTRING
-QDate QLocale::toDate(const QString &string, FormatType format) const
+QDate QLocale::toDate(const QString &string, StringFormat format) const
 {
     return toDate(string, dateFormat(format));
 }
@@ -1561,7 +1643,7 @@ QDate QLocale::toDate(const QString &string, FormatType format) const
 */
 
 #ifndef QT_NO_DATESTRING
-QDateTime QLocale::toDateTime(const QString &string, FormatType format) const
+QDateTime QLocale::toDateTime(const QString &string, StringFormat format) const
 {
     return toDateTime(string, dateTimeFormat(format));
 }
@@ -1873,91 +1955,95 @@ QList<QLocale::Country> QLocale::countriesForLanguage(Language language)
     \since 4.2
 
     Returns the localized name of \a month, in the format specified
-    by \a type.
+    by \a format and the context specified by \a context.
 
-    \sa dayName(), standaloneMonthName()
+    \sa dayName()
 */
-QString QLocale::monthName(int month, FormatType type) const
+QString QLocale::monthName(int month,
+                           FieldFormat format,
+                           FieldContext context) const
 {
     if (month < 1 || month > 12)
         return QString();
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(type == LongFormat
-                                             ? QSystemLocale::MonthNameLong : QSystemLocale::MonthNameShort,
-                                             month);
+        QVariant res;
+        if (context == StandaloneContext) {
+            switch (format) {
+            case LongName:
+                res = systemLocale()->query(QSystemLocale::MonthNameLongStandalone, month);
+                break;
+            case NarrowName:
+                res = systemLocale()->query(QSystemLocale::MonthNameNarrowStandalone, month);
+                break;
+            case ShortName:
+            default:
+                res = systemLocale()->query(QSystemLocale::MonthNameShortStandalone, month);
+                break;
+            }
+        } else {
+            switch (format) {
+            case LongName:
+                res = systemLocale()->query(QSystemLocale::MonthNameLong, month);
+                break;
+            case NarrowName:
+                res = systemLocale()->query(QSystemLocale::MonthNameNarrow, month);
+                break;
+            case ShortName:
+            default:
+                res = systemLocale()->query(QSystemLocale::MonthNameShort, month);
+                break;
+            }
+        }
         if (!res.isNull())
             return res.toString();
     }
 #endif
 
     quint32 idx, size;
-    switch (type) {
-    case QLocale::LongFormat:
-        idx = d()->m_long_month_names_idx;
-        size = d()->m_long_month_names_size;
-        break;
-    case QLocale::ShortFormat:
-        idx = d()->m_short_month_names_idx;
-        size = d()->m_short_month_names_size;
-        break;
-    case QLocale::NarrowFormat:
-        idx = d()->m_narrow_month_names_idx;
-        size = d()->m_narrow_month_names_size;
-        break;
-    default:
-        return QString();
+    QString name;
+
+    if (context == StandaloneContext) {
+        switch (format) {
+        case QLocale::LongName:
+            idx = d()->m_standalone_long_month_names_idx;
+            size = d()->m_standalone_long_month_names_size;
+            break;
+        case QLocale::ShortName:
+            idx = d()->m_standalone_short_month_names_idx;
+            size = d()->m_standalone_short_month_names_size;
+            break;
+        case QLocale::NarrowName:
+            idx = d()->m_standalone_narrow_month_names_idx;
+            size = d()->m_standalone_narrow_month_names_size;
+            break;
+        default:
+            return QString();
+        }
+        name = getLocaleListData(standalone_months_data + idx, size, month - 1);
     }
-    return getLocaleListData(months_data + idx, size, month - 1);
-}
 
-/*!
-    \since 4.5
-
-    Returns the localized name of \a month that is used as a
-    standalone text, in the format specified by \a type.
-
-    If the locale information doesn't specify the standalone month
-    name then return value is the same as in monthName().
-
-    \sa monthName(), standaloneDayName()
-*/
-QString QLocale::standaloneMonthName(int month, FormatType type) const
-{
-    if (month < 1 || month > 12)
-        return QString();
-
-#ifndef QT_NO_SYSTEMLOCALE
-    if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(type == LongFormat
-                                             ? QSystemLocale::MonthNameLong : QSystemLocale::MonthNameShort,
-                                             month);
-        if (!res.isNull())
-            return res.toString();
+    if (name.isEmpty()) {
+        switch (format) {
+        case QLocale::LongName:
+            idx = d()->m_long_month_names_idx;
+            size = d()->m_long_month_names_size;
+            break;
+        case QLocale::ShortName:
+            idx = d()->m_short_month_names_idx;
+            size = d()->m_short_month_names_size;
+            break;
+        case QLocale::NarrowName:
+            idx = d()->m_narrow_month_names_idx;
+            size = d()->m_narrow_month_names_size;
+            break;
+        default:
+            return QString();
+        }
+        name = getLocaleListData(months_data + idx, size, month - 1);
     }
-#endif
 
-    quint32 idx, size;
-    switch (type) {
-    case QLocale::LongFormat:
-        idx = d()->m_standalone_long_month_names_idx;
-        size = d()->m_standalone_long_month_names_size;
-        break;
-    case QLocale::ShortFormat:
-        idx = d()->m_standalone_short_month_names_idx;
-        size = d()->m_standalone_short_month_names_size;
-        break;
-    case QLocale::NarrowFormat:
-        idx = d()->m_standalone_narrow_month_names_idx;
-        size = d()->m_standalone_narrow_month_names_size;
-        break;
-    default:
-        return QString();
-    }
-    QString name = getLocaleListData(standalone_months_data + idx, size, month - 1);
-    if (name.isEmpty())
-        return monthName(month, type);
     return name;
 }
 
@@ -1966,97 +2052,156 @@ QString QLocale::standaloneMonthName(int month, FormatType type) const
 
     Returns the localized name of the \a day (where 1 represents
     Monday, 2 represents Tuesday and so on), in the format specified
-    by \a type.
+    by \a type and context specified by \a context.
 
-    \sa monthName(), standaloneDayName()
+    \sa monthName()
 */
-QString QLocale::dayName(int day, FormatType type) const
+QString QLocale::dayName(int day,
+                         FieldFormat format,
+                         FieldContext context) const
 {
     if (day < 1 || day > 7)
         return QString();
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(type == LongFormat
-                                             ? QSystemLocale::DayNameLong : QSystemLocale::DayNameShort,
-                                             day);
+        QVariant res;
+        if (context == StandaloneContext) {
+            switch (format) {
+            case LongName:
+                res = systemLocale()->query(QSystemLocale::DayNameLongStandalone, day);
+                break;
+            case NarrowName:
+                res = systemLocale()->query(QSystemLocale::DayNameNarrowStandalone, day);
+                break;
+            case ShortName:
+            default:
+                res = systemLocale()->query(QSystemLocale::DayNameShortStandalone, day);
+                break;
+            }
+        } else {
+            switch (format) {
+            case LongName:
+                res = systemLocale()->query(QSystemLocale::DayNameLong, day);
+                break;
+            case NarrowName:
+                res = systemLocale()->query(QSystemLocale::DayNameNarrow, day);
+                break;
+            case ShortName:
+            default:
+                res = systemLocale()->query(QSystemLocale::DayNameShort, day);
+                break;
+            }
+        }
         if (!res.isNull())
             return res.toString();
     }
 #endif
+
     if (day == 7)
         day = 0;
 
     quint32 idx, size;
-    switch (type) {
-    case QLocale::LongFormat:
-        idx = d()->m_long_day_names_idx;
-        size = d()->m_long_day_names_size;
-        break;
-    case QLocale::ShortFormat:
-        idx = d()->m_short_day_names_idx;
-        size = d()->m_short_day_names_size;
-        break;
-    case QLocale::NarrowFormat:
-        idx = d()->m_narrow_day_names_idx;
-        size = d()->m_narrow_day_names_size;
-        break;
-    default:
-        return QString();
+    QString name;
+
+    if (context == StandaloneContext) {
+        switch (format) {
+        case QLocale::LongName:
+            idx = d()->m_standalone_long_day_names_idx;
+            size = d()->m_standalone_long_day_names_size;
+            break;
+        case QLocale::ShortName:
+            idx = d()->m_standalone_short_day_names_idx;
+            size = d()->m_standalone_short_day_names_size;
+            break;
+        case QLocale::NarrowName:
+            idx = d()->m_standalone_narrow_day_names_idx;
+            size = d()->m_standalone_narrow_day_names_size;
+            break;
+        default:
+            return QString();
+        }
+        name = getLocaleListData(days_data + idx, size, day);
     }
-    return getLocaleListData(days_data + idx, size, day);
+
+    if (name.isEmpty()) {
+        switch (format) {
+        case QLocale::LongName:
+            idx = d()->m_long_day_names_idx;
+            size = d()->m_long_day_names_size;
+            break;
+        case QLocale::ShortName:
+            idx = d()->m_short_day_names_idx;
+            size = d()->m_short_day_names_size;
+            break;
+        case QLocale::NarrowName:
+            idx = d()->m_narrow_day_names_idx;
+            size = d()->m_narrow_day_names_size;
+            break;
+        default:
+            return QString();
+        }
+        name = getLocaleListData(days_data + idx, size, day);
+    }
+
+    return name;
 }
 
 /*!
-    \since 4.5
+    Returns the localized name of the day period for a given \a time,
+    in the format specified by \a type and context specified by \a context.
 
-    Returns the localized name of the \a day (where 1 represents
-    Monday, 2 represents Tuesday and so on) that is used as a
-    standalone text, in the format specified by \a type.
-
-    If the locale information does not specify the standalone day
-    name then return value is the same as in dayName().
-
-    \sa dayName(), standaloneMonthName()
+    Currently only AM and PM day periods are supported.
 */
-QString QLocale::standaloneDayName(int day, FormatType type) const
+QString QLocale::dayPeriodName(QTime time,
+                               FieldFormat format,
+                               FieldContext context) const
 {
-    if (day < 1 || day > 7)
+    if (!time.isValid())
         return QString();
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(type == LongFormat
-                                             ? QSystemLocale::DayNameLong : QSystemLocale::DayNameShort,
-                                             day);
+        QVariant res;
+        if (context == StandaloneContext) {
+            switch (format) {
+            case LongName:
+                res = systemLocale()->query(QSystemLocale::DayPeriodNameLongStandalone, time);
+                break;
+            case NarrowName:
+                res = systemLocale()->query(QSystemLocale::DayPeriodNameNarrowStandalone, time);
+                break;
+            case ShortName:
+            default:
+                res = systemLocale()->query(QSystemLocale::DayPeriodNameShortStandalone, time);
+                break;
+            }
+        } else {
+            switch (format) {
+            case LongName:
+                res = systemLocale()->query(QSystemLocale::DayPeriodNameLong, time);
+                break;
+            case NarrowName:
+                res = systemLocale()->query(QSystemLocale::DayPeriodNameNarrow, time);
+                break;
+            case ShortName:
+            default:
+                res = systemLocale()->query(QSystemLocale::DayPeriodNameShort, time);
+                break;
+            }
+        }
         if (!res.isNull())
             return res.toString();
     }
+#else
+Q_UNUSED(format)
+Q_UNUSED(context)
 #endif
-    if (day == 7)
-        day = 0;
 
-    quint32 idx, size;
-    switch (type) {
-    case QLocale::LongFormat:
-        idx = d()->m_standalone_long_day_names_idx;
-        size = d()->m_standalone_long_day_names_size;
-        break;
-    case QLocale::ShortFormat:
-        idx = d()->m_standalone_short_day_names_idx;
-        size = d()->m_standalone_short_day_names_size;
-        break;
-    case QLocale::NarrowFormat:
-        idx = d()->m_standalone_narrow_day_names_idx;
-        size = d()->m_standalone_narrow_day_names_size;
-        break;
-    default:
-        return QString();
-    }
-    QString name = getLocaleListData(days_data + idx, size, day);
-    if (name.isEmpty())
-        return dayName(day == 0 ? 7 : day, type);
-    return name;
+    if (time < QTime(12,0,0))
+        return getLocaleData(am_data + d()->m_am_idx, d()->m_am_size);
+    else
+        return getLocaleData(pm_data + d()->m_pm_idx, d()->m_pm_size);
 }
 
 /*!
@@ -2186,44 +2331,24 @@ QString QLocale::toLower(const QString &str) const
 
 
 /*!
+    \deprecated use dayPeriodText() instead
     \since 4.5
 
     Returns the localized name of the "AM" suffix for times specified using
     the conventions of the 12-hour clock.
 
-    \sa pmText()
+    \sa dayPeriodText(), pmText()
 */
-QString QLocale::amText() const
-{
-#ifndef QT_NO_SYSTEMLOCALE
-    if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(QSystemLocale::AMText, QVariant());
-        if (!res.isNull())
-            return res.toString();
-    }
-#endif
-    return getLocaleData(am_data + d()->m_am_idx, d()->m_am_size);
-}
 
 /*!
+    \deprecated use dayPeriodText() instead
     \since 4.5
 
     Returns the localized name of the "PM" suffix for times specified using
     the conventions of the 12-hour clock.
 
-    \sa amText()
+    \sa dayPeriodText(), amText()
 */
-QString QLocale::pmText() const
-{
-#ifndef QT_NO_SYSTEMLOCALE
-    if (d() == systemPrivate()) {
-        QVariant res = systemLocale()->query(QSystemLocale::PMText, QVariant());
-        if (!res.isNull())
-            return res.toString();
-    }
-#endif
-    return getLocaleData(pm_data + d()->m_pm_idx, d()->m_pm_size);
-}
 
 
 QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *date, const QTime *time,
@@ -2297,10 +2422,10 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                     result.append(longLongToString(date->month(), -1, 10, 2, QLocalePrivate::ZeroPadded));
                     break;
                 case 3:
-                    result.append(q->monthName(date->month(), QLocale::ShortFormat));
+                    result.append(q->monthName(date->month(), QLocale::ShortName));
                     break;
                 case 4:
-                    result.append(q->monthName(date->month(), QLocale::LongFormat));
+                    result.append(q->monthName(date->month(), QLocale::LongName));
                     break;
                 }
                 break;
@@ -2316,10 +2441,10 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                     result.append(longLongToString(date->day(), -1, 10, 2, QLocalePrivate::ZeroPadded));
                     break;
                 case 3:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::ShortFormat));
+                    result.append(q->dayName(date->dayOfWeek(), QLocale::ShortName));
                     break;
                 case 4:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::LongFormat));
+                    result.append(q->dayName(date->dayOfWeek(), QLocale::LongName));
                     break;
                 }
                 break;
@@ -2391,7 +2516,7 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 } else {
                     repeat = 1;
                 }
-                result.append(am_pm == AM ? q->amText().toLower() : q->pmText().toLower());
+                result.append(am_pm == AM ? q->dayPeriodName(QTime(0,0,0)).toLower() : q->dayPeriodName(QTime(12,0,0)).toLower());
                 break;
 
             case 'A':
@@ -2401,7 +2526,7 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 } else {
                     repeat = 1;
                 }
-                result.append(am_pm == AM ? q->amText().toUpper() : q->pmText().toUpper());
+                result.append(am_pm == AM ? q->dayPeriodName(QTime(0,0,0)).toUpper() : q->dayPeriodName(QTime(12,0,0)).toUpper());
                 break;
 
             case 'z':
