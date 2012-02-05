@@ -189,8 +189,7 @@ static QString fmtDateTime(const QString& f, const QTime* dt = 0, const QDate* d
     The year(), month(), and day() functions provide access to the
     year, month, and day numbers. Also, dayOfWeek() and dayOfYear()
     functions are provided. The same information is provided in
-    textual format by the toString(), shortDayName(), longDayName(),
-    shortMonthName(), and longMonthName() functions.
+    textual format by the toString() functions.
 
     QDate provides a full set of operators to compare two QDate
     objects where smaller means earlier, and larger means later.
@@ -511,8 +510,10 @@ int QDate::weekNumber(int *yearNumber) const
     return w;
 }
 
+#if QT_DEPRECATED_SINCE(5,0)
 #ifndef QT_NO_TEXTDATE
 /*!
+    \deprecated in 5.0, use QLocale::monthName() instead
     \since 4.5
 
     Returns the short name of the \a month for the representation specified
@@ -560,6 +561,7 @@ QString QDate::shortMonthName(int month, QDate::MonthNameType type)
 }
 
 /*!
+    \deprecated in 5.0, use QLocale::monthName() instead
     \since 4.5
 
     Returns the long name of the \a month for the representation specified
@@ -607,6 +609,7 @@ QString QDate::longMonthName(int month, MonthNameType type)
 }
 
 /*!
+    \deprecated in 5.0, use QLocale::dayName() instead
     \since 4.5
 
     Returns the short name of the \a weekday for the representation specified
@@ -649,6 +652,7 @@ QString QDate::shortDayName(int weekday, MonthNameType type)
 }
 
 /*!
+    \deprecated in 5.0, use QLocale::dayName() instead
     \since 4.5
 
     Returns the long name of the \a weekday for the representation specified
@@ -690,6 +694,7 @@ QString QDate::longDayName(int weekday, MonthNameType type)
     return QLocale::system().dayName(weekday, QLocale::LongName);
 }
 #endif //QT_NO_TEXTDATE
+#endif //QT_DEPRECATED_SINCE
 
 #ifndef QT_NO_DATESTRING
 

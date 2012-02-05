@@ -65,10 +65,12 @@ QT_BEGIN_NAMESPACE
 class Q_CORE_EXPORT QDate
 {
 public:
+#if QT_DEPRECATED_SINCE(5,0)
     enum MonthNameType {
         DateFormat = 0,
         StandaloneFormat
     };
+#endif
 public:
     QDate() { jd = nullJd(); }
     QDate(int y, int m, int d);
@@ -85,12 +87,15 @@ public:
     int daysInYear() const;
     int weekNumber(int *yearNum = 0) const;
 
+#if QT_DEPRECATED_SINCE(5,0)
 #ifndef QT_NO_TEXTDATE
-    static QString shortMonthName(int month, MonthNameType type = DateFormat);
-    static QString shortDayName(int weekday, MonthNameType type = DateFormat);
-    static QString longMonthName(int month, MonthNameType type = DateFormat);
-    static QString longDayName(int weekday, MonthNameType type = DateFormat);
+// ### These should be inline but create a circular dependency with QLocale includes
+QT_DEPRECATED static QString shortMonthName(int month, MonthNameType type = DateFormat);
+QT_DEPRECATED static QString shortDayName(int weekday, MonthNameType type = DateFormat);
+QT_DEPRECATED static QString longMonthName(int month, MonthNameType type = DateFormat);
+QT_DEPRECATED static QString longDayName(int weekday, MonthNameType type = DateFormat);
 #endif // QT_NO_TEXTDATE
+#endif // QT_DEPRECATED_SINCE
 #ifndef QT_NO_DATESTRING
     QString toString(Qt::DateFormat f = Qt::TextDate) const;
     QString toString(const QString &format) const;
