@@ -2389,31 +2389,19 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
         bool used = false;
         if (date) {
             switch (c.unicode()) {
-            case 'y':
-                used = true;
-                if (repeat >= 4)
-                    repeat = 4;
-                else if (repeat >= 2)
-                    repeat = 2;
-
-                switch (repeat) {
-                case 4:
-                    result.append(longLongToString(date->year()));
-                    break;
-                case 2:
-                    result.append(longLongToString(date->year() % 100, -1, 10, 2,
-                                                   QLocalePrivate::ZeroPadded));
-                    break;
-                default:
-                    repeat = 1;
-                    result.append(c);
-                    break;
-                }
+            // Year 1..n
+            case 'y': {
+                int year = q->calendar().year(*date);
+                if (repeat == 2)
+                    year = year % 100;
+                result.append(zeroPad(year, repeat));
                 break;
+            }
 
+            // Month 1..5
             case 'M':
                 used = true;
-                repeat = qMin(repeat, 4);
+                repeat = qMin(repeat, 5);
                 switch (repeat) {
                 case 1:
                     result.append(longLongToString(date->month()));
@@ -2427,12 +2415,16 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 case 4:
                     result.append(q->monthName(date->month(), QLocale::LongName));
                     break;
+                case 5:
+                    result.append(q->monthName(date->month(), QLocale::NarrowName));
+                    break;
                 }
                 break;
 
+            // Day 1..2
             case 'd':
                 used = true;
-                repeat = qMin(repeat, 4);
+                repeat = qMin(repeat, 2);
                 switch (repeat) {
                 case 1:
                     result.append(longLongToString(date->day()));
@@ -2440,14 +2432,29 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 case 2:
                     result.append(longLongToString(date->day(), -1, 10, 2, QLocalePrivate::ZeroPadded));
                     break;
+                }
+                break;
+
+            // Day of Week 1..5
+            case 'E': {
+                used = true;
+                repeat = qMin(repeat, 5);
+                int dayOfWeek = q->calendar().dayOfWeek(*date);
+                switch (repeat) {
+                case 1:
+                case 2:
                 case 3:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::ShortName));
+                    result.append(q->dayName(dayOfWeek, QLocale::ShortName));
                     break;
                 case 4:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::LongName));
+                    result.append(q->dayName(dayOfWeek, QLocale::LongName));
+                    break;
+                case 5:
+                    result.append(q->dayName(dayOfWeek, QLocale::NarrowName));
                     break;
                 }
                 break;
+            }
 
             default:
                 break;
@@ -2455,10 +2462,16 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
         }
         if (!used && time) {
             switch (c.unicode()) {
+
+            // Hour 1 to 12 1..2
             case 'h': {
                 used = true;
                 repeat = qMin(repeat, 2);
-                const int hour = format_am_pm ? hour12 : time->hour();
+                int hour = time->hour();
+                if (hour > 12)
+                    hour -= 12;
+                else if (hour == 0)
+                    hour = 12;
 
                 switch (repeat) {
                 case 1:
@@ -2470,6 +2483,8 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 }
                 break;
             }
+
+            // Hour 0 to 23 1..2
             case 'H':
                 used = true;
                 repeat = qMin(repeat, 2);
@@ -2483,6 +2498,7 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 }
                 break;
 
+            // Minute 1..2
             case 'm':
                 used = true;
                 repeat = qMin(repeat, 2);
@@ -2496,6 +2512,7 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 }
                 break;
 
+            // Second 1..2
             case 's':
                 used = true;
                 repeat = qMin(repeat, 2);
@@ -2509,50 +2526,34 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 }
                 break;
 
+            // AM/PM 1
             case 'a':
                 used = true;
-                if (i + 1 < format.length() && format.at(i + 1).unicode() == 'p') {
-                    repeat = 2;
-                } else {
-                    repeat = 1;
-                }
-                result.append(am_pm == AM ? q->dayPeriodName(QTime(0,0,0)).toLower() : q->dayPeriodName(QTime(12,0,0)).toLower());
+                repeat = qMin(repeat, 1);
+                //TODO Confirm is LongName not ShortName, not stated in CLDR docs
+                result.append(q->dayPeriodName(*time));
                 break;
 
-            case 'A':
+            // Fractional seconds 1..n
+            case 'S': {
                 used = true;
-                if (i + 1 < format.length() && format.at(i + 1).unicode() == 'P') {
-                    repeat = 2;
-                } else {
-                    repeat = 1;
-                }
-                result.append(am_pm == AM ? q->dayPeriodName(QTime(0,0,0)).toUpper() : q->dayPeriodName(QTime(12,0,0)).toUpper());
+                QString frac = zeroPad(time->msec(), 3);
+                if (repeat > 3)
+                    frac = frac.leftJustified(repeat, QLatin1Char('0'), true);
+                else if (repeat < 3)
+                    frac = frac.left(repeat);
+                //TODO Find if leading 0's get stripped, not stated in CLDR docs
+                result.append(frac);
                 break;
+            }
 
+            // Time Zone 1..4
             case 'z':
                 used = true;
-                if (repeat >= 3) {
-                    repeat = 3;
-                } else {
-                    repeat = 1;
-                }
-                switch (repeat) {
-                case 1:
-                    result.append(longLongToString(time->msec()));
-                    break;
-                case 3:
-                    result.append(longLongToString(time->msec(), -1, 10, 3, QLocalePrivate::ZeroPadded));
-                    break;
-                }
-                break;
-
-            case 't':
-                used = true;
-                repeat = 1;
+                repeat = qMin(repeat, 4);
                 result.append(timeZone());
                 break;
-            default:
-                break;
+
             }
         }
         if (!used) {

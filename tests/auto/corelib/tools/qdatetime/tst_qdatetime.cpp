@@ -127,7 +127,6 @@ private slots:
 
     void getDate();
 
-    void fewDigitsInYear() const;
     void printNegativeYear() const;
     void roundtripGermanLocale() const;
     void utcOffsetLessThan() const;
@@ -1351,7 +1350,7 @@ void tst_QDateTime::dateFromStringFormat_data()
     QTest::newRow("data15") << february << QString("MMMM") << QDate(defDate().year(), 2, 1);
 
     QString date = mon + " " + august + " 8 2005";
-    QTest::newRow("data16") << date << QString("ddd MMMM d yyyy") << QDate(2005, 8, 8);
+    QTest::newRow("data16") << date << QString("EEE MMMM d yyyy") << QDate(2005, 8, 8);
     QTest::newRow("data17") << QString("2000:00") << QString("yyyy:yy") << QDate(2000, 1, 1);
     QTest::newRow("data18") << QString("1999:99") << QString("yyyy:yy") << QDate(1999, 1, 1);
     QTest::newRow("data19") << QString("2099:99") << QString("yyyy:yy") << QDate(2099, 1, 1);
@@ -1359,23 +1358,23 @@ void tst_QDateTime::dateFromStringFormat_data()
     QTest::newRow("data21") << QString("99") << QString("yy") << QDate(1999, 1, 1);
     QTest::newRow("data22") << QString("01") << QString("yy") << QDate(1901, 1, 1);
 
-    QTest::newRow("data23") << monday << QString("dddd") << QDate(1900, 1, 1);
-    QTest::newRow("data24") << tuesday << QString("dddd") << QDate(1900, 1, 2);
-    QTest::newRow("data25") << wednesday << QString("dddd") << QDate(1900, 1, 3);
-    QTest::newRow("data26") << thursday << QString("dddd") << QDate(1900, 1, 4);
-    QTest::newRow("data26") << friday << QString("dddd") << QDate(1900, 1, 5);
-    QTest::newRow("data27") << saturday << QString("dddd") << QDate(1900, 1, 6);
-    QTest::newRow("data28") << sunday << QString("dddd") << QDate(1900, 1, 7);
+    QTest::newRow("data23") << monday << QString("EEEE") << QDate(1900, 1, 1);
+    QTest::newRow("data24") << tuesday << QString("EEEE") << QDate(1900, 1, 2);
+    QTest::newRow("data25") << wednesday << QString("EEEE") << QDate(1900, 1, 3);
+    QTest::newRow("data26") << thursday << QString("EEEE") << QDate(1900, 1, 4);
+    QTest::newRow("data26") << friday << QString("EEEE") << QDate(1900, 1, 5);
+    QTest::newRow("data27") << saturday << QString("EEEE") << QDate(1900, 1, 6);
+    QTest::newRow("data28") << sunday << QString("EEEE") << QDate(1900, 1, 7);
 
-    QTest::newRow("data29") << monday + " 2006" << QString("dddd yyyy") << QDate(2006, 1, 2);
-    QTest::newRow("data30") << tuesday + " 2006" << QString("dddd yyyy") << QDate(2006, 1, 3);
-    QTest::newRow("data31") << wednesday + " 2006" << QString("dddd yyyy") << QDate(2006, 1, 4);
-    QTest::newRow("data32") << thursday + " 2006" << QString("dddd yyyy") << QDate(2006, 1, 5);
-    QTest::newRow("data33") << friday + " 2006" << QString("dddd yyyy") << QDate(2006, 1, 6);
-    QTest::newRow("data34") << saturday + " 2006" << QString("dddd yyyy") << QDate(2006, 1, 7);
-    QTest::newRow("data35") << sunday + " 2006" << QString("dddd yyyy") << QDate(2006, 1, 1);
+    QTest::newRow("data29") << monday + " 2006" << QString("EEEE yyyy") << QDate(2006, 1, 2);
+    QTest::newRow("data30") << tuesday + " 2006" << QString("EEEE yyyy") << QDate(2006, 1, 3);
+    QTest::newRow("data31") << wednesday + " 2006" << QString("EEEE yyyy") << QDate(2006, 1, 4);
+    QTest::newRow("data32") << thursday + " 2006" << QString("EEEE yyyy") << QDate(2006, 1, 5);
+    QTest::newRow("data33") << friday + " 2006" << QString("EEEE yyyy") << QDate(2006, 1, 6);
+    QTest::newRow("data34") << saturday + " 2006" << QString("EEEE yyyy") << QDate(2006, 1, 7);
+    QTest::newRow("data35") << sunday + " 2006" << QString("EEEE yyyy") << QDate(2006, 1, 1);
 
-    QTest::newRow("data36 ") << tuesday + " 2007 " + march << QString("dddd yyyy MMMM") << QDate(2007, 3, 6);
+    QTest::newRow("data36 ") << tuesday + " 2007 " + march << QString("EEEE yyyy MMMM") << QDate(2007, 3, 6);
 
 }
 
@@ -1398,13 +1397,13 @@ void tst_QDateTime::timeFromStringFormat_data()
 
     QTest::newRow("data0") << QString("1010") << QString("mmm") << QTime(0, 10, 0);
     QTest::newRow("data1") << QString("00") << QString("hm") << invalidTime();
-    QTest::newRow("data2") << QString("10am") << QString("hap") << QTime(10, 0, 0);
-    QTest::newRow("data3") << QString("10pm") << QString("hap") << QTime(22, 0, 0);
-    QTest::newRow("data4") << QString("10pmam") << QString("hapap") << invalidTime();
+    QTest::newRow("data2") << QString("10AM") << QString("ha") << QTime(10, 0, 0);
+    QTest::newRow("data3") << QString("10PM") << QString("ha") << QTime(22, 0, 0);
+    QTest::newRow("data4") << QString("10PMAM") << QString("haa") << invalidTime();
     QTest::newRow("data5") << QString("1070") << QString("hhm") << invalidTime();
     QTest::newRow("data6") << QString("1011") << QString("hh") << invalidTime();
     QTest::newRow("data7") << QString("25") << QString("hh") << invalidTime();
-    QTest::newRow("data8") << QString("22pm") << QString("Hap") << QTime(22, 0, 0);
+    QTest::newRow("data8") << QString("22PM") << QString("Ha") << QTime(22, 0, 0);
     QTest::newRow("data9") << QString("2221") << QString("hhhh") << invalidTime();
 }
 
@@ -1439,20 +1438,20 @@ void tst_QDateTime::dateTimeFromStringFormat_data()
     QTest::newRow("data3") << QString("10hello20") << QString("ss'hello'ss") << invalidDateTime();
     QTest::newRow("data4") << QString("10") << QString("''") << invalidDateTime();
     QTest::newRow("data5") << QString("10") << QString("'") << invalidDateTime();
-    QTest::newRow("data6") << QString("pm") << QString("ap") << QDateTime(defDate(), QTime(12, 0, 0));
-    QTest::newRow("data7") << QString("foo") << QString("ap") << invalidDateTime();
+    QTest::newRow("data6") << QString("PM") << QString("a") << QDateTime(defDate(), QTime(12, 0, 0));
+    QTest::newRow("data7") << QString("foo") << QString("a") << invalidDateTime();
     QTest::newRow("data8") << QString("101010") << QString("dMyy") << QDateTime(QDate(1910, 10, 10), QTime());
     QTest::newRow("data9") << QString("101010") << QString("dMyy") << QDateTime(QDate(1910, 10, 10), QTime());
     QTest::newRow("data10") << QString("101010") << QString("dMyy") << QDateTime(QDate(1910, 10, 10), QTime());
     QTest::newRow("data11") << date << QString("dd MMM yy") << QDateTime(QDate(1910, 10, 10), QTime());
     date = fri + " " + december + " 3 2004";
-    QTest::newRow("data12") << date << QString("ddd MMMM d yyyy") << QDateTime(QDate(2004, 12, 3), QTime());
+    QTest::newRow("data12") << date << QString("EEE MMMM d yyyy") << QDateTime(QDate(2004, 12, 3), QTime());
     QTest::newRow("data13") << QString("30.02.2004") << QString("dd.MM.yyyy") << invalidDateTime();
     QTest::newRow("data14") << QString("32.01.2004") << QString("dd.MM.yyyy") << invalidDateTime();
     date = thu + " " + january + " 2004";
-    QTest::newRow("data15") << date << QString("ddd MMMM yyyy") << QDateTime(QDate(2004, 1, 1), QTime());
+    QTest::newRow("data15") << date << QString("EEE MMMM yyyy") << QDateTime(QDate(2004, 1, 1), QTime());
     QTest::newRow("data16") << QString("2005-06-28T07:57:30.001Z")
-                            << QString("yyyy-MM-ddThh:mm:ss.zZ")
+                            << QString("yyyy-MM-ddThh:mm:ss.SSSZ")
                             << QDateTime(QDate(2005, 06, 28), QTime(07, 57, 30, 1));
 
 }
@@ -1650,21 +1649,6 @@ void tst_QDateTime::getDate()
     QVERIFY(date.month() == m);
     QVERIFY(date.day() == d);
     }
-}
-
-void tst_QDateTime::fewDigitsInYear() const
-{
-    const QDateTime three(QDate(300, 10, 11), QTime());
-    QCOMPARE(three.toString(QLatin1String("yyyy-MM-dd")), QString::fromLatin1("0300-10-11"));
-
-    const QDateTime two(QDate(20, 10, 11), QTime());
-    QCOMPARE(two.toString(QLatin1String("yyyy-MM-dd")), QString::fromLatin1("0020-10-11"));
-
-    const QDateTime yyTwo(QDate(30, 10, 11), QTime());
-    QCOMPARE(yyTwo.toString(QLatin1String("yy-MM-dd")), QString::fromLatin1("30-10-11"));
-
-    const QDateTime yyOne(QDate(4, 10, 11), QTime());
-    QCOMPARE(yyOne.toString(QLatin1String("yy-MM-dd")), QString::fromLatin1("04-10-11"));
 }
 
 void tst_QDateTime::printNegativeYear() const

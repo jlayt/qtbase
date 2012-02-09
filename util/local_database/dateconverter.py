@@ -45,34 +45,27 @@ import re
 def _convert_pattern(pattern):
     # patterns from http://www.unicode.org/reports/tr35/#Date_Format_Patterns
     qt_regexps = {
-        r"yyy{3,}" : "yyyy", # more that three digits hence convert to four-digit year
         r"L" : "M",          # stand-alone month names. not supported.
         r"g{1,}": "",        # modified julian day. not supported.
-        r"S{1,}" : "",       # fractional seconds. not supported.
         r"A{1,}" : ""        # milliseconds in day. not supported.
     }
     qt_patterns = {
         "G" : "", "GG" : "", "GGG" : "", "GGGG" : "", "GGGGG" : "", # Era. not supported.
-        "y" : "yyyy", # four-digit year without leading zeroes
         "Q" : "", "QQ" : "", "QQQ" : "", "QQQQ" : "", # quarter. not supported.
         "q" : "", "qq" : "", "qqq" : "", "qqqq" : "", # quarter. not supported.
-        "MMMMM" : "MMM", # narrow month name.
-        "LLLLL" : "MMM", # stand-alone narrow month name.
+        "LLLLL" : "MMMMM", # stand-alone narrow month name.
         "l" : "", # special symbol for chinese leap month. not supported.
         "w" : "", "W" : "", # week of year/month. not supported.
         "D" : "", "DD" : "", "DDD" : "", # day of year. not supported.
         "F" : "", # day of week in month. not supported.
-        "E" : "ddd", "EE" : "ddd", "EEE" : "ddd", "EEEEE" : "ddd", "EEEE" : "dddd", # day of week
-        "e" : "ddd", "ee" : "ddd", "eee" : "ddd", "eeeee" : "ddd", "eeee" : "dddd", # local day of week
-        "c" : "ddd", "cc" : "ddd", "ccc" : "ddd", "ccccc" : "ddd", "cccc" : "dddd", # stand-alone local day of week
-        "a" : "AP", # AM/PM
+        "e" : "E", "ee" : "EE", "eee" : "EEE", "eeeee" : "EEEEE", "eeee" : "EEEE", # local day of week
+        "c" : "E", "cc" : "EE", "ccc" : "EEE", "ccccc" : "EEEEE", "cccc" : "EEEE", # stand-alone local day of week
         "K" : "h", # Hour 0-11
         "k" : "H", # Hour 1-24
         "j" : "", # special reserved symbol.
-        "z" : "t", "zz" : "t", "zzz" : "t", "zzzz" : "t", # timezone
-        "Z" : "t", "ZZ" : "t", "ZZZ" : "t", "ZZZZ" : "t", # timezone
-        "v" : "t", "vv" : "t", "vvv" : "t", "vvvv" : "t", # timezone
-        "V" : "t", "VV" : "t", "VVV" : "t", "VVVV" : "t"  # timezone
+        "Z" : "z", "ZZ" : "zz", "ZZZ" : "zzz", "ZZZZ" : "zzzz", # timezone
+        "v" : "z", "vv" : "zz", "vvv" : "zzz", "vvvv" : "zzzz", # timezone
+        "V" : "z", "VV" : "zz", "VVV" : "zzz", "VVVV" : "zzzz"  # timezone
     }
     if qt_patterns.has_key(pattern):
         return qt_patterns[pattern]
@@ -82,7 +75,7 @@ def _convert_pattern(pattern):
 
 def convert_date(input):
     result = ""
-    patterns = "GyYuQqMLlwWdDFgEecahHKkjmsSAzZvV"
+    patterns = "GuQqLlwWDFgecKkjAZvV"
     last = ""
     inquote = 0
     chars_to_strip = " -"

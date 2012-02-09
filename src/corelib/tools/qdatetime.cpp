@@ -4344,7 +4344,7 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
                 }
                 break;
 
-            case 'z':
+            case 'S':  // TODO Not strictly correct, need to adjust places
                 if (parserType != QVariant::Date) {
                     const SectionNode sn = { MSecSection, i - add, countRepeat(newFormat, i, 3) < 3 ? 1 : 3 };
                     newSectionNodes.append(sn);
@@ -4354,18 +4354,12 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
                     newDisplay |= MSecSection;
                 }
                 break;
-            case 'A':
             case 'a':
                 if (parserType != QVariant::Date) {
-                    const bool cap = (sect == 'A');
-                    const SectionNode sn = { AmPmSection, i - add, (cap ? 1 : 0) };
+                    const SectionNode sn = { AmPmSection, i - add, countRepeat(newFormat, i, 1 };
                     newSectionNodes.append(sn);
                     appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
                     newDisplay |= AmPmSection;
-                    if (i + 1 < newFormat.size()
-                        && newFormat.at(i+1) == (cap ? QLatin1Char('P') : QLatin1Char('p'))) {
-                        ++i;
-                    }
                     index = i + 1;
                 }
                 break;
@@ -4373,8 +4367,8 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
                 if (parserType != QVariant::Time) {
                     const int repeat = countRepeat(newFormat, i, 4);
                     if (repeat >= 2) {
-                        const SectionNode sn = { repeat == 4 ? YearSection : YearSection2Digits,
-                                                 i - add, repeat == 4 ? 4 : 2 };
+                        const SectionNode sn = { repeat == 2 ? YearSection : YearSection2Digits,
+                                                 i - add, repeat };
                         newSectionNodes.append(sn);
                         appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
                         i += sn.count - 1;
@@ -4395,13 +4389,23 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
                 break;
             case 'd':
                 if (parserType != QVariant::Time) {
-                    const int repeat = countRepeat(newFormat, i, 4);
-                    const SectionNode sn = { repeat >= 3 ? DayOfWeekSection : DaySection, i - add, repeat };
+                    const int repeat = countRepeat(newFormat, i, 2);
+                    const SectionNode sn = { DaySection, i - add, repeat };
                     newSectionNodes.append(sn);
                     appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
                     i += sn.count - 1;
                     index = i + 1;
-                    newDisplay |= sn.type;
+                    newDisplay |= DaySection;
+                }
+                break;
+            case 'E':
+                if (parserType != QVariant::Time) {
+                    const SectionNode sn = { DayOfWeekSection, i - add, countRepeat(newFormat, i, 4) };
+                    newSectionNodes.append(sn);
+                    appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
+                    i += sn.count - 1;
+                    index = i + 1;
+                    newDisplay |= DayOfWeekSection;
                 }
                 break;
 
@@ -5435,13 +5439,13 @@ QString QDateTimeParser::sectionFormat(Section s, int count) const
 {
     QChar fillChar;
     switch (s) {
-    case AmPmSection: return count == 1 ? QLatin1String("AP") : QLatin1String("ap");
-    case MSecSection: fillChar = QLatin1Char('z'); break;
+    case AmPmSection: fillChar = QLatin1Char('a'); break;
+    case MSecSection: fillChar = QLatin1Char('S'); break;
     case SecondSection: fillChar = QLatin1Char('s'); break;
     case MinuteSection: fillChar = QLatin1Char('m'); break;
     case Hour24Section: fillChar = QLatin1Char('H'); break;
     case Hour12Section: fillChar = QLatin1Char('h'); break;
-    case DayOfWeekSection:
+    case DayOfWeekSection: fillChar = QLatin1Char('E'); break;
     case DaySection: fillChar = QLatin1Char('d'); break;
     case MonthSection: fillChar = QLatin1Char('M'); break;
     case YearSection2Digits:
