@@ -383,7 +383,7 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
         return getMacDateFormat(kCFDateFormatterShortStyle);
 
     case TimeFormatFull:
-        return getMacTimeFormat(kCFDateFormatterFStyle);
+        return getMacTimeFormat(kCFDateFormatterFullStyle);
     case TimeFormatLong:
         return getMacTimeFormat(kCFDateFormatterLongStyle);
     case TimeFormatMedium:
@@ -397,7 +397,7 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
     case DayNameLongStandalone:
     case DayNameShortStandalone:
     case DayNameNarrowStandalone:
-        return macDayName(in.toInt(), !(type == DayNameLong || type = DayNameLongStandalone));
+        return macDayName(in.toInt(), !(type == DayNameLong || type == DayNameLongStandalone));
 
     case MonthNameLong:
     case MonthNameShort:
@@ -436,7 +436,7 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
         QCFType<CFLocaleRef> locale = CFLocaleCopyCurrent();
         QCFType<CFDateFormatterRef> formatter = CFDateFormatterCreate(NULL, locale, kCFDateFormatterLongStyle, kCFDateFormatterLongStyle);
         QCFType<CFStringRef> value = static_cast<CFStringRef>(CFDateFormatterCopyProperty(formatter,
-            (time < QTime(12,0,0) ? kCFDateFormatterAMSymbol : kCFDateFormatterPMSymbol)));
+            (in.toTime() < QTime(12,0,0) ? kCFDateFormatterAMSymbol : kCFDateFormatterPMSymbol)));
         return QCFString::toQString(value);
     }
 
