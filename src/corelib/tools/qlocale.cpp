@@ -2391,10 +2391,10 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
             switch (c.unicode()) {
             // Year 1..n
             case 'y': {
-                int year = q->calendar().year(*date);
+                int year = date->year();
                 if (repeat == 2)
                     year = year % 100;
-                result.append(zeroPad(year, repeat));
+                result.append(longLongToString(year, -1, 10, repeat, QLocalePrivate::ZeroPadded));
                 break;
             }
 
@@ -2439,7 +2439,7 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
             case 'E': {
                 used = true;
                 repeat = qMin(repeat, 5);
-                int dayOfWeek = q->calendar().dayOfWeek(*date);
+                int dayOfWeek = date->dayOfWeek();
                 switch (repeat) {
                 case 1:
                 case 2:
@@ -2537,7 +2537,8 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
             // Fractional seconds 1..n
             case 'S': {
                 used = true;
-                QString frac = zeroPad(time->msec(), 3);
+                QString frac = longLongToString(time->msec(), -1, 10, 3, QLocalePrivate::ZeroPadded);
+
                 if (repeat > 3)
                     frac = frac.leftJustified(repeat, QLatin1Char('0'), true);
                 else if (repeat < 3)
