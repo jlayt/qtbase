@@ -4356,7 +4356,7 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
                 break;
             case 'a':
                 if (parserType != QVariant::Date) {
-                    const SectionNode sn = { AmPmSection, i - add, countRepeat(newFormat, i, 1 };
+                    const SectionNode sn = { AmPmSection, i - add, countRepeat(newFormat, i, 1) };
                     newSectionNodes.append(sn);
                     appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
                     newDisplay |= AmPmSection;
