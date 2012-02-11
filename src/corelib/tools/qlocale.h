@@ -44,6 +44,7 @@
 
 #include <QtCore/qvariant.h>
 #include <QtCore/qstring.h>
+#include <QtCore/qdatetime.h>
 #include <QtCore/qobjectdefs.h>
 
 QT_BEGIN_HEADER
@@ -52,9 +53,6 @@ QT_BEGIN_NAMESPACE
 
 
 class QDataStream;
-class QDate;
-class QDateTime;
-class QTime;
 class QVariant;
 class QTextStream;
 class QTextStreamPrivate;
@@ -567,7 +565,33 @@ public:
 
     enum MeasurementSystem { MetricSystem, ImperialSystem };
 
+#if QT_DEPRECATED_SINCE(5,0)
     enum FormatType { LongFormat, ShortFormat, NarrowFormat };
+#endif
+
+    // CLDR format length attribute for date/time/number/currency
+    enum FormatPattern {
+        FullPattern,
+        LongPattern,
+        MediumPattern,
+        ShortPattern
+    };
+
+    // CLDR field width attribute
+    enum FieldFormat {
+        LongName,      // e.g. January
+        ShortName,     // e.g. Jan
+        NarrowName,    // e.g. J
+        LongNumber,    // e.g. 01
+        ShortNumber    // e.g. 1
+    };
+
+    // CLDR context attribute
+    enum FieldContext {
+        FormatContext,        // Use in a format
+        StandaloneContext     // Use standalone
+    };
+
     enum NumberOption {
         OmitGroupSeparator = 0x01,
         RejectGroupSeparator = 0x02
@@ -615,23 +639,56 @@ public:
     QString toString(double i, char f = 'g', int prec = 6) const;
     inline QString toString(float i, char f = 'g', int prec = 6) const;
     QString toString(const QDate &date, const QString &formatStr) const;
-    QString toString(const QDate &date, FormatType format = LongFormat) const;
+    QString toString(const QDate &date, FormatPattern format = FullPattern) const;
     QString toString(const QTime &time, const QString &formatStr) const;
-    QString toString(const QTime &time, FormatType format = LongFormat) const;
-    QString toString(const QDateTime &dateTime, FormatType format = LongFormat) const;
+    QString toString(const QTime &time, FormatPattern format = FullPattern) const;
+    QString toString(const QDateTime &dateTime, FormatPattern format = FullPattern) const;
     QString toString(const QDateTime &dateTime, const QString &format) const;
 
-    QString dateFormat(FormatType format = LongFormat) const;
-    QString timeFormat(FormatType format = LongFormat) const;
-    QString dateTimeFormat(FormatType format = LongFormat) const;
+    QString dateFormat(FormatPattern format = FullPattern) const;
+    QString timeFormat(FormatPattern format = FullPattern) const;
+    QString dateTimeFormat(FormatPattern format = FullPattern) const;
 #ifndef QT_NO_DATESTRING
-    QDate toDate(const QString &string, FormatType = LongFormat) const;
-    QTime toTime(const QString &string, FormatType = LongFormat) const;
-    QDateTime toDateTime(const QString &string, FormatType format = LongFormat) const;
+    QDate toDate(const QString &string, FormatPattern = FullPattern) const;
+    QTime toTime(const QString &string, FormatPattern = FullPattern) const;
+    QDateTime toDateTime(const QString &string, FormatPattern format = FullPattern) const;
     QDate toDate(const QString &string, const QString &format) const;
     QTime toTime(const QString &string, const QString &format) const;
     QDateTime toDateTime(const QString &string, const QString &format) const;
 #endif
+
+#if QT_DEPRECATED_SINCE(5,0)
+QT_DEPRECATED inline QString toString(const QDate &date, FormatType format) const
+{ return toString(date, (format == LongFormat) ? FullPattern : ShortPattern); }
+QT_DEPRECATED inline QString toString(const QTime &time, FormatType format = LongFormat) const
+{ return toString(time, (format == LongFormat) ? FullPattern : ShortPattern); }
+QT_DEPRECATED inline QString toString(const QDateTime &dateTime, FormatType format = LongFormat) const
+{ return toString(dateTime, (format == LongFormat) ? FullPattern : ShortPattern); }
+#ifndef QT_NO_DATESTRING
+QT_DEPRECATED inline QDate toDate(const QString &string, FormatType format) const
+{ return toDate(string, (format == LongFormat) ? FullPattern : ShortPattern); }
+QT_DEPRECATED inline QTime toTime(const QString &string, FormatType format) const
+{ return toTime(string, (format == LongFormat) ? FullPattern : ShortPattern); }
+QT_DEPRECATED inline QDateTime toDateTime(const QString &string, FormatType format) const
+{ return toDateTime(string, (format == LongFormat) ? FullPattern : ShortPattern); }
+#endif // QT_NO_DATESTRING
+QT_DEPRECATED inline QString dateFormat(FormatType format) const
+{ return dateFormat((format == LongFormat) ? FullPattern : ShortPattern); }
+QT_DEPRECATED inline QString timeFormat(FormatType format) const
+{ return timeFormat((format == LongFormat) ? FullPattern : ShortPattern); }
+QT_DEPRECATED inline QString dateTimeFormat(FormatType format) const
+{ return dateTimeFormat((format == LongFormat) ? FullPattern : ShortPattern); }
+QT_DEPRECATED inline QString monthName(int m, FormatType format) const
+{ return monthName(m, (format == LongFormat) ? LongName : ShortName); }
+QT_DEPRECATED inline QString standaloneMonthName(int m, FormatType format) const
+{ return monthName(m, (format == LongFormat) ? LongName : ShortName, StandaloneContext); }
+QT_DEPRECATED inline QString dayName(int d, FormatType format) const
+{ return dayName(d, (format == LongFormat) ? LongName : ShortName); }
+QT_DEPRECATED inline QString standaloneDayName(int d, FormatType format) const
+{ return dayName(d, (format == LongFormat) ? LongName : ShortName, StandaloneContext); }
+QT_DEPRECATED inline QString amText() const { return dayPeriodName(QTime(0,0,0)); }
+QT_DEPRECATED inline QString pmText() const { return dayPeriodName(QTime(12,0,0)); }
+#endif //QT_DEPRECATED_SINCE
 
     // ### Qt 5: We need to return QString from these function since
     //           unicode data contains several characters for these fields.
@@ -643,16 +700,18 @@ public:
     QChar positiveSign() const;
     QChar exponential() const;
 
-    QString monthName(int, FormatType format = LongFormat) const;
-    QString standaloneMonthName(int, FormatType format = LongFormat) const;
-    QString dayName(int, FormatType format = LongFormat) const;
-    QString standaloneDayName(int, FormatType format = LongFormat) const;
+    QString monthName(int month,
+                      FieldFormat format = LongName,
+                      FieldContext context = FormatContext) const;
+    QString dayName(int day,
+                      FieldFormat format = LongName,
+                      FieldContext context = FormatContext) const;
+    QString dayPeriodName(const QTime &time,
+                          FieldFormat format = LongName,
+                          FieldContext context = FormatContext) const;
 
     Qt::DayOfWeek firstDayOfWeek() const;
     QList<Qt::DayOfWeek> weekdays() const;
-
-    QString amText() const;
-    QString pmText() const;
 
     MeasurementSystem measurementSystem() const;
 

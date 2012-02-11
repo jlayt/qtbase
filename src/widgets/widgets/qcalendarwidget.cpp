@@ -213,9 +213,9 @@ QString QCalendarDayValidator::text(const QDate &date, int repeat) const
             str += QLatin1Char('0');
         return str + QString::number(date.day());
     } else if (repeat == 3) {
-        return m_locale.dayName(date.dayOfWeek(), QLocale::ShortFormat);
+        return m_locale.dayName(date.dayOfWeek(), QLocale::ShortName);
     } else if (repeat >= 4) {
-        return m_locale.dayName(date.dayOfWeek(), QLocale::LongFormat);
+        return m_locale.dayName(date.dayOfWeek(), QLocale::LongName);
     }
     return QString();
 }
@@ -331,9 +331,9 @@ QString QCalendarMonthValidator::text(const QDate &date, int repeat) const
             str += QLatin1Char('0');
         return str + QString::number(date.month());
     } else if (repeat == 3) {
-        return m_locale.standaloneMonthName(date.month(), QLocale::ShortFormat);
+        return m_locale.monthName(date.month(), QLocale::ShortName, QLocale::StandaloneContext);
     } else /*if (repeat >= 4)*/ {
-        return m_locale.standaloneMonthName(date.month(), QLocale::LongFormat);
+        return m_locale.monthName(date.month(), QLocale::LongName, QLocale::StandaloneContext);
     }
 }
 
@@ -1056,15 +1056,15 @@ QString QCalendarModel::dayName(Qt::DayOfWeek day) const
 {
     switch (m_horizontalHeaderFormat) {
         case QCalendarWidget::SingleLetterDayNames: {
-            QString standaloneDayName = m_view->locale().standaloneDayName(day, QLocale::NarrowFormat);
-            if (standaloneDayName == m_view->locale().dayName(day, QLocale::NarrowFormat))
+            QString standaloneDayName = m_view->locale().dayName(day, QLocale::NarrowName, QLocale::StandaloneContext);
+            if (standaloneDayName == m_view->locale().dayName(day, QLocale::NarrowName))
                 return standaloneDayName.left(1);
             return standaloneDayName;
         }
         case QCalendarWidget::ShortDayNames:
-            return m_view->locale().dayName(day, QLocale::ShortFormat);
+            return m_view->locale().dayName(day, QLocale::ShortName);
         case QCalendarWidget::LongDayNames:
-            return m_view->locale().dayName(day, QLocale::LongFormat);
+            return m_view->locale().dayName(day, QLocale::LongName);
         default:
             break;
     }
@@ -1710,7 +1710,7 @@ void QCalendarWidgetPrivate::createNavigationBar(QWidget *widget)
     monthButton->setPopupMode(QToolButton::InstantPopup);
     monthMenu = new QMenu(monthButton);
     for (int i = 1; i <= 12; i++) {
-        QString monthName(q->locale().standaloneMonthName(i, QLocale::LongFormat));
+        QString monthName(q->locale().monthName(i, QLocale::LongName, QLocale::StandaloneContext));
         QAction *act = monthMenu->addAction(monthName);
         act->setData(i);
         monthToAction[i] = act;
@@ -1797,7 +1797,7 @@ void QCalendarWidgetPrivate::updateMonthMenuNames()
     Q_Q(QCalendarWidget);
 
     for (int i = 1; i <= 12; i++) {
-        QString monthName(q->locale().standaloneMonthName(i, QLocale::LongFormat));
+        QString monthName(q->locale().monthName(i, QLocale::LongName, QLocale::StandaloneContext));
         monthToAction[i]->setText(monthName);
     }
 }
@@ -1898,7 +1898,7 @@ void QCalendarWidgetPrivate::updateNavigationBar()
 {
     Q_Q(QCalendarWidget);
 
-    QString monthName = q->locale().standaloneMonthName(m_model->m_shownMonth, QLocale::LongFormat);
+    QString monthName = q->locale().monthName(m_model->m_shownMonth, QLocale::LongName, QLocale::StandaloneContext);
 
     monthButton->setText(monthName);
     yearButton->setText(QString::number(m_model->m_shownYear));
@@ -2591,7 +2591,7 @@ QCalendarWidget::HorizontalHeaderFormat QCalendarWidget::horizontalHeaderFormat(
 }
 
 
-/*! 
+/*!
     \enum QCalendarWidget::VerticalHeaderFormat
 
     This enum type defines the various formats the vertical header can display.

@@ -388,28 +388,38 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
         QString value = getCFLocaleValue(kCFLocaleGroupingSeparator);
         return value.isEmpty() ? QVariant() : value;
     }
+    case DateFormatFull:
     case DateFormatLong:
+    case DateFormatMedium:
     case DateFormatShort:
-        return getMacDateFormat(type == DateFormatShort
+        return getMacDateFormat(type == DateFormatShort || type == DateFormatMedium
                                 ? kCFDateFormatterShortStyle
                                 : kCFDateFormatterLongStyle);
+    case TimeFormatFull:
     case TimeFormatLong:
+    case TimeFormatMedium:
     case TimeFormatShort:
-        return getMacTimeFormat(type == TimeFormatShort
+        return getMacTimeFormat(type == TimeFormatShort || type == TimeFormatMedium
                                 ? kCFDateFormatterShortStyle
                                 : kCFDateFormatterLongStyle);
     case DayNameLong:
     case DayNameShort:
-        return macDayName(in.toInt(), (type == DayNameShort));
+    case DayNameNarrow:
+        return macDayName(in.toInt(), (type == DayNameShort || type == DayNameNarrow));
     case MonthNameLong:
     case MonthNameShort:
-        return macMonthName(in.toInt(), (type == MonthNameShort));
-    case DateToStringShort:
+    case MonthNameNarrow:
+        return macMonthName(in.toInt(), (type == MonthNameShort || type == MonthNameNarrow));
+    case DateToStringFull:
     case DateToStringLong:
-        return macDateToString(in.toDate(), (type == DateToStringShort));
-    case TimeToStringShort:
+    case DateToStringMedium:
+    case DateToStringShort:
+        return macDateToString(in.toDate(), (type == DateToStringShort || type == DateToStringMedium));
+    case TimeToStringFull:
     case TimeToStringLong:
-        return macTimeToString(in.toTime(), (type == TimeToStringShort));
+    case TimeToStringMedium:
+    case TimeToStringShort:
+        return macTimeToString(in.toTime(), (type == TimeToStringShort || type == TimeToStringMedium));
 
     case NegativeSign:
     case PositiveSign:
@@ -419,12 +429,13 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
     case MeasurementSystem:
         return QVariant(static_cast<int>(macMeasurementSystem()));
 
-    case AMText:
-    case PMText: {
+    case DayPeriodNameLong:
+    case DayPeriodNameShort:
+    case DayPeriodNameNarrow: {
         QCFType<CFLocaleRef> locale = CFLocaleCopyCurrent();
         QCFType<CFDateFormatterRef> formatter = CFDateFormatterCreate(NULL, locale, kCFDateFormatterLongStyle, kCFDateFormatterLongStyle);
         QCFType<CFStringRef> value = static_cast<CFStringRef>(CFDateFormatterCopyProperty(formatter,
-            (type == AMText ? kCFDateFormatterAMSymbol : kCFDateFormatterPMSymbol)));
+            (in.toTime() < QTime(12, 0, 0) ? kCFDateFormatterAMSymbol : kCFDateFormatterPMSymbol)));
         return QCFString::toQString(value);
     }
     case FirstDayOfWeek:
