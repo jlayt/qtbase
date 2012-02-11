@@ -226,6 +226,12 @@ information about a particular change.
   * toShort(), toUShort(), toInt(), toUInt(), toLongLong() and toULongLong() no
     longer take a parameter for base, they will only perform localised base 10
     conversions. For converting other bases use the QString methods instead.
+  * The FormatType enum and all methods using it are deprecated, use the
+    FormatPattern, FieldFormat, and FieldContext enums and methods instead.
+  * The standaloneDayName(0 and standaloneMonthName() methods have been deprecated,
+    use the dayName() and monthName() methods with StandaloneContext enum instead.
+  * The amText() and pmText() methods are deprecated, use the dayPeriodName()
+    method instead.
 
 - QSystemLocale has been removed from the public API.
 

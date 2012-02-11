@@ -628,6 +628,59 @@
 */
 
 /*!
+    \enum QLocale::FormatPattern
+
+    This enum describes the types of format that can be used when
+    converting objects such as QDate and QTime to localized strings.
+
+    \value FullFormat The longest version of the object.
+
+    \value LongFormat A longer version of the object
+
+    \value MediumFormat A shorter version of the object
+
+    \value ShortFormat The shortest version of the object
+*/
+
+/*!
+    \enum QLocale::FieldFormat
+
+    This enum describes the types of format that can be used when
+    converting object fields to localized strings.
+
+    \value LongName The long name version of a field; for example
+    returning "January" as a month name.
+
+    \value ShortName The short name version of a field, for example
+    returning "Jan" as a month name.
+
+    \value NarrowName The narrow name version of a field, for example
+    returning "J" as a month name.  This format is used when space is
+    limited such as in a column header.  Unlike LongName and ShortName
+    this value is not guaranteed to be unique and should not be used
+    when parsing input.
+
+    \value LongNumber The padded numeric value of a field, for example
+    "01" as a month.
+
+    \value ShortNumber The un-padded numeric value of a field, for example
+    "1" as a month.
+*/
+
+/*!
+    \enum FieldContext
+
+    This enum describes the types of context that can be used when
+    converting object fields to localized strings.
+
+    \value FormatContext The version of a field to be used in a FormatPattern
+
+    \value StandaloneContext The version of a field to be used standalone
+*/
+
+
+/*!
+    \obsolete
     \enum QLocale::FormatType
 
     This enum describes the types of format that can be used when
