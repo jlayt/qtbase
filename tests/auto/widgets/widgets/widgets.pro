@@ -9,7 +9,7 @@ SUBDIRS=\
    qcheckbox \
    qcombobox \
    qcommandlinkbutton \
-   qdatetimeedit \
+#   qdatetimeedit \
    qdial \
    qdialogbuttonbox \
    qdockwidget \

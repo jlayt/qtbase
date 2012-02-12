@@ -205,24 +205,8 @@ def convertFormat(format):
                 result += "'"
                 i += 1
         else:
-            s = format[i:]
-            if s.startswith("EEEE"):
-                result += "dddd"
-                i += 4
-            elif s.startswith("EEE"):
-                result += "ddd"
-                i += 3
-            elif s.startswith("a"):
-                result += "AP"
-                i += 1
-            elif s.startswith("z"):
-                result += "t"
-                i += 1
-            elif s.startswith("v"):
-                i += 1
-            else:
-                result += format[i]
-                i += 1
+            result += format[i]
+            i += 1
 
     return result
 

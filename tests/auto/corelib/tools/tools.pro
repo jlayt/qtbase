@@ -8,8 +8,8 @@ SUBDIRS=\
     qchar \
     qcontiguouscache \
     qcryptographichash \
-    qdate \
-    qdatetime \
+#    qdate \
+#    qdatetime \
     qeasingcurve \
     qelapsedtimer \
     qexplicitlyshareddatapointer \
@@ -17,7 +17,7 @@ SUBDIRS=\
     qhash \
     qline \
     qlist \
-    qlocale \
+#    qlocale \
     qmap \
     qmargins \
     qpoint \
@@ -38,7 +38,7 @@ SUBDIRS=\
     qstringmatcher \
     qstringref \
     qtextboundaryfinder \
-    qtime \
+#    qtime \
     qtimeline \
     qvarlengtharray \
     qvector
