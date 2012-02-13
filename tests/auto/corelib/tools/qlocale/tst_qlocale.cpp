@@ -1764,7 +1764,7 @@ void tst_QLocale::dayName_data()
     QTest::newRow("de_DE Dec") << QString("de_DE") <<  7 << QString("Sonntag") << QString("So.") << QString("S")
                                                          << QString("Sonntag") << QString("So")  << QString("S");
     QTest::newRow("ru_RU Sun") << QString("ru_RU") <<  7 << QString::fromUtf8("\320\262\320\276\321\201\320\272\321\200\320\265\321\201\320\265\320\275\321\214\320\265")
-                                                         << QString::fromUtf8("\320\222\321\201")
+                                                         << QString::fromUtf8("\320\262\321\201")
                                                          << QString::fromUtf8("\320\222")
                                                          << QString::fromUtf8("\320\222\320\276\321\201\320\272\321\200\320\265\321\201\320\265\320\275\321\214\320\265")
                                                          << QString::fromUtf8("\320\222\321\201")
