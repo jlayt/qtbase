@@ -71,6 +71,9 @@ class Q_CORE_EXPORT QLocale
     friend class QDoubleValidatorPrivate;
     friend class QTextStream;
     friend class QTextStreamPrivate;
+    friend class QDate;
+    friend class QTime;
+    friend class QDateTime;
 
 public:
 // GENERATED PART STARTS HERE

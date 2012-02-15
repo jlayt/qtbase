@@ -289,7 +289,7 @@ Q_DECLARE_METATYPE(KeyList)
 void tst_QDateTimeEdit::getSetCheck()
 {
     QDateTimeEdit obj1;
-    obj1.setDisplayFormat("dd/MM/yyyy hh:mm:ss.zzz d/M/yy h:m:s.z AP");
+    obj1.setDisplayFormat("dd/MM/yyyy hh:mm:ss.SSS d/M/yy h:m:s.SSS a");
     // Section QDateTimeEdit::currentSection()
     // void QDateTimeEdit::setCurrentSection(Section)
     obj1.setCurrentSection(QDateTimeEdit::NoSection);
@@ -743,16 +743,15 @@ void tst_QDateTimeEdit::displayFormat_data()
     QTest::newRow("valid-1") << QString("dd MM yyyy::ss:mm:hh") << true
                              << QString("31 12 2999::59:59:03") << dt;
     QTest::newRow("valid-2") << QString("hh-dd-mm-MM-yy") << true << QString("03-31-59-12-99") << dt;
-    QTest::newRow("valid-3") << QString("ddd MM d yyyy::ss:mm:hh") << true
+    QTest::newRow("valid-3") << QString("EEE MM d yyyy::ss:mm:hh") << true
                              << QDate::shortDayName(2) + " 12 31 2999::59:59:03" << dt;
     QTest::newRow("valid-4") << QString("hh-dd-mm-MM-yyyy") << true << QString("03-31-59-12-2999") << dt;
     QTest::newRow("invalid-0") << QString("yyyy.MM.yy") << true << QString("2999.12.99") << dt;
-    QTest::newRow("invalid-1") << QString("y") << false << QString() << dt;
     QTest::newRow("invalid-2") << QString("") << false << QString() << dt;
     QTest::newRow("quoted-1") << QString("'Midday is at:' dd") << true << QString("Midday is at: 31") << dt;
     QTest::newRow("leading1") << QString("h:hh:hhh") << true << QString("3:03:033") << dt;
-    QTest::newRow("H1") << QString("HH:hh:ap") << true << QString("03:03:am") << dt;
-    QTest::newRow("H2") << QString("HH:hh:ap") << true << QString("23:11:pm")
+    QTest::newRow("H1") << QString("HH:hh:a") << true << QString("03:03:AM") << dt;
+    QTest::newRow("H2") << QString("HH:hh:a") << true << QString("23:11:PM")
                         << QDateTime(dt.date(), QTime(23, 0, 0));
 }
 
@@ -1935,7 +1934,7 @@ void tst_QDateTimeEdit::userKeyPress_Time()
     QFETCH(QTime, expected_time);
 
     if (ampm)
-        testWidget->setDisplayFormat("hh:mm:ss ap");
+        testWidget->setDisplayFormat("hh:mm:ss a");
     else
         testWidget->setDisplayFormat("hh:mm:ss");
 
@@ -2153,40 +2152,40 @@ void tst_QDateTimeEdit::sectionText_data()
     QTest::addColumn<uint>("section");
     QTest::addColumn<QString>("sectionText");
 
-    QTest::newRow("data0") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data0") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::NoSection << QString();
-    QTest::newRow("data1") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data1") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
-                        << (uint)QDateTimeEdit::AmPmSection << QString("pm");
-    QTest::newRow("data2") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+                        << (uint)QDateTimeEdit::AmPmSection << QString("PM");
+    QTest::newRow("data2") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::MSecSection << QString("789");
-    QTest::newRow("data3") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data3") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::SecondSection << QString("03");
-    QTest::newRow("data4") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data4") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::MinuteSection << QString("55");
-    QTest::newRow("data5") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data5") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::HourSection << QString("03");
-    QTest::newRow("data6") << QString("dd/MM/yyyy hh:mm:ss zzz")
+    QTest::newRow("data6") << QString("dd/MM/yyyy HH:mm:ss SSS")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::HourSection << QString("15");
-    QTest::newRow("data7") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data7") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::DaySection << QString("22");
-    QTest::newRow("data8") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data8") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::MonthSection << QString("06");
-    QTest::newRow("data9") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data9") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                         << (uint)QDateTimeEdit::YearSection << QString("2004");
-    QTest::newRow("data10") << QString("dd/MM/yyyy hh:mm:ss zzz AP")
+    QTest::newRow("data10") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                          << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                          << (uint)QDateTimeEdit::AmPmSection << QString("PM");
-    QTest::newRow("data11") << QString("dd/MM/yyyy hh:mm:ss ap")
+    QTest::newRow("data11") << QString("dd/MM/yyyy hh:mm:ss a")
                          << QDateTime(QDate(2004, 6, 22), QTime(15, 55, 3, 789))
                          << (uint)QDateTimeEdit::MSecSection << QString();
 }
@@ -2333,11 +2332,11 @@ void tst_QDateTimeEdit::stepHourAMPM_data()
 
         QTest::newRow("hh 1") << QString("hh") << keys << expected << QTime(0, 0)
                               << QTime(0, 0) << QTime(23, 59, 59);
-        QTest::newRow("hh:ap 1") << QString("hh:ap") << keys << expected
+        QTest::newRow("hh:a 1") << QString("hh:a") << keys << expected
                                  << QTime(0, 0) << QTime(0, 0)
                                  << QTime(23, 59, 59);
 
-        QTest::newRow("HH:ap 2") << QString("HH:ap") << keys << expected
+        QTest::newRow("HH:a 2") << QString("HH:a") << keys << expected
                                  << QTime(0, 0) << QTime(0, 0)
                                  << QTime(23, 59, 59);
 
@@ -2348,7 +2347,7 @@ void tst_QDateTimeEdit::stepHourAMPM_data()
         keys << Qt::Key_Down;
         expected << QTime(2, 0, 0);
         QTest::newRow("hh 2") << QString("hh") << keys << expected << QTime(0, 0) << QTime(2, 0, 0) << QTime(23, 59, 59);
-        QTest::newRow("hh:ap 2") << QString("hh:ap") << keys << expected << QTime(0, 0) << QTime(2, 0, 0) << QTime(23, 59, 59);
+        QTest::newRow("hh:a 2") << QString("hh:a") << keys << expected << QTime(0, 0) << QTime(2, 0, 0) << QTime(23, 59, 59);
     }
     {
         KeyList keys;
@@ -2359,7 +2358,7 @@ void tst_QDateTimeEdit::stepHourAMPM_data()
         expected << QTime(23, 0, 0);
         QTest::newRow("hh 3") << QString("hh") << keys << expected << QTime(0, 0) << QTime(22, 0, 0)
                               << QTime(23, 59, 59);
-        QTest::newRow("hh:ap 3") << QString("hh:ap") << keys << expected << QTime(0, 0)
+        QTest::newRow("hh:a 3") << QString("hh:a") << keys << expected << QTime(0, 0)
                                  << QTime(22, 0, 0) << QTime(23, 59, 59);
     }
     {
@@ -2367,7 +2366,7 @@ void tst_QDateTimeEdit::stepHourAMPM_data()
         TimeList expected;
         keys << Qt::Key_Up;
         expected << QTime(15, 31, 0);
-        QTest::newRow("hh:mm:ap 3") << QString("hh:mm:ap") << keys << expected << QTime(15, 31, 0)
+        QTest::newRow("hh:mm:a 3") << QString("hh:mm:a") << keys << expected << QTime(15, 31, 0)
                                     << QTime(9, 0, 0) << QTime(16, 0, 0);
         QTest::newRow("hh:mm 3") << QString("hh:mm") << keys << expected << QTime(15, 31, 0)
                                  << QTime(9, 0, 0) << QTime(16, 0, 0);
@@ -2405,17 +2404,17 @@ void tst_QDateTimeEdit::displayedSections_data()
     QTest::addColumn<QString>("format");
     QTest::addColumn<uint>("section");
 
-    QTest::newRow("data0") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data0") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)(QDateTimeEdit::DaySection | QDateTimeEdit::MonthSection
                                   | QDateTimeEdit::YearSection | QDateTimeEdit::HourSection
                                   | QDateTimeEdit::MinuteSection | QDateTimeEdit::SecondSection
                                   | QDateTimeEdit::MSecSection | QDateTimeEdit::AmPmSection);
-    QTest::newRow("data1") << QString("dd/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data1") << QString("dd/yyyy hh:mm:ss SSS a")
                         << (uint)(QDateTimeEdit::DaySection
                                   | QDateTimeEdit::YearSection | QDateTimeEdit::HourSection
                                   | QDateTimeEdit::MinuteSection | QDateTimeEdit::SecondSection
                                   | QDateTimeEdit::MSecSection | QDateTimeEdit::AmPmSection);
-    QTest::newRow("data2") << QString("dd/MM/yyyy mm zzz ap")
+    QTest::newRow("data2") << QString("dd/MM/yyyy mm SSS a")
                         << (uint)(QDateTimeEdit::DaySection | QDateTimeEdit::MonthSection
                                   | QDateTimeEdit::YearSection
                                   | QDateTimeEdit::MinuteSection
@@ -2423,13 +2422,13 @@ void tst_QDateTimeEdit::displayedSections_data()
     QTest::newRow("data3") << QString("dd/MM/yyyy")
                         << (uint)(QDateTimeEdit::DaySection | QDateTimeEdit::MonthSection
                                   | QDateTimeEdit::YearSection);
-    QTest::newRow("data4") << QString("hh:mm:ss zzz ap")
+    QTest::newRow("data4") << QString("hh:mm:ss SSS a")
                         << (uint)(QDateTimeEdit::HourSection
                                   | QDateTimeEdit::MinuteSection | QDateTimeEdit::SecondSection
                                   | QDateTimeEdit::MSecSection | QDateTimeEdit::AmPmSection);
-    QTest::newRow("data5") << QString("dd ap")
+    QTest::newRow("data5") << QString("dd a")
                         << (uint)(QDateTimeEdit::DaySection | QDateTimeEdit::AmPmSection);
-    QTest::newRow("data6") << QString("zzz")
+    QTest::newRow("data6") << QString("SSS")
                         << (uint)QDateTimeEdit::MSecSection;
 }
 
@@ -2449,27 +2448,27 @@ void tst_QDateTimeEdit::currentSection_data()
     QTest::addColumn<uint>("currentSection");
 
     // First is deliberate, this way we can make sure that it is not reset by specifying no section.
-    QTest::newRow("data0") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data0") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::NoSection << (uint)QDateTimeEdit::YearSection;
-    QTest::newRow("data1") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data1") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::AmPmSection << (uint)QDateTimeEdit::AmPmSection;
-    QTest::newRow("data2") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data2") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::MSecSection << (uint)QDateTimeEdit::MSecSection;
-    QTest::newRow("data3") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data3") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::SecondSection << (uint)QDateTimeEdit::SecondSection;
-    QTest::newRow("data4") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data4") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::MinuteSection << (uint)QDateTimeEdit::MinuteSection;
-    QTest::newRow("data5") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data5") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::HourSection << (uint)QDateTimeEdit::HourSection;
-    QTest::newRow("data6") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data6") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::DaySection << (uint)QDateTimeEdit::DaySection;
-    QTest::newRow("data7") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data7") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::MonthSection << (uint)QDateTimeEdit::MonthSection;
-    QTest::newRow("data8") << QString("dd/MM/yyyy hh:mm:ss zzz ap")
+    QTest::newRow("data8") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::YearSection << (uint)QDateTimeEdit::YearSection;
-    QTest::newRow("data9") << QString("dd/MM/yyyy hh:mm:ss zzz AP")
+    QTest::newRow("data9") << QString("dd/MM/yyyy hh:mm:ss SSS a")
                         << (uint)QDateTimeEdit::AmPmSection << (uint)QDateTimeEdit::AmPmSection;
-    QTest::newRow("data10") << QString("dd/MM/yyyy hh:mm:ss ap")
+    QTest::newRow("data10") << QString("dd/MM/yyyy hh:mm:ss a")
                          << (uint)QDateTimeEdit::MSecSection << (uint)QDateTimeEdit::DaySection;
 }
 
@@ -2535,9 +2534,9 @@ void tst_QDateTimeEdit::newCase()
         QDate::longMonthName(6) != "June" || QDate::longMonthName(7) != "July")
         QSKIP("This test only works in English");
 
-    testWidget->setDisplayFormat("MMMM'a'MbMMMcMM");
+    testWidget->setDisplayFormat("MMMM'a'MbMMMiMM");
     testWidget->setDate(QDate(2005, 6, 1));
-    QCOMPARE(testWidget->text(), QString("Junea6bJunc06"));
+    QCOMPARE(testWidget->text(), QString("Junea6bJuni06"));
 #ifdef Q_OS_MAC
     QTest::keyClick(testWidget, Qt::Key_Left, Qt::ControlModifier);
 #else
@@ -2645,7 +2644,7 @@ void tst_QDateTimeEdit::newCase4()
 
 void tst_QDateTimeEdit::newCase5()
 {
-    testWidget->setDisplayFormat("yyyy-MM-dd hh:mm:ss zzz 'ms'");
+    testWidget->setDisplayFormat("yyyy-MM-dd hh:mm:ss SSS 'ms'");
     testWidget->setDateTime(QDateTime(QDate(2005, 10, 7), QTime(17, 44, 13, 100)));
     testWidget->show();
     QCOMPARE(testWidget->lineEdit()->displayText(), QString("2005-10-07 17:44:13 100 ms"));
@@ -2686,7 +2685,7 @@ void tst_QDateTimeEdit::newCase6()
 
 void tst_QDateTimeEdit::task98554()
 {
-    testWidget->setDisplayFormat("mm.ss.zzz(ms)");
+    testWidget->setDisplayFormat("mm.ss.SSS(ms)");
     testWidget->setTime(QTime(0, 0, 9));
     testWidget->setCurrentSection(QDateTimeEdit::SecondSection);
     testWidget->show();
@@ -2712,25 +2711,25 @@ void tst_QDateTimeEdit::setCurrentSection_data()
     QTest::addColumn<QList<int> >("setCurrentSections");
     QTest::addColumn<QList<int> >("expectedCursorPositions");
 
-    QTest::newRow("Day") << QString("dd/MM/yyyy hh:mm:ss.zzz d/M/yy h:m:s.z") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
+    QTest::newRow("Day") << QString("dd/MM/yyyy hh:mm:ss.SSS d/M/yy h:m:s.SSS") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
                          << makeList(QDateTimeEdit::DaySection, QDateTimeEdit::DaySection, QDateTimeEdit::DaySection)
                          << makeList(24, 0, 24);
-    QTest::newRow("Month") << QString("dd/MM/yyyy hh:mm:ss.zzz d/M/yy h:m:s.z") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
+    QTest::newRow("Month") << QString("dd/MM/yyyy hh:mm:ss.SSS d/M/yy h:m:s.SSS") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
                            << makeList(QDateTimeEdit::MonthSection, QDateTimeEdit::MonthSection, QDateTimeEdit::MonthSection)
                            << makeList(3, 26, 3);
-    QTest::newRow("Year") << QString("dd/MM/yyyy hh:mm:ss.zzz d/M/yy h:m:s.z") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
+    QTest::newRow("Year") << QString("dd/MM/yyyy hh:mm:ss.SSS d/M/yy h:m:s.SSS") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
                           << makeList(QDateTimeEdit::YearSection, QDateTimeEdit::YearSection, QDateTimeEdit::YearSection)
                           << makeList(6, 28, 6);
-    QTest::newRow("Hour") << QString("dd/MM/yyyy hh:mm:ss.zzz d/M/yy h:m:s.z") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
+    QTest::newRow("Hour") << QString("dd/MM/yyyy hh:mm:ss.SSS d/M/yy h:m:s.SSS") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
                           << makeList(QDateTimeEdit::HourSection, QDateTimeEdit::HourSection, QDateTimeEdit::HourSection)
                           << makeList(11, 31, 11);
-    QTest::newRow("Minute") << QString("dd/MM/yyyy hh:mm:ss.zzz d/M/yy h:m:s.z") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
+    QTest::newRow("Minute") << QString("dd/MM/yyyy hh:mm:ss.SSS d/M/yy h:m:s.SSS") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
                             << makeList(QDateTimeEdit::MinuteSection, QDateTimeEdit::MinuteSection, QDateTimeEdit::MinuteSection)
                             << makeList(14, 33, 14);
-    QTest::newRow("Second") << QString("dd/MM/yyyy hh:mm:ss.zzz d/M/yy h:m:s.z") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
+    QTest::newRow("Second") << QString("dd/MM/yyyy hh:mm:ss.SSS d/M/yy h:m:s.SSS") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
                             << makeList(QDateTimeEdit::SecondSection, QDateTimeEdit::SecondSection, QDateTimeEdit::SecondSection)
                             << makeList(17, 35, 17);
-    QTest::newRow("MSec") << QString("dd/MM/yyyy hh:mm:ss.zzz d/M/yy h:m:s.z") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
+    QTest::newRow("MSec") << QString("dd/MM/yyyy hh:mm:ss.SSS d/M/yy h:m:s.SSS") << QDateTime(QDate(2001, 1, 1), QTime(1, 2, 3, 4))
                           << makeList(QDateTimeEdit::MSecSection, QDateTimeEdit::MSecSection, QDateTimeEdit::MSecSection)
                           << makeList(20, 37, 20);
 }
@@ -2762,7 +2761,7 @@ void tst_QDateTimeEdit::setCurrentSection()
 
 void tst_QDateTimeEdit::setSelectedSection()
 {
-    testWidget->setDisplayFormat("mm.ss.zzz('ms') m");
+    testWidget->setDisplayFormat("mm.ss.SSS('ms') m");
     testWidget->setTime(QTime(0, 0, 9));
     testWidget->show();
 #ifdef Q_OS_MAC
@@ -2898,27 +2897,27 @@ void tst_QDateTimeEdit::hour12Test()
 {
     testWidget->setDisplayFormat("hh a");
     testWidget->setTime(QTime(0, 0, 0));
-    QCOMPARE(testWidget->lineEdit()->displayText(), QString("12 am"));
+    QCOMPARE(testWidget->lineEdit()->displayText(), QString("12 AM"));
     for (int i=0; i<11; ++i) {
         QTest::keyClick(testWidget, Qt::Key_Up);
     }
-    QCOMPARE(testWidget->lineEdit()->displayText(), QString("11 am"));
+    QCOMPARE(testWidget->lineEdit()->displayText(), QString("11 AM"));
     QTest::keyClick(testWidget, Qt::Key_Up);
-    QCOMPARE(testWidget->lineEdit()->displayText(), QString("12 pm"));
+    QCOMPARE(testWidget->lineEdit()->displayText(), QString("12 PM"));
     for (int i=0; i<11; ++i) {
         QTest::keyClick(testWidget, Qt::Key_Up);
     }
-    QCOMPARE(testWidget->lineEdit()->displayText(), QString("11 pm"));
+    QCOMPARE(testWidget->lineEdit()->displayText(), QString("11 PM"));
     QTest::keyClick(testWidget, Qt::Key_Up);
-    QCOMPARE(testWidget->lineEdit()->displayText(), QString("11 pm"));
+    QCOMPARE(testWidget->lineEdit()->displayText(), QString("11 PM"));
     for (int i=0; i<12; ++i) {
         QTest::keyClick(testWidget, Qt::Key_Down);
     }
-    QCOMPARE(testWidget->lineEdit()->displayText(), QString("11 am"));
+    QCOMPARE(testWidget->lineEdit()->displayText(), QString("11 AM"));
     QTest::keyClick(testWidget, Qt::Key_1);
-    QCOMPARE(testWidget->lineEdit()->displayText(), QString("1 am"));
+    QCOMPARE(testWidget->lineEdit()->displayText(), QString("1 AM"));
     QTest::keyClick(testWidget, Qt::Key_3);
-    QCOMPARE(testWidget->lineEdit()->displayText(), QString("1 am"));
+    QCOMPARE(testWidget->lineEdit()->displayText(), QString("1 AM"));
 }
 
 void tst_QDateTimeEdit::yyTest()
@@ -2963,7 +2962,7 @@ void tst_QDateTimeEdit::yyTest()
 
 void tst_QDateTimeEdit::task108572()
 {
-    testWidget->setDisplayFormat("hh:mm:ss.zzz");
+    testWidget->setDisplayFormat("hh:mm:ss.SSS");
     testWidget->setTime(QTime(0, 1, 2, 0));
     QCOMPARE(testWidget->lineEdit()->displayText(), QString("00:01:02.000"));
 
@@ -3044,7 +3043,7 @@ void tst_QDateTimeEdit::ddMMMMyyyy()
 
 void tst_QDateTimeEdit::wheelEvent()
 {
-    testWidget->setDisplayFormat("dddd/MM");
+    testWidget->setDisplayFormat("EEEE/MM");
     testWidget->setDate(QDate(2000, 2, 21));
     testWidget->setCurrentSection(QDateTimeEdit::DaySection);
     QWheelEvent w(testWidget->lineEdit()->geometry().center(), 120, 0, 0);

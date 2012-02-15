@@ -555,8 +555,7 @@ void tst_QTime::fromStringFormat_data()
     QTest::addColumn<QString>("format");
     QTest::addColumn<QTime>("t");
 
-    QTest::newRow( "data0" ) << QString("02:23PM") << QString("hh:mmAP") << QTime(14,23,0,0);
-    QTest::newRow( "data1" ) << QString("02:23pm") << QString("hh:mmap") << QTime(14,23,0,0);
+    QTest::newRow( "data0" ) << QString("02:23PM") << QString("hh:mma") << QTime(14,23,0,0);
 }
 
 void tst_QTime::fromStringFormat()
@@ -598,11 +597,9 @@ void tst_QTime::toString_format_data()
     QTest::addColumn<QString>("format");
     QTest::addColumn<QString>("str");
 
-    QTest::newRow( "data0" ) << QTime(0,0,0,0) << QString("h:m:s:z") << QString("0:0:0:0");
-    QTest::newRow( "data1" ) << QTime(10,12,34,53) << QString("hh:mm:ss:zzz") << QString("10:12:34:053");
-    QTest::newRow( "data2" ) << QTime(10,12,34,45) << QString("hh:m:ss:z") << QString("10:12:34:45");
-    QTest::newRow( "data3" ) << QTime(10,12,34,45) << QString("hh:ss ap") << QString("10:34 am");
-    QTest::newRow( "data4" ) << QTime(22,12,34,45) << QString("hh:zzz AP") << QString("10:045 PM");
+    QTest::newRow( "data0" ) << QTime(0,0,0,0) << QString("h:m:s:S") << QString("12:0:0:0");
+    QTest::newRow( "data1" ) << QTime(10,12,34,53) << QString("hh:mm:ss:SSS") << QString("10:12:34:053");
+    QTest::newRow( "data3" ) << QTime(10,12,34,45) << QString("hh:ss a") << QString("10:34 AM");
     QTest::newRow( "data5" ) << QTime(230,230,230,230) << QString("hh:mm:ss") << QString();
 }
 

@@ -45,6 +45,7 @@
 #include "qdatastream.h"
 #include "qset.h"
 #include "qlocale.h"
+#include "qlocale_p.h"
 #include "qdatetime.h"
 #include "qregexp.h"
 #include "qdebug.h"
@@ -142,9 +143,6 @@ static const char monthDays[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30,
 static const char * const qt_shortMonthNames[] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-#endif
-#ifndef QT_NO_DATESTRING
-static QString fmtDateTime(const QString& f, const QTime* dt = 0, const QDate* dd = 0);
 #endif
 
 /*****************************************************************************
@@ -829,7 +827,8 @@ QString QDate::toString(const QString& format) const
 {
     if (year() > 9999)
         return QString();
-    return fmtDateTime(format, 0, this);
+    QLocale sys = QLocale::system();
+    return sys.d()->dateTimeToString(format, this, 0, &sys);
 }
 #endif //QT_NO_DATESTRING
 
@@ -1584,7 +1583,8 @@ QString QTime::toString(Qt::DateFormat format) const
 */
 QString QTime::toString(const QString& format) const
 {
-    return fmtDateTime(format, this, 0);
+    QLocale sys = QLocale::system();
+    return sys.d()->dateTimeToString(format, 0, this, &sys);
 }
 #endif //QT_NO_DATESTRING
 /*!
@@ -2576,7 +2576,8 @@ QString QDateTime::toString(Qt::DateFormat f) const
 */
 QString QDateTime::toString(const QString& format) const
 {
-    return fmtDateTime(format, &d->time, &d->date);
+    QLocale sys = QLocale::system();
+    return sys.d()->dateTimeToString(format, &d->date, &d->time, &sys);
 }
 #endif //QT_NO_DATESTRING
 
@@ -3593,202 +3594,6 @@ QDataStream &operator>>(QDataStream &in, QDateTime &dateTime)
 }
 #endif // QT_NO_DATASTREAM
 
-
-
-// checks if there is an unqoted 'AP' or 'ap' in the string
-static bool hasUnquotedAP(const QString &f)
-{
-    const QLatin1Char quote('\'');
-    bool inquote = false;
-    const int max = f.size();
-    for (int i=0; i<max; ++i) {
-        if (f.at(i) == quote) {
-            inquote = !inquote;
-        } else if (!inquote && f.at(i).toUpper() == QLatin1Char('A')) {
-            return true;
-        }
-    }
-    return false;
-}
-
-#ifndef QT_NO_DATESTRING
-/*****************************************************************************
-  Some static function used by QDate, QTime and QDateTime
-*****************************************************************************/
-
-// Replaces tokens by their value. See QDateTime::toString() for a list of valid tokens
-static QString getFmtString(const QString& f, const QTime* dt = 0, const QDate* dd = 0, bool am_pm = false)
-{
-    if (f.isEmpty())
-        return QString();
-
-    QString buf = f;
-    int removed = 0;
-
-    if (dt) {
-        if (f.startsWith(QLatin1String("hh")) || f.startsWith(QLatin1String("HH"))) {
-            const bool hour12 = f.at(0) == QLatin1Char('h') && am_pm;
-            if (hour12 && dt->hour() > 12)
-                buf = QString::number(dt->hour() - 12).rightJustified(2, QLatin1Char('0'), true);
-            else if (hour12 && dt->hour() == 0)
-                buf = QLatin1String("12");
-            else
-                buf = QString::number(dt->hour()).rightJustified(2, QLatin1Char('0'), true);
-            removed = 2;
-        } else if (f.at(0) == QLatin1Char('h') || f.at(0) == QLatin1Char('H')) {
-            const bool hour12 = f.at(0) == QLatin1Char('h') && am_pm;
-            if (hour12 && dt->hour() > 12)
-                buf = QString::number(dt->hour() - 12);
-            else if (hour12 && dt->hour() == 0)
-                buf = QLatin1String("12");
-            else
-                buf = QString::number(dt->hour());
-            removed = 1;
-        } else if (f.startsWith(QLatin1String("mm"))) {
-            buf = QString::number(dt->minute()).rightJustified(2, QLatin1Char('0'), true);
-            removed = 2;
-        } else if (f.at(0) == (QLatin1Char('m'))) {
-            buf = QString::number(dt->minute());
-            removed = 1;
-        } else if (f.startsWith(QLatin1String("ss"))) {
-            buf = QString::number(dt->second()).rightJustified(2, QLatin1Char('0'), true);
-            removed = 2;
-        } else if (f.at(0) == QLatin1Char('s')) {
-            buf = QString::number(dt->second());
-        } else if (f.startsWith(QLatin1String("zzz"))) {
-            buf = QString::number(dt->msec()).rightJustified(3, QLatin1Char('0'), true);
-            removed = 3;
-        } else if (f.at(0) == QLatin1Char('z')) {
-            buf = QString::number(dt->msec());
-            removed = 1;
-        } else if (f.at(0).toUpper() == QLatin1Char('A')) {
-            const bool upper = f.at(0) == QLatin1Char('A');
-            buf = dt->hour() < 12 ? QLatin1String("am") : QLatin1String("pm");
-            if (upper)
-                buf = buf.toUpper();
-            if (f.size() > 1 && f.at(1).toUpper() == QLatin1Char('P') &&
-                f.at(0).isUpper() == f.at(1).isUpper()) {
-                removed = 2;
-            } else {
-                removed = 1;
-            }
-        }
-    }
-
-    if (dd) {
-        if (f.startsWith(QLatin1String("dddd"))) {
-            buf = dd->longDayName(dd->dayOfWeek());
-            removed = 4;
-        } else if (f.startsWith(QLatin1String("ddd"))) {
-            buf = dd->shortDayName(dd->dayOfWeek());
-            removed = 3;
-        } else if (f.startsWith(QLatin1String("dd"))) {
-            buf = QString::number(dd->day()).rightJustified(2, QLatin1Char('0'), true);
-            removed = 2;
-        } else if (f.at(0) == QLatin1Char('d')) {
-            buf = QString::number(dd->day());
-            removed = 1;
-        } else if (f.startsWith(QLatin1String("MMMM"))) {
-            buf = dd->longMonthName(dd->month());
-            removed = 4;
-        } else if (f.startsWith(QLatin1String("MMM"))) {
-            buf = dd->shortMonthName(dd->month());
-            removed = 3;
-        } else if (f.startsWith(QLatin1String("MM"))) {
-            buf = QString::number(dd->month()).rightJustified(2, QLatin1Char('0'), true);
-            removed = 2;
-        } else if (f.at(0) == QLatin1Char('M')) {
-            buf = QString::number(dd->month());
-            removed = 1;
-        } else if (f.startsWith(QLatin1String("yyyy"))) {
-            const int year = dd->year();
-            buf = QString::number(qAbs(year)).rightJustified(4, QLatin1Char('0'));
-            if(year > 0)
-                removed = 4;
-            else
-            {
-                buf.prepend(QLatin1Char('-'));
-                removed = 5;
-            }
-
-        } else if (f.startsWith(QLatin1String("yy"))) {
-            buf = QString::number(dd->year()).right(2).rightJustified(2, QLatin1Char('0'));
-            removed = 2;
-        }
-    }
-    if (removed == 0 || removed >= f.size()) {
-        return buf;
-    }
-
-    return buf + getFmtString(f.mid(removed), dt, dd, am_pm);
-}
-
-// Parses the format string and uses getFmtString to get the values for the tokens. Ret
-static QString fmtDateTime(const QString& f, const QTime* dt, const QDate* dd)
-{
-    const QLatin1Char quote('\'');
-    if (f.isEmpty())
-        return QString();
-    if (dt && !dt->isValid())
-        return QString();
-    if (dd && !dd->isValid())
-        return QString();
-
-    const bool ap = hasUnquotedAP(f);
-
-    QString buf;
-    QString frm;
-    QChar status(QLatin1Char('0'));
-
-    for (int i = 0; i < (int)f.length(); ++i) {
-        if (f.at(i) == quote) {
-            if (status == quote) {
-                if (i > 0 && f.at(i - 1) == quote)
-                    buf += QLatin1Char('\'');
-                status = QLatin1Char('0');
-            } else {
-                if (!frm.isEmpty()) {
-                    buf += getFmtString(frm, dt, dd, ap);
-                    frm.clear();
-                }
-                status = quote;
-            }
-        } else if (status == quote) {
-            buf += f.at(i);
-        } else if (f.at(i) == status) {
-            if ((ap) && ((f.at(i) == QLatin1Char('P')) || (f.at(i) == QLatin1Char('p'))))
-                status = QLatin1Char('0');
-            frm += f.at(i);
-        } else {
-            buf += getFmtString(frm, dt, dd, ap);
-            frm.clear();
-            if ((f.at(i) == QLatin1Char('h')) || (f.at(i) == QLatin1Char('m'))
-                || (f.at(i) == QLatin1Char('H'))
-                || (f.at(i) == QLatin1Char('s')) || (f.at(i) == QLatin1Char('z'))) {
-                status = f.at(i);
-                frm += f.at(i);
-            } else if ((f.at(i) == QLatin1Char('d')) || (f.at(i) == QLatin1Char('M')) || (f.at(i) == QLatin1Char('y'))) {
-                status = f.at(i);
-                frm += f.at(i);
-            } else if ((ap) && (f.at(i) == QLatin1Char('A'))) {
-                status = QLatin1Char('P');
-                frm += f.at(i);
-            } else  if((ap) && (f.at(i) == QLatin1Char('a'))) {
-                status = QLatin1Char('p');
-                frm += f.at(i);
-            } else {
-                buf += f.at(i);
-                status = QLatin1Char('0');
-            }
-        }
-    }
-
-    buf += getFmtString(frm, dt, dd, ap);
-
-    return buf;
-}
-#endif // QT_NO_DATESTRING
-
 #ifdef Q_OS_WIN
 static const int LowerYear = 1980;
 #else
@@ -4008,7 +3813,7 @@ int QDateTimeParser::getDigit(const QDateTime &t, int index) const
     case YearSection: return t.date().year();
     case MonthSection: return t.date().month();
     case DaySection: return t.date().day();
-    case DayOfWeekSection: return t.date().day();
+    case DayOfWeekSection: return t.date().dayOfWeek();
     case AmPmSection: return t.time().hour() > 11 ? 1 : 0;
 
     default: break;
@@ -4066,7 +3871,6 @@ bool QDateTimeParser::setDigit(QDateTime &v, int index, int newVal) const
     case YearSection: year = newVal; break;
     case MonthSection: month = newVal; break;
     case DaySection:
-    case DayOfWeekSection:
         if (newVal > 31) {
             // have to keep legacy behavior. setting the
             // date to 32 should return false. Setting it
@@ -4074,6 +3878,8 @@ bool QDateTimeParser::setDigit(QDateTime &v, int index, int newVal) const
             return false;
         }
         day = newVal;
+        break;
+    case DayOfWeekSection:
         break;
     case AmPmSection: hour = (newVal == 0 ? hour % 12 : (hour % 12) + 12); break;
     default:
@@ -4308,6 +4114,8 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
             switch (sect) {
             case 'H':
             case 'h':
+            case 'K':
+            case 'k':
                 if (parserType != QVariant::Date) {
                     const Section hour = (sect == 'h') ? Hour12Section : Hour24Section;
                     const SectionNode sn = { hour, i - add, countRepeat(newFormat, i, 2) };
@@ -4339,9 +4147,9 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
                 }
                 break;
 
-            case 'z':
+            case 'S':  // TODO Not strictly correct, need to adjust places
                 if (parserType != QVariant::Date) {
-                    const SectionNode sn = { MSecSection, i - add, countRepeat(newFormat, i, 3) < 3 ? 1 : 3 };
+                    const SectionNode sn = { MSecSection, i - add, countRepeat(newFormat, i, 3) };
                     newSectionNodes.append(sn);
                     appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
                     i += sn.count - 1;
@@ -4349,33 +4157,26 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
                     newDisplay |= MSecSection;
                 }
                 break;
-            case 'A':
             case 'a':
                 if (parserType != QVariant::Date) {
-                    const bool cap = (sect == 'A');
-                    const SectionNode sn = { AmPmSection, i - add, (cap ? 1 : 0) };
+                    const SectionNode sn = { AmPmSection, i - add, countRepeat(newFormat, i, 1) };
                     newSectionNodes.append(sn);
                     appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
                     newDisplay |= AmPmSection;
-                    if (i + 1 < newFormat.size()
-                        && newFormat.at(i+1) == (cap ? QLatin1Char('P') : QLatin1Char('p'))) {
-                        ++i;
-                    }
                     index = i + 1;
                 }
                 break;
             case 'y':
+            case 'u':
                 if (parserType != QVariant::Time) {
                     const int repeat = countRepeat(newFormat, i, 4);
-                    if (repeat >= 2) {
-                        const SectionNode sn = { repeat == 4 ? YearSection : YearSection2Digits,
-                                                 i - add, repeat == 4 ? 4 : 2 };
-                        newSectionNodes.append(sn);
-                        appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
-                        i += sn.count - 1;
-                        index = i + 1;
-                        newDisplay |= sn.type;
-                    }
+                    const SectionNode sn = { repeat == 2 ? YearSection2Digits : YearSection,
+                                             i - add, repeat };
+                    newSectionNodes.append(sn);
+                    appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
+                    i += sn.count - 1;
+                    index = i + 1;
+                    newDisplay |= sn.type;
                 }
                 break;
             case 'M':
@@ -4390,13 +4191,25 @@ bool QDateTimeParser::parseFormat(const QString &newFormat)
                 break;
             case 'd':
                 if (parserType != QVariant::Time) {
-                    const int repeat = countRepeat(newFormat, i, 4);
-                    const SectionNode sn = { repeat >= 3 ? DayOfWeekSection : DaySection, i - add, repeat };
+                    const int repeat = countRepeat(newFormat, i, 2);
+                    const SectionNode sn = { DaySection, i - add, repeat };
                     newSectionNodes.append(sn);
                     appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
                     i += sn.count - 1;
                     index = i + 1;
-                    newDisplay |= sn.type;
+                    newDisplay |= DaySection;
+                }
+                break;
+            case 'E':
+            case 'e':
+            case 'c':
+                if (parserType != QVariant::Time) {
+                    const SectionNode sn = { DayOfWeekSection, i - add, countRepeat(newFormat, i, 4) };
+                    newSectionNodes.append(sn);
+                    appendSeparator(&newSeparators, newFormat, index, i - index, lastQuote);
+                    i += sn.count - 1;
+                    index = i + 1;
+                    newDisplay |= DayOfWeekSection;
                 }
                 break;
 
@@ -4983,7 +4796,7 @@ QDateTimeParser::StateNode QDateTimeParser::parse(QString &input, int &cursorPos
             QDTPDEBUG << year << month << day << hour << minute << second << msec;
         }
         QDTPDEBUGN("'%s' => '%s'(%s)", input.toLatin1().constData(),
-                   newCurrentValue.toString(QLatin1String("yyyy/MM/dd hh:mm:ss.zzz")).toLatin1().constData(),
+                   newCurrentValue.toString(QLatin1String("yyyy/MM/dd hh:mm:ss.SSS")).toLatin1().constData(),
                    stateName(state).toLatin1().constData());
     }
 end:
@@ -5384,9 +5197,7 @@ QDateTimeParser::FieldInfo QDateTimeParser::fieldInfo(int index) const
         if (s != YearSection) {
             ret |= AllowPartial;
         }
-        if (sn.count != 1) {
-            ret |= FixedWidth;
-        }
+        ret |= FixedWidth;
         break;
     case MonthSection:
     case DaySection:
@@ -5430,13 +5241,14 @@ QString QDateTimeParser::sectionFormat(Section s, int count) const
 {
     QChar fillChar;
     switch (s) {
-    case AmPmSection: return count == 1 ? QLatin1String("AP") : QLatin1String("ap");
-    case MSecSection: fillChar = QLatin1Char('z'); break;
+    case AmPmSection: return QLatin1String("a"); break;
+    case MSecSection: fillChar = QLatin1Char('s'); break;
+//    case MSecSection: return QLatin1String("SSS"); break;
     case SecondSection: fillChar = QLatin1Char('s'); break;
     case MinuteSection: fillChar = QLatin1Char('m'); break;
     case Hour24Section: fillChar = QLatin1Char('H'); break;
     case Hour12Section: fillChar = QLatin1Char('h'); break;
-    case DayOfWeekSection:
+    case DayOfWeekSection: fillChar = QLatin1Char('E'); break;
     case DaySection: fillChar = QLatin1Char('d'); break;
     case MonthSection: fillChar = QLatin1Char('M'); break;
     case YearSection2Digits:

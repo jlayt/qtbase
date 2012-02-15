@@ -797,8 +797,8 @@ void tst_QLocale::dayOfWeek()
     QFETCH(QString, shortName);
     QFETCH(QString, longName);
 
-    QCOMPARE(QLocale::c().toString(date, "ddd"), shortName);
-    QCOMPARE(QLocale::c().toString(date, "dddd"), longName);
+    QCOMPARE(QLocale::c().toString(date, "EEE"), shortName);
+    QCOMPARE(QLocale::c().toString(date, "EEEE"), longName);
 }
 
 void tst_QLocale::formatDate_data()
@@ -807,17 +807,17 @@ void tst_QLocale::formatDate_data()
     QTest::addColumn<QString>("format");
     QTest::addColumn<QString>("result");
 
-    QTest::newRow("1") << QDate(1974, 12, 1) << "d/M/yyyy" << "1/12/1974";
-    QTest::newRow("2") << QDate(1974, 12, 1) << "d/M/yyyyy" << "1/12/1974y";
-    QTest::newRow("4") << QDate(1974, 1, 1) << "d/M/yyyy" << "1/1/1974";
-    QTest::newRow("5") << QDate(1974, 1, 1) << "dd/MM/yyy" << "01/01/74y";
-    QTest::newRow("6") << QDate(1974, 12, 1) << "ddd/MMM/yy" << "Sun/Dec/74";
-    QTest::newRow("7") << QDate(1974, 12, 1) << "dddd/MMMM/y" << "Sunday/December/y";
-    QTest::newRow("8") << QDate(1974, 12, 1) << "ddddd/MMMMM/yy" << "Sunday1/December12/74";
-    QTest::newRow("9") << QDate(1974, 12, 1) << "'dddd'/MMMM/yy" << "dddd/December/74";
-    QTest::newRow("10") << QDate(1974, 12, 1) << "d'dd'd/MMMM/yyy" << "1dd1/December/74y";
+    QTest::newRow("1")  << QDate(1974, 12, 1) << "d/M/yyyy"         << "1/12/1974";
+    QTest::newRow("2")  << QDate(1974, 12, 1) << "d/M/yyyyy"        << "1/12/01974";
+    QTest::newRow("4")  << QDate(1974,  1, 1) << "d/M/yyyy"         << "1/1/1974";
+    QTest::newRow("5")  << QDate(1974,  1, 1) << "dd/MM/yyy"        << "01/01/1974";
+    QTest::newRow("6")  << QDate(1974, 12, 1) << "EEE/MMM/yy"       << "Sun/Dec/74";
+    QTest::newRow("7")  << QDate(1974, 12, 1) << "EEEE/MMMM/y"      << "Sunday/December/1974";
+    QTest::newRow("8")  << QDate(1974, 12, 1) << "EEEEE/MMMMM/yy"   << "7/12/74";
+    QTest::newRow("9")  << QDate(1974, 12, 1) << "'dddd'/MMMM/yy"   << "dddd/December/74";
+    QTest::newRow("10") << QDate(1974, 12, 1) << "d'dd'd/MMMM/yyy"  << "1dd1/December/1974";
     QTest::newRow("11") << QDate(1974, 12, 1) << "d'dd'd/MMM'M'/yy" << "1dd1/DecM/74";
-    QTest::newRow("12") << QDate(1974, 12, 1) << "d'd'dd/M/yy" << "1d01/12/74";
+    QTest::newRow("12") << QDate(1974, 12, 1) << "d'd'dd/M/yy"      << "1d01/12/74";
 
     QTest::newRow("20") << QDate(1974, 12, 1) << "foo" << "foo";
     QTest::newRow("21") << QDate(1974, 12, 1) << "'" << "";
@@ -830,6 +830,101 @@ void tst_QLocale::formatDate_data()
     QTest::newRow("28") << QDate() << "'\"yy\"'" << "";
     QTest::newRow("29") << QDate(1974, 12, 1) << "hh:mm:ss.zzz ap d'd'dd/M/yy" << "hh:mm:ss.zzz ap 1d01/12/74";
 
+    QTest::newRow("y")      << QDate(    4, 12, 1) << "y"      << "4";
+    QTest::newRow("yy")     << QDate(    4, 12, 1) << "yy"     << "04";
+    QTest::newRow("yyy")    << QDate(    4, 12, 1) << "yyy"    << "004";
+    QTest::newRow("yyyy")   << QDate(    4, 12, 1) << "yyyy"   << "0004";
+    QTest::newRow("yyyyy")  << QDate(    4, 12, 1) << "yyyyy"  << "00004";
+    QTest::newRow("yyyyyy") << QDate(    4, 12, 1) << "yyyyyy" << "000004";
+
+    QTest::newRow("y neg")      << QDate(   -4, 12, 1) << "y"      << "-4";
+    QTest::newRow("yy neg")     << QDate(   -4, 12, 1) << "yy"     << "-04";
+    QTest::newRow("yyy neg")    << QDate(   -4, 12, 1) << "yyy"    << "-004";
+    QTest::newRow("yyyy neg")   << QDate(   -4, 12, 1) << "yyyy"   << "-0004";
+    QTest::newRow("yyyyy neg")  << QDate(   -4, 12, 1) << "yyyyy"  << "-00004";
+    QTest::newRow("yyyyyy neg") << QDate(   -4, 12, 1) << "yyyyyy" << "-000004";
+
+    QTest::newRow("yy 2")   << QDate(  44, 12, 1) << "yy"     << "44";
+    QTest::newRow("yy 3")   << QDate( 444, 12, 1) << "yy"     << "44";
+    QTest::newRow("yy 4")   << QDate(4444, 12, 1) << "yy"     << "44";
+
+    QTest::newRow("Y")      << QDate(    4, 12, 1) << "Y"      << "4";
+    QTest::newRow("YY")     << QDate(    4, 12, 1) << "YY"     << "04";
+    QTest::newRow("YYY")    << QDate(    4, 12, 1) << "YYY"    << "004";
+    QTest::newRow("YYYY")   << QDate(    4, 12, 1) << "YYYY"   << "0004";
+    QTest::newRow("YYYYY")  << QDate(    4, 12, 1) << "YYYYY"  << "00004";
+    QTest::newRow("YYYYYY") << QDate(    4, 12, 1) << "YYYYYY" << "000004";
+
+    QTest::newRow("Y neg")      << QDate(   -4, 12, 1) << "Y"      << "-4";
+    QTest::newRow("YY neg")     << QDate(   -4, 12, 1) << "YY"     << "-04";
+    QTest::newRow("YYY neg")    << QDate(   -4, 12, 1) << "YYY"    << "-004";
+    QTest::newRow("YYYY neg")   << QDate(   -4, 12, 1) << "YYYY"   << "-0004";
+    QTest::newRow("YYYYY neg")  << QDate(   -4, 12, 1) << "YYYYY"  << "-00004";
+    QTest::newRow("YYYYYY neg") << QDate(   -4, 12, 1) << "YYYYYY" << "-000004";
+
+    QTest::newRow("YY 2")  << QDate(  44, 12, 1) << "yy"     << "44";
+    QTest::newRow("YY 3")  << QDate( 444, 12, 1) << "yy"     << "44";
+    QTest::newRow("YY 4")  << QDate(4444, 12, 1) << "yy"     << "44";
+
+    QTest::newRow("u")      << QDate(    4, 12, 1) << "u"      << "4";
+    QTest::newRow("uu")     << QDate(    4, 12, 1) << "uu"     << "04";
+    QTest::newRow("uuu")    << QDate(    4, 12, 1) << "uuu"    << "004";
+    QTest::newRow("uuuu")   << QDate(    4, 12, 1) << "uuuu"   << "0004";
+    QTest::newRow("uuuuu")  << QDate(    4, 12, 1) << "uuuuu"  << "00004";
+    QTest::newRow("uuuuuu") << QDate(    4, 12, 1) << "uuuuuu" << "000004";
+
+    QTest::newRow("u neg")      << QDate(   -4, 12, 1) << "u"      << "-4";
+    QTest::newRow("uu neg")     << QDate(   -4, 12, 1) << "uu"     << "-04";
+    QTest::newRow("uuu neg")    << QDate(   -4, 12, 1) << "uuu"    << "-004";
+    QTest::newRow("uuuu neg")   << QDate(   -4, 12, 1) << "uuuu"   << "-0004";
+    QTest::newRow("uuuuu neg")  << QDate(   -4, 12, 1) << "uuuuu"  << "-00004";
+    QTest::newRow("uuuuuu neg") << QDate(   -4, 12, 1) << "uuuuuu" << "-000004";
+
+    QTest::newRow("uu 2")   << QDate(  44, 12, 1) << "uu"     << "44";
+    QTest::newRow("uu 3")   << QDate( 444, 12, 1) << "uu"     << "44";
+    QTest::newRow("uu 4")   << QDate(4444, 12, 1) << "uu"     << "44";
+
+    QTest::newRow("M"     ) << QDate(1974,  6, 1) << "M"      << "6";
+    QTest::newRow("MM"    ) << QDate(1974,  6, 1) << "MM"     << "06";
+    QTest::newRow("MMM"   ) << QDate(1974,  6, 1) << "MMM"    << "Jun";
+    QTest::newRow("MMMM"  ) << QDate(1974,  6, 1) << "MMMM"   << "June";
+    QTest::newRow("MMMMM" ) << QDate(1974,  6, 1) << "MMMMM"  << "6";
+    QTest::newRow("MMMMMM") << QDate(1974,  6, 1) << "MMMMMM" << "66";
+
+    QTest::newRow("L")      << QDate(1974,  6, 1) << "L"      << "6";
+    QTest::newRow("LL")     << QDate(1974,  6, 1) << "LL"     << "06";
+    QTest::newRow("LLL")    << QDate(1974,  6, 1) << "LLL"    << "Jun";
+    QTest::newRow("LLLL")   << QDate(1974,  6, 1) << "LLLL"   << "June";
+    QTest::newRow("LLLLL")  << QDate(1974,  6, 1) << "LLLLL"  << "J";
+    QTest::newRow("LLLLLL") << QDate(1974,  6, 1) << "LLLLLL" << "J6";
+
+    QTest::newRow("w")      << QDate(1974,  1, 4) << "w"      << "1";
+    QTest::newRow("ww")     << QDate(1974,  1, 4) << "ww"     << "01";
+
+    QTest::newRow("d")      << QDate(1974,  6, 1) << "d"      << "1";
+    QTest::newRow("dd")     << QDate(1974,  6, 1) << "dd"     << "01";
+    QTest::newRow("ddd")    << QDate(1974,  6, 1) << "ddd"    << "011";
+
+    QTest::newRow("E")      << QDate(1974,  1, 1) << "E"      << "Tue";
+    QTest::newRow("EE")     << QDate(1974,  1, 1) << "EE"     << "Tue";
+    QTest::newRow("EEE")    << QDate(1974,  1, 1) << "EEE"    << "Tue";
+    QTest::newRow("EEEE")   << QDate(1974,  1, 1) << "EEEE"   << "Tuesday";
+    QTest::newRow("EEEEE")  << QDate(1974,  1, 1) << "EEEEE"  << "2";
+    QTest::newRow("EEEEEE") << QDate(1974,  1, 1) << "EEEEEE" << "2Tue";
+
+    QTest::newRow("e")      << QDate(1974,  1, 1) << "e"      << "2";
+    QTest::newRow("ee")     << QDate(1974,  1, 1) << "ee"     << "02";
+    QTest::newRow("eee")    << QDate(1974,  1, 1) << "eee"    << "Tue";
+    QTest::newRow("eeee")   << QDate(1974,  1, 1) << "eeee"   << "Tuesday";
+    QTest::newRow("eeeee")  << QDate(1974,  1, 1) << "eeeee"  << "2";
+    QTest::newRow("eeeeee") << QDate(1974,  1, 1) << "eeeeee" << "22";
+
+    QTest::newRow("c")      << QDate(1974,  1, 1) << "c"      << "2";
+    QTest::newRow("cc")     << QDate(1974,  1, 1) << "cc"     << "02";
+    QTest::newRow("ccc")    << QDate(1974,  1, 1) << "ccc"    << "Tue";
+    QTest::newRow("cccc")   << QDate(1974,  1, 1) << "cccc"   << "Tuesday";
+    QTest::newRow("ccccc")  << QDate(1974,  1, 1) << "ccccc"  << "T";
+    QTest::newRow("cccccc") << QDate(1974,  1, 1) << "cccccc" << "T2";
 }
 
 void tst_QLocale::formatDate()
@@ -856,19 +951,15 @@ void tst_QLocale::formatTime_data()
     QTest::newRow("5") << QTime(1, 2, 3) << "HH:mm:ss" << "01:02:03";
     QTest::newRow("6") << QTime(1, 2, 3) << "hhh:mmm:sss" << "011:022:033";
 
-    QTest::newRow("8") << QTime(14, 2, 3) << "h:m:s" << "14:2:3";
-    QTest::newRow("9") << QTime(14, 2, 3) << "H:m:s" << "14:2:3";
-    QTest::newRow("10") << QTime(14, 2, 3) << "hh:mm:ss" << "14:02:03";
-    QTest::newRow("11") << QTime(14, 2, 3) << "HH:mm:ss" << "14:02:03";
-    QTest::newRow("12") << QTime(14, 2, 3) << "hhh:mmm:sss" << "1414:022:033";
-
-    QTest::newRow("14") << QTime(14, 2, 3) << "h:m:s ap" << "2:2:3 pm";
-    QTest::newRow("15") << QTime(14, 2, 3) << "H:m:s AP" << "14:2:3 PM";
-    QTest::newRow("16") << QTime(14, 2, 3) << "hh:mm:ss aap" << "02:02:03 pmpm";
-    QTest::newRow("17") << QTime(14, 2, 3) << "HH:mm:ss AP aa" << "14:02:03 PM pmpm";
-
-    QTest::newRow("18") << QTime(1, 2, 3) << "h:m:s ap" << "1:2:3 am";
-    QTest::newRow("19") << QTime(1, 2, 3) << "H:m:s AP" << "1:2:3 AM";
+    QTest::newRow("8")  << QTime(14, 2, 3) << "h:m:s"         << "2:2:3";
+    QTest::newRow("9")  << QTime(14, 2, 3) << "H:m:s"         << "14:2:3";
+    QTest::newRow("10") << QTime(14, 2, 3) << "hh:mm:ss"      << "02:02:03";
+    QTest::newRow("11") << QTime(14, 2, 3) << "HH:mm:ss"      << "14:02:03";
+    QTest::newRow("12") << QTime(14, 2, 3) << "hhh:mmm:sss"   << "022:022:033";
+    QTest::newRow("14") << QTime(14, 2, 3) << "h:m:s a"       << "2:2:3 PM";
+    QTest::newRow("16") << QTime(14, 2, 3) << "hh:mm:ss aa"   << "02:02:03 PMPM";
+    QTest::newRow("17") << QTime(14, 2, 3) << "HH:mm:ss a aa" << "14:02:03 PM PMPM";
+    QTest::newRow("18") << QTime( 1, 2, 3) << "h:m:s a"       << "1:2:3 AM";
 
     QTest::newRow("20") << QTime(1, 2, 3) << "foo" << "foo";
     QTest::newRow("21") << QTime(1, 2, 3) << "'" << "";
@@ -879,13 +970,139 @@ void tst_QLocale::formatTime_data()
     QTest::newRow("26") << QTime(1, 2, 3) << "\"H\"" << "\"1\"";
     QTest::newRow("27") << QTime(1, 2, 3) << "'\"H\"'" << "\"H\"";
 
-    QTest::newRow("28") << QTime(1, 2, 3, 456) << "H:m:s.z" << "1:2:3.456";
-    QTest::newRow("29") << QTime(1, 2, 3, 456) << "H:m:s.zz" << "1:2:3.456456";
-    QTest::newRow("30") << QTime(1, 2, 3, 456) << "H:m:s.zzz" << "1:2:3.456";
-    QTest::newRow("31") << QTime(1, 2, 3, 4) << "H:m:s.z" << "1:2:3.4";
-    QTest::newRow("32") << QTime(1, 2, 3, 4) << "H:m:s.zzz" << "1:2:3.004";
-    QTest::newRow("33") << QTime() << "H:m:s.zzz" << "";
-    QTest::newRow("34") << QTime(1, 2, 3, 4) << "dd MM yyyy H:m:s.zzz" << "dd MM yyyy 1:2:3.004";
+    QTest::newRow("28") << QTime(1, 2, 3, 456) << "H:m:s.SSS" << "1:2:3.456";
+
+    QTest::newRow("h 0")    << QTime( 0, 2, 3) << "h"    << "12";
+    QTest::newRow("hh 0")   << QTime( 0, 2, 3) << "hh"   << "12";
+    QTest::newRow("hhh 0")  << QTime( 0, 2, 3) << "hhh"  << "1212";
+
+    QTest::newRow("h 1")    << QTime( 1, 2, 3) << "h"    << "1";
+    QTest::newRow("hh 1")   << QTime( 1, 2, 3) << "hh"   << "01";
+    QTest::newRow("hhh 1")  << QTime( 1, 2, 3) << "hhh"  << "011";
+
+    QTest::newRow("h 12")   << QTime(12, 2, 3) << "h"    << "12";
+    QTest::newRow("hh 12")  << QTime(12, 2, 3) << "hh"   << "12";
+    QTest::newRow("hhh 12") << QTime(12, 2, 3) << "hhh"  << "1212";
+
+    QTest::newRow("h 13")   << QTime(13, 2, 3) << "h"    << "1";
+    QTest::newRow("hh 13")  << QTime(13, 2, 3) << "hh"   << "01";
+    QTest::newRow("hhh 13") << QTime(13, 2, 3) << "hhh"  << "011";
+
+    QTest::newRow("h 13")   << QTime(23, 2, 3) << "h"    << "11";
+    QTest::newRow("hh 13")  << QTime(23, 2, 3) << "hh"   << "11";
+    QTest::newRow("hhh 13") << QTime(23, 2, 3) << "hhh"  << "1111";
+
+    QTest::newRow("H 0")    << QTime( 0, 2, 3) << "H"    << "0";
+    QTest::newRow("HH 0")   << QTime( 0, 2, 3) << "HH"   << "00";
+    QTest::newRow("HHH 0")  << QTime( 0, 2, 3) << "HHH"  << "000";
+
+    QTest::newRow("H 1")    << QTime( 1, 2, 3) << "H"    << "1";
+    QTest::newRow("HH 1")   << QTime( 1, 2, 3) << "HH"   << "01";
+    QTest::newRow("HHH 1")  << QTime( 1, 2, 3) << "HHH"  << "011";
+
+    QTest::newRow("H 12")   << QTime(12, 2, 3) << "H"    << "12";
+    QTest::newRow("HH 12")  << QTime(12, 2, 3) << "HH"   << "12";
+    QTest::newRow("HHH 12") << QTime(12, 2, 3) << "HHH"  << "1212";
+
+    QTest::newRow("H 13")   << QTime(13, 2, 3) << "H"    << "13";
+    QTest::newRow("HH 13")  << QTime(13, 2, 3) << "HH"   << "13";
+    QTest::newRow("HHH 13") << QTime(13, 2, 3) << "HHH"  << "1313";
+
+    QTest::newRow("H 13")   << QTime(23, 2, 3) << "H"    << "23";
+    QTest::newRow("HH 13")  << QTime(23, 2, 3) << "HH"   << "23";
+    QTest::newRow("HHH 13") << QTime(23, 2, 3) << "HHH"  << "2323";
+
+    QTest::newRow("K 0")    << QTime( 0, 2, 3) << "K"    << "0";
+    QTest::newRow("KK 0")   << QTime( 0, 2, 3) << "KK"   << "00";
+    QTest::newRow("KKK 0")  << QTime( 0, 2, 3) << "KKK"  << "000";
+
+    QTest::newRow("K 1")    << QTime( 1, 2, 3) << "K"    << "1";
+    QTest::newRow("KK 1")   << QTime( 1, 2, 3) << "KK"   << "01";
+    QTest::newRow("KKK 1")  << QTime( 1, 2, 3) << "KKK"  << "011";
+
+    QTest::newRow("K 12")   << QTime(12, 2, 3) << "K"    << "0";
+    QTest::newRow("KK 12")  << QTime(12, 2, 3) << "KK"   << "00";
+    QTest::newRow("KKK 12") << QTime(12, 2, 3) << "KKK"  << "000";
+
+    QTest::newRow("K 13")   << QTime(13, 2, 3) << "K"    << "1";
+    QTest::newRow("KK 13")  << QTime(13, 2, 3) << "KK"   << "01";
+    QTest::newRow("KKK 13") << QTime(13, 2, 3) << "KKK"  << "011";
+
+    QTest::newRow("K 23")   << QTime(23, 2, 3) << "K"    << "11";
+    QTest::newRow("KK 23")  << QTime(23, 2, 3) << "KK"   << "11";
+    QTest::newRow("KKK 23") << QTime(23, 2, 3) << "KKK"  << "1111";
+
+    QTest::newRow("k 0")    << QTime( 0, 2, 3) << "k"    << "24";
+    QTest::newRow("kk 0")   << QTime( 0, 2, 3) << "kk"   << "24";
+    QTest::newRow("kkk 0")  << QTime( 0, 2, 3) << "kkk"  << "2424";
+
+    QTest::newRow("k 1")    << QTime( 1, 2, 3) << "k"    << "1";
+    QTest::newRow("kk 1")   << QTime( 1, 2, 3) << "kk"   << "01";
+    QTest::newRow("kkk 1")  << QTime( 1, 2, 3) << "kkk"  << "011";
+
+    QTest::newRow("k 12")   << QTime(12, 2, 3) << "k"    << "12";
+    QTest::newRow("kk 12")  << QTime(12, 2, 3) << "kk"   << "12";
+    QTest::newRow("kkk 12") << QTime(12, 2, 3) << "kkk"  << "1212";
+
+    QTest::newRow("k 13")   << QTime(13, 2, 3) << "k"    << "13";
+    QTest::newRow("kk 13")  << QTime(13, 2, 3) << "kk"   << "13";
+    QTest::newRow("kkk 13") << QTime(13, 2, 3) << "kkk"  << "1313";
+
+    QTest::newRow("k 13")   << QTime(23, 2, 3) << "k"    << "23";
+    QTest::newRow("kk 13")  << QTime(23, 2, 3) << "kk"   << "23";
+    QTest::newRow("kkk 13") << QTime(23, 2, 3) << "kkk"  << "2323";
+
+    QTest::newRow("m")      << QTime( 1, 2, 3) << "m"    << "2";
+    QTest::newRow("mm")     << QTime( 1, 2, 3) << "mm"   << "02";
+    QTest::newRow("mmm")    << QTime( 1, 2, 3) << "mmm"  << "022";
+
+    QTest::newRow("s")      << QTime( 1, 2, 3) << "s"    << "3";
+    QTest::newRow("ss")     << QTime( 1, 2, 3) << "ss"   << "03";
+    QTest::newRow("sss")    << QTime( 1, 2, 3) << "sss"  << "033";
+
+    QTest::newRow("a")      << QTime( 1, 2, 3) << "a"    << "AM";
+    QTest::newRow("aa")     << QTime( 1, 2, 3) << "aa"   << "AMAM";
+
+    QTest::newRow("S")      << QTime( 1, 2, 3, 456) << "S"     << "4";
+    QTest::newRow("SS")     << QTime( 1, 2, 3, 456) << "SS"    << "45";
+    QTest::newRow("SSS")    << QTime( 1, 2, 3, 456) << "SSS"   << "456";
+    QTest::newRow("SSSS")   << QTime( 1, 2, 3, 456) << "SSSS"  << "4560";
+    QTest::newRow("SSSSS")  << QTime( 1, 2, 3, 456) << "SSSSS" << "45600";
+
+    QTest::newRow("S")      << QTime( 1, 2, 3,   1) << "S"      << "0";
+    QTest::newRow("SS")     << QTime( 1, 2, 3,   1) << "SS"     << "00";
+    QTest::newRow("SSS")    << QTime( 1, 2, 3,   1) << "SSS"    << "001";
+    QTest::newRow("SSSS")   << QTime( 1, 2, 3,   1) << "SSSS"   << "0010";
+    QTest::newRow("SSSSS")  << QTime( 1, 2, 3,   1) << "SSSSS"  << "00100";
+
+    QString tz = QLocale::c().toString(QTime(0,0,0), "z");
+    QString tz2 = tz + tz;
+    QString tz3 = tz2 + tz;
+
+    QTest::newRow("z")     << QTime( 1, 2, 3) << "z"      << tz;
+    QTest::newRow("zz")    << QTime( 1, 2, 3) << "zz"     << tz;
+    QTest::newRow("zzz")   << QTime( 1, 2, 3) << "zzz"    << tz;
+    QTest::newRow("zzzz")  << QTime( 1, 2, 3) << "zzzz"   << tz;
+    QTest::newRow("zzzzz") << QTime( 1, 2, 3) << "zzzzz"  << tz2;
+
+    QTest::newRow("Z")     << QTime( 1, 2, 3) << "Z"      << tz;
+    QTest::newRow("ZZ")    << QTime( 1, 2, 3) << "ZZ"     << tz;
+    QTest::newRow("ZZZ")   << QTime( 1, 2, 3) << "ZZZ"    << tz;
+    QTest::newRow("ZZZZ")  << QTime( 1, 2, 3) << "ZZZZ"   << tz;
+    QTest::newRow("ZZZZZ") << QTime( 1, 2, 3) << "ZZZZZ"  << tz2;
+
+    QTest::newRow("v"    ) << QTime( 1, 2, 3) << "v"      << tz;
+    QTest::newRow("vv"   ) << QTime( 1, 2, 3) << "vv"     << tz2;
+    QTest::newRow("vvv"  ) << QTime( 1, 2, 3) << "vvv"    << tz3;
+    QTest::newRow("vvvv" ) << QTime( 1, 2, 3) << "vvvv"   << tz;
+    QTest::newRow("vvvvv") << QTime( 1, 2, 3) << "vvvvv"  << tz2;
+
+    QTest::newRow("V"    ) << QTime( 1, 2, 3) << "V"      << tz;
+    QTest::newRow("VV"   ) << QTime( 1, 2, 3) << "VV"     << tz2;
+    QTest::newRow("VVV"  ) << QTime( 1, 2, 3) << "VVV"    << tz3;
+    QTest::newRow("VVVV" ) << QTime( 1, 2, 3) << "VVVV"   << tz;
+    QTest::newRow("VVVVV") << QTime( 1, 2, 3) << "VVVVV"  << tz2;
+
 }
 
 void tst_QLocale::formatTime()
@@ -909,25 +1126,11 @@ void tst_QLocale::formatDateTime_data()
     QTest::newRow("1C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(5, 14, 13))
                         << "d/M/yyyy hh:h:mm" << "1/12/1974 05:5:14";
     QTest::newRow("2C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 13))
-                        << "d/M/yyyyy h" << "1/12/1974y 15";
+                        << "d/M/yyyy H" << "1/12/1974 15";
     QTest::newRow("4C") << "C" << QDateTime(QDate(1974, 1, 1), QTime(15, 14, 13))
-                        << "d/M/yyyy zzz" << "1/1/1974 000";
+                        << "d/M/yyyy SSS" << "1/1/1974 000";
     QTest::newRow("5C") << "C" << QDateTime(QDate(1974, 1, 1), QTime(15, 14, 13))
-                        << "dd/MM/yyy z" << "01/01/74y 0";
-    QTest::newRow("6C") << "C" << QDateTime(QDate(1974, 12, 2), QTime(15, 14, 13))
-                        << "ddd/MMM/yy AP" << "Mon/Dec/74 PM";
-    QTest::newRow("7C") << "C" << QDateTime(QDate(1974, 12, 2), QTime(15, 14, 13))
-                        << "dddd/MMMM/y apa" << "Monday/December/y pmpm";
-    QTest::newRow("8C") << "C" << QDateTime(QDate(1974, 12, 2), QTime(15, 14, 13))
-                        << "ddddd/MMMMM/yy ss" << "Monday2/December12/74 13";
-    QTest::newRow("9C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 13))
-                        << "'dddd'/MMMM/yy s" << "dddd/December/74 13";
-    QTest::newRow("10C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(15, 4, 13))
-                         << "d'dd'd/MMMM/yyy m'm'mm" << "1dd1/December/74y 4m04";
-    QTest::newRow("11C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 3))
-                         << "d'dd'd/MMM'M'/yysss" << "1dd1/DecM/74033";
-    QTest::newRow("12C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 13))
-                         << "d'd'dd/M/yyh" << "1d01/12/7415";
+                        << "dd/MM/yyy S" << "01/01/1974 0";
 
     QTest::newRow("20C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 13))
                          << "foo" << "foo";
@@ -951,25 +1154,11 @@ void tst_QLocale::formatDateTime_data()
     QTest::newRow("1no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(5, 14, 13))
                             << "d/M/yyyy hh:h:mm" << "1/12/1974 05:5:14";
     QTest::newRow("2no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 13))
-                            << "d/M/yyyyy h" << "1/12/1974y 15";
+                            << "d/M/yyyy H" << "1/12/1974 15";
     QTest::newRow("4no_NO") << "no_NO" << QDateTime(QDate(1974, 1, 1), QTime(15, 14, 13))
-                            << "d/M/yyyy zzz" << "1/1/1974 000";
+                            << "d/M/yyyy SSS" << "1/1/1974 000";
     QTest::newRow("5no_NO") << "no_NO" << QDateTime(QDate(1974, 1, 1), QTime(15, 14, 13))
-                            << "dd/MM/yyy z" << "01/01/74y 0";
-    QTest::newRow("6no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 2), QTime(15, 14, 13))
-                            << "ddd/MMM/yy AP" << "man./des./74 PM";
-    QTest::newRow("7no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 2), QTime(15, 14, 13))
-                            << "dddd/MMMM/y apa" << "mandag/desember/y pmpm";
-    QTest::newRow("8no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 2), QTime(15, 14, 13))
-                            << "ddddd/MMMMM/yy ss" << "mandag2/desember12/74 13";
-    QTest::newRow("9no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 13))
-                            << "'dddd'/MMMM/yy s" << "dddd/desember/74 13";
-    QTest::newRow("10no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(15, 4, 13))
-                             << "d'dd'd/MMMM/yyy m'm'mm" << "1dd1/desember/74y 4m04";
-    QTest::newRow("11no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 3))
-                             << "d'dd'd/MMM'M'/yysss" << "1dd1/des.M/74033";
-    QTest::newRow("12no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 13))
-                             << "d'd'dd/M/yyh" << "1d01/12/7415";
+                            << "dd/MM/yyy S" << "01/01/1974 0";
 
     QTest::newRow("20no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(15, 14, 13))
                              << "foo" << "foo";
@@ -1013,17 +1202,17 @@ void tst_QLocale::toDateTime_data()
     QTest::newRow("1C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(5, 14, 0))
                         << "d/M/yyyy hh:h:mm" << "1/12/1974 05:5:14";
     QTest::newRow("2C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(15, 0, 0))
-                        << "d/M/yyyyy h" << "1/12/1974y 15";
+                        << "d/M/yyyyy H" << "1/12/19741974 15";
     QTest::newRow("4C") << "C" << QDateTime(QDate(1974, 1, 1), QTime(0, 0, 0))
-                        << "d/M/yyyy zzz" << "1/1/1974 000";
+                        << "d/M/yyyy SSS" << "1/1/1974 000";
     QTest::newRow("5C") << "C" << QDateTime(QDate(1974, 1, 1), QTime(0, 0, 0))
-                        << "dd/MM/yyy z" << "01/01/74y 0";
+                        << "dd/MM/yyy S" << "01/01/1974 0";
     QTest::newRow("8C") << "C" << QDateTime(QDate(1974, 12, 2), QTime(0, 0, 13))
-                        << "ddddd/MMMMM/yy ss" << "Monday2/December12/74 13";
+                        << "EEEEd/MMMMM/yy ss" << "Monday2/December12/74 13";
     QTest::newRow("9C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(0, 0, 13))
                         << "'dddd'/MMMM/yy s" << "dddd/December/74 13";
     QTest::newRow("10C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(0, 4, 0))
-                         << "d'dd'd/MMMM/yyy m'm'mm" << "1dd1/December/74y 4m04";
+                         << "d'dd'd/MMMM/yyy m'm'mm" << "1dd1/December/1974 4m04";
     QTest::newRow("11C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(0, 0, 3))
                          << "d'dd'd/MMM'M'/yysss" << "1dd1/DecM/74033";
     QTest::newRow("12C") << "C" << QDateTime(QDate(1974, 12, 1), QTime(15, 0, 0))
@@ -1032,27 +1221,27 @@ void tst_QLocale::toDateTime_data()
     QTest::newRow("1no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(5, 14, 0))
                             << "d/M/yyyy hh:h:mm" << "1/12/1974 05:5:14";
     QTest::newRow("2no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(15, 0, 0))
-                            << "d/M/yyyyy h" << "1/12/1974y 15";
+                            << "d/M/yyyyy H" << "1/12/19741974 15";
     QTest::newRow("4no_NO") << "no_NO" << QDateTime(QDate(1974, 1, 1), QTime(0, 0, 0))
-                            << "d/M/yyyy zzz" << "1/1/1974 000";
+                            << "d/M/yyyy SSS" << "1/1/1974 000";
     QTest::newRow("5no_NO") << "no_NO" << QDateTime(QDate(1974, 1, 1), QTime(0, 0, 0))
-                            << "dd/MM/yyy z" << "01/01/74y 0";
+                            << "dd/MM/yyy S" << "01/01/1974 0";
     QTest::newRow("8no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 2), QTime(0, 0, 13))
-                            << "ddddd/MMMMM/yy ss" << "mandag2/desember12/74 13";
+                            << "EEEEd/MMMMM/yy ss" << "mandag2/desember12/74 13";
     QTest::newRow("9no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(0, 0, 13))
                             << "'dddd'/MMMM/yy s" << "dddd/desember/74 13";
     QTest::newRow("10no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(0, 4, 0))
-                             << "d'dd'd/MMMM/yyy m'm'mm" << "1dd1/desember/74y 4m04";
+                             << "d'dd'd/MMMM/yyy m'm'mm" << "1dd1/desember/1974 4m04";
     QTest::newRow("11no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(0, 0, 3))
                              << "d'dd'd/MMM'M'/yysss" << "1dd1/des.M/74033";
     QTest::newRow("12no_NO") << "no_NO" << QDateTime(QDate(1974, 12, 1), QTime(15, 0, 0))
                              << "d'd'dd/M/yyh" << "1d01/12/7415";
 
     QTest::newRow("RFC-1123") << "C" << QDateTime(QDate(2007, 11, 1), QTime(18, 8, 30))
-                              << "ddd, dd MMM yyyy hh:mm:ss 'GMT'" << "Thu, 01 Nov 2007 18:08:30 GMT";
+                              << "EEE, dd MMM yyyy hh:mm:ss 'GMT'" << "Thu, 01 Nov 2007 18:08:30 GMT";
 
     QTest::newRow("longFormat") << "en_US" << QDateTime(QDate(2009, 1, 5), QTime(11, 48, 32))
-                      << "dddd, MMMM d, yyyy h:mm:ss AP " << "Monday, January 5, 2009 11:48:32 AM ";
+                      << "EEEE, MMMM d, yyyy h:mm:ss a " << "Monday, January 5, 2009 11:48:32 AM ";
 }
 
 void tst_QLocale::toDateTime()
@@ -1889,8 +2078,8 @@ void tst_QLocale::dateFormat()
     const QLocale no("no_NO");
     QCOMPARE(no.dateFormat(QLocale::ShortFormat), QLatin1String("dd.MM.yy"));
     QCOMPARE(no.dateFormat(QLocale::MediumPattern), QLatin1String("dd.MM.yy"));
-    QCOMPARE(no.dateFormat(QLocale::LongPattern), QLatin1String("dddd d. MMMM yyyy"));
-    QCOMPARE(no.dateFormat(QLocale::FullPattern), QLatin1String("dddd d. MMMM yyyy"));
+    QCOMPARE(no.dateFormat(QLocale::LongPattern), QLatin1String("EEEE d. MMMM y"));
+    QCOMPARE(no.dateFormat(QLocale::FullPattern), QLatin1String("EEEE d. MMMM y"));
 }
 
 void tst_QLocale::timeFormat()
@@ -1898,8 +2087,8 @@ void tst_QLocale::timeFormat()
     const QLocale no("no_NO");
     QCOMPARE(no.timeFormat(QLocale::ShortPattern), QLatin1String("HH:mm"));
     QCOMPARE(no.timeFormat(QLocale::MediumPattern), QLatin1String("HH:mm"));
-    QCOMPARE(no.timeFormat(QLocale::LongPattern), QLatin1String("'kl'. HH:mm:ss t"));
-    QCOMPARE(no.timeFormat(QLocale::FullPattern), QLatin1String("'kl'. HH:mm:ss t"));
+    QCOMPARE(no.timeFormat(QLocale::LongPattern), QLatin1String("'kl'. HH:mm:ss zzzz"));
+    QCOMPARE(no.timeFormat(QLocale::FullPattern), QLatin1String("'kl'. HH:mm:ss zzzz"));
 }
 
 void tst_QLocale::dateTimeFormat()
@@ -1907,8 +2096,8 @@ void tst_QLocale::dateTimeFormat()
     const QLocale no("no_NO");
     QCOMPARE(no.dateTimeFormat(QLocale::ShortPattern), QLatin1String("dd.MM.yy HH:mm"));
     QCOMPARE(no.dateTimeFormat(QLocale::MediumPattern), QLatin1String("dd.MM.yy HH:mm"));
-    QCOMPARE(no.dateTimeFormat(QLocale::LongPattern), QLatin1String("dddd d. MMMM yyyy 'kl'. HH:mm:ss t"));
-    QCOMPARE(no.dateTimeFormat(QLocale::FullPattern), QLatin1String("dddd d. MMMM yyyy 'kl'. HH:mm:ss t"));
+    QCOMPARE(no.dateTimeFormat(QLocale::LongPattern), QLatin1String("EEEE d. MMMM y 'kl'. HH:mm:ss zzzz"));
+    QCOMPARE(no.dateTimeFormat(QLocale::FullPattern), QLatin1String("EEEE d. MMMM y 'kl'. HH:mm:ss zzzz"));
 }
 
 void tst_QLocale::currency()
