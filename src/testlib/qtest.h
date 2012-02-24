@@ -86,21 +86,21 @@ template<> inline char *toString(const QByteArray &ba)
 template<> inline char *toString(const QTime &time)
 {
     return time.isValid()
-        ? qstrdup(time.toString(QLatin1String("hh:mm:ss.zzz")).toLatin1().constData())
+        ? qstrdup(time.toString(QLatin1String("HH:mm:ss.SSS")).toLatin1().constData())
         : qstrdup("Invalid QTime");
 }
 
 template<> inline char *toString(const QDate &date)
 {
     return date.isValid()
-        ? qstrdup(date.toString(QLatin1String("yyyy/MM/dd")).toLatin1().constData())
+        ? qstrdup(date.toString(QLatin1String("yyyy-MM-dd")).toLatin1().constData())
         : qstrdup("Invalid QDate");
 }
 
 template<> inline char *toString(const QDateTime &dateTime)
 {
     return dateTime.isValid()
-        ? qstrdup((dateTime.toString(QLatin1String("yyyy/MM/dd hh:mm:ss.zzz")) +
+        ? qstrdup((dateTime.toString(QLatin1String("yyyy-MM-dd HH:mm:ss.SSS")) +
                   (dateTime.timeSpec() == Qt::LocalTime ? QLatin1String("[local time]") : QLatin1String("[UTC]"))).toLatin1().constData())
         : qstrdup("Invalid QDateTime");
 }

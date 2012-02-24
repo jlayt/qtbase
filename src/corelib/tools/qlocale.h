@@ -71,6 +71,9 @@ class Q_CORE_EXPORT QLocale
     friend class QDoubleValidatorPrivate;
     friend class QTextStream;
     friend class QTextStreamPrivate;
+    friend class QDate;
+    friend class QTime;
+    friend class QDateTime;
 
 public:
 // GENERATED PART STARTS HERE
@@ -682,10 +685,10 @@ public:
     { return monthName(m, (format == LongFormat) ? LongName : ShortName); }
     QT_DEPRECATED inline QString standaloneMonthName(int m, FormatType format) const
     { return monthName(m, (format == LongFormat) ? LongName : ShortName, StandaloneContext); }
-    QT_DEPRECATED inline QString dayName(int d, FormatType format) const
-    { return dayName(d, (format == LongFormat) ? LongName : ShortName); }
-    QT_DEPRECATED inline QString standaloneDayName(int d, FormatType format) const
-    { return dayName(d, (format == LongFormat) ? LongName : ShortName, StandaloneContext); }
+    QT_DEPRECATED inline QString dayName(int day, FormatType format) const
+    { return dayName(day, (format == LongFormat) ? LongName : ShortName); }
+    QT_DEPRECATED inline QString standaloneDayName(int day, FormatType format) const
+    { return dayName(day, (format == LongFormat) ? LongName : ShortName, StandaloneContext); }
     QT_DEPRECATED inline QString amText() const { return dayPeriodName(QTime(0,0,0)); }
     QT_DEPRECATED inline QString pmText() const { return dayPeriodName(QTime(12,0,0)); }
 #endif //QT_DEPRECATED_SINCE

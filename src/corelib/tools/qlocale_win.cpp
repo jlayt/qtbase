@@ -609,23 +609,6 @@ QString QSystemLocalePrivate::winToQtFormat(const QString &sys_fmt)
 
         switch (c.unicode()) {
             // Date
-            case 'y':
-                if (repeat > 5)
-                    repeat = 5;
-                else if (repeat == 3)
-                    repeat = 2;
-                switch (repeat) {
-                    case 1:
-                        result += QLatin1String("yy"); // "y" unsupported by Qt, use "yy"
-                        break;
-                    case 5:
-                        result += QLatin1String("yyyy"); // "yyyyy" same as "yyyy" on Windows
-                        break;
-                    default:
-                        result += QString(repeat, QLatin1Char('y'));
-                        break;
-                }
-                break;
             case 'g':
                 if (repeat > 2)
                     repeat = 2;
@@ -640,7 +623,7 @@ QString QSystemLocalePrivate::winToQtFormat(const QString &sys_fmt)
             case 't':
                 if (repeat > 2)
                     repeat = 2;
-                result += QLatin1String("AP"); // "t" unsupported, use "AP"
+                result += QLatin1String('a'); // "t" unsupported, use 'a'
                 break;
             default:
                 result += QString(repeat, c);
