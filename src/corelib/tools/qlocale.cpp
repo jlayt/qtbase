@@ -1655,71 +1655,71 @@ QDateTime QLocale::toDateTime(const QString &string, const QString &format) cons
 /*!
     \since 4.1
 
-    Returns the decimal point character of this locale.
+    Returns the decimal point symbol of this locale.
 */
-QChar QLocale::decimalPoint() const
+QString QLocale::decimalPoint() const
 {
-    return d->decimal();
+    return QString(d->decimal());
 }
 
 /*!
     \since 4.1
 
-    Returns the group separator character of this locale.
+    Returns the group separator symbol of this locale.
 */
-QChar QLocale::groupSeparator() const
+QString QLocale::groupSeparator() const
 {
-    return d->group();
+    return QString(d->group());
 }
 
 /*!
     \since 4.1
 
-    Returns the percent character of this locale.
+    Returns the percent symbol of this locale.
 */
-QChar QLocale::percent() const
+QString QLocale::percent() const
 {
-    return d->percent();
+    return QString(d->percent());
 }
 
 /*!
     \since 4.1
 
-    Returns the zero digit character of this locale.
+    Returns the zero digit symbol of this locale.
 */
-QChar QLocale::zeroDigit() const
+QString QLocale::zeroDigit() const
 {
-    return d->zero();
+    return QString(d->zero());
 }
 
 /*!
     \since 4.1
 
-    Returns the negative sign character of this locale.
+    Returns the negative sign symbol of this locale.
 */
-QChar QLocale::negativeSign() const
+QString QLocale::negativeSign() const
 {
-    return d->minus();
+    return QString(d->minus());
 }
 
 /*!
     \since 4.5
 
-    Returns the positive sign character of this locale.
+    Returns the positive sign symbol of this locale.
 */
-QChar QLocale::positiveSign() const
+QString QLocale::positiveSign() const
 {
-    return d->plus();
+    return QString(d->plus());
 }
 
 /*!
     \since 4.1
 
-    Returns the exponential character of this locale.
+    Returns the exponential symbol of this locale.
 */
-QChar QLocale::exponential() const
+QString QLocale::exponential() const
 {
-    return d->exponential();
+    return QString(d->exponential());
 }
 
 static bool qIsUpper(char c)

@@ -397,6 +397,7 @@ public:
     inline void ungetChar(QChar ch);
     NumberParsingStatus getNumber(qulonglong *l);
     bool getReal(double *f);
+    bool getSymbol(const QString &symbol, const QChar &c, QString *input);
 
     inline void write(const QString &data);
     inline void putString(const QString &ch, bool number = false);
@@ -990,16 +991,20 @@ inline void QTextStreamPrivate::putString(const QString &s, bool number)
         QString pad(padSize, padChar);
         if (fieldAlignment == QTextStream::AlignLeft) {
             tmp.append(QString(padSize, padChar));
-        } else if (fieldAlignment == QTextStream::AlignRight
-                   || fieldAlignment == QTextStream::AlignAccountingStyle) {
+        } else if (fieldAlignment == QTextStream::AlignRight) {
             tmp.prepend(QString(padSize, padChar));
-            if (fieldAlignment == QTextStream::AlignAccountingStyle && number) {
-                const QChar sign = s.size() > 0 ? s.at(0) : QChar();
-                if (sign == locale.negativeSign() || sign == locale.positiveSign()) {
-                    QChar *data = tmp.data();
-                    data[padSize] = tmp.at(0);
-                    data[0] = sign;
-                }
+        } else if (fieldAlignment == QTextStream::AlignAccountingStyle) {
+            if (number) {
+                QString sign;
+                if (s.startsWith(locale.negativeSign()))
+                    sign = locale.negativeSign();
+                else if (s.startsWith(locale.positiveSign()))
+                    sign = locale.positiveSign();
+                tmp = sign;
+                tmp.append(QString(padSize, padChar));
+                tmp.append(s.mid(sign.length()));
+           } else {
+                tmp.prepend(QString(padSize, padChar));
            }
         } else if (fieldAlignment == QTextStream::AlignCenter) {
             tmp.prepend(QString(padSize/2, padChar));
@@ -1721,6 +1726,11 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
     scan(0, 0, 0, NotSpace);
     consumeLastToken();
 
+    QString symbol;
+    const QString pos = locale.positiveSign();
+    const QString neg = locale.negativeSign();
+    const QString grp = locale.groupSeparator();
+
     // detect int encoding
     int base = integerBase;
     if (base == 0) {
@@ -1746,8 +1756,16 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
                 base = 10;
             }
             ungetChar(ch2);
-        } else if (ch == locale.negativeSign() || ch == locale.positiveSign() || ch.isDigit()) {
+        } else if (ch.isDigit()) {
             base = 10;
+        } else if (getSymbol(neg, ch, &symbol) || getSymbol(pos, ch, &symbol)) {
+            base = 10;
+            int j = symbol.length();
+            while (j > 1) {
+                ungetChar(symbol.at(j - 1));
+                --j;
+            }
+            symbol.clear();
         } else {
             ungetChar(ch);
             return npsInvalidPrefix;
@@ -1816,10 +1834,11 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
     case 10: {
         // Parse sign (or first digit)
         QChar sign;
+        QString signSymbol;
         int ndigits = 0;
         if (!getChar(&sign))
             return npsMissingDigit;
-        if (sign != locale.negativeSign() && sign != locale.positiveSign()) {
+        if (!getSymbol(neg, sign, &signSymbol) && !getSymbol(pos, sign, &signSymbol)) {
             if (!sign.isDigit()) {
                 ungetChar(sign);
                 return npsMissingDigit;
@@ -1833,7 +1852,7 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
             if (ch.isDigit()) {
                 val *= 10;
                 val += ch.digitValue();
-            } else if (locale != QLocale::c() && ch == locale.groupSeparator()) {
+            } else if (locale != QLocale::c() && getSymbol(grp, ch, &symbol)) {
                 continue;
             } else {
                 ungetChar(ch);
@@ -1843,7 +1862,7 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
         }
         if (ndigits == 0)
             return npsMissingDigit;
-        if (sign == locale.negativeSign()) {
+        if (signSymbol == neg) {
             qlonglong ival = qlonglong(val);
             if (ival > 0)
                 ival = -ival;
@@ -1954,6 +1973,12 @@ bool QTextStreamPrivate::getReal(double *f)
     char buf[BufferSize];
     int i = 0;
 
+    QString dec = locale.decimalPoint();
+    QString exp = locale.exponential();
+    QString neg = locale.negativeSign();
+    QString pos = locale.positiveSign();
+    QString grp = locale.groupSeparator();
+    QString symbol;
     QChar c;
     while (getChar(&c)) {
         switch (c.unicode()) {
@@ -1977,16 +2002,17 @@ bool QTextStreamPrivate::getReal(double *f)
             input = InputT;
             break;
         default: {
-            QChar lc = c.toLower();
-            if (lc == locale.decimalPoint().toLower())
+            // This is slightly naive in assuming that no symbol is a prefix of another symbol
+            if (getSymbol(dec, c, &symbol))
                 input = InputDot;
-            else if (lc == locale.exponential().toLower())
+            else if (getSymbol(exp, c, &symbol))
                 input = InputExp;
-            else if (lc == locale.negativeSign().toLower()
-                     || lc == locale.positiveSign().toLower())
+            else if (getSymbol(pos, c, &symbol))
+                input = InputSign;
+            else if (getSymbol(neg, c, &symbol))
                 input = InputSign;
             else if (locale != QLocale::c() // backward-compatibility
-                     && lc == locale.groupSeparator().toLower())
+                     && getSymbol(grp, c, &symbol))
                 input = InputDigit; // well, it isn't a digit, but no one cares.
             else
                 input = None;
@@ -2009,7 +2035,13 @@ bool QTextStreamPrivate::getReal(double *f)
             break;
         }
 
-        buf[i++] = c.toLatin1();
+        if (!symbol.isEmpty()) {
+            for (int j = 0; j < symbol.length(); ++j)
+                buf[i++] = symbol.at(j).toLatin1();
+            symbol.clear();
+        } else {
+            buf[i++] = c.toLatin1();
+        }
     }
 
     if (i == 0)
@@ -2035,6 +2067,40 @@ bool QTextStreamPrivate::getReal(double *f)
     bool ok;
     *f = locale.toDouble(QString::fromLatin1(buf), &ok);
     return ok;
+}
+
+/*! \internal
+    Get a symbol of arbitrary length
+*/
+bool QTextStreamPrivate::getSymbol(const QString &symbol, const QChar &c, QString *input)
+{
+    input->clear();
+    input->append(c);
+
+    // Shortcut if symbol is 1 char
+    if (input->toLower() == symbol.toLower())
+        return true;
+
+    int len = symbol.length();
+    int pos = 1;
+    QChar in;
+
+    // Read in the length of the symbol
+    while (pos < len && getChar(&in)) {
+        input->append(in);
+        ++pos;
+    }
+    // If length read OK and matches symbol then use, otherwise put back
+    if (input->toLower() == symbol.toLower()) {
+        return true;
+    } else {
+        while (pos > 1) {
+            ungetChar(input->at(pos - 1));
+            --pos;
+        }
+        input->clear();
+        return false;
+    }
 }
 
 /*!

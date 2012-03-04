@@ -87,11 +87,11 @@ struct QSystemLocalePrivate
 {
     QSystemLocalePrivate();
 
-    QChar zeroDigit();
-    QChar decimalPoint();
-    QChar groupSeparator();
-    QChar negativeSign();
-    QChar positiveSign();
+    QString zeroDigit();
+    QString decimalPoint();
+    QString groupSeparator();
+    QString negativeSign();
+    QString positiveSign();
     QVariant dateFormat(QLocale::FormatType);
     QVariant timeFormat(QLocale::FormatType);
     QVariant dateTimeFormat(QLocale::FormatType);
@@ -217,31 +217,31 @@ QString &QSystemLocalePrivate::substituteDigits(QString &string)
     return string;
 }
 
-QChar QSystemLocalePrivate::zeroDigit()
+QString QSystemLocalePrivate::zeroDigit()
 {
     if (zero.isNull())
-        zero = getLocaleInfo_qchar(LOCALE_SNATIVEDIGITS);
+        zero = getLocaleInfo(LOCALE_SNATIVEDIGITS);
     return zero;
 }
 
-QChar QSystemLocalePrivate::decimalPoint()
+QString QSystemLocalePrivate::decimalPoint()
 {
-    return getLocaleInfo_qchar(LOCALE_SDECIMAL);
+    return getLocaleInfo(LOCALE_SDECIMAL);
 }
 
-QChar QSystemLocalePrivate::groupSeparator()
+QString QSystemLocalePrivate::groupSeparator()
 {
-    return getLocaleInfo_qchar(LOCALE_STHOUSAND);
+    return getLocaleInfo(LOCALE_STHOUSAND);
 }
 
-QChar QSystemLocalePrivate::negativeSign()
+QString QSystemLocalePrivate::negativeSign()
 {
-    return getLocaleInfo_qchar(LOCALE_SNEGATIVESIGN);
+    return getLocaleInfo(LOCALE_SNEGATIVESIGN);
 }
 
-QChar QSystemLocalePrivate::positiveSign()
+QString QSystemLocalePrivate::positiveSign()
 {
-    return getLocaleInfo_qchar(LOCALE_SPOSITIVESIGN);
+    return getLocaleInfo(LOCALE_SPOSITIVESIGN);
 }
 
 QVariant QSystemLocalePrivate::dateFormat(QLocale::FormatType type)

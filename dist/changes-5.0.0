@@ -272,6 +272,8 @@ information about a particular change.
   * toShort(), toUShort(), toInt(), toUInt(), toLongLong() and toULongLong() no
     longer take a parameter for base, they will only perform localised base 10
     conversions. For converting other bases use the QString methods instead.
+  * decimalPoint(), groupSeparator(), percent(), zeroDigit(), negativeSign(),
+    positiveSign(), and exponential() all now return a QString instead of a QChar
 
 - QSystemLocale has been removed from the public API.
 

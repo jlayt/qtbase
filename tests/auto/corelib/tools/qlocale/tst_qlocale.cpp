@@ -87,6 +87,7 @@ public:
 
 private slots:
     void initTestCase();
+    void cLocale();
     void windowsDefaultLocale();
     void macDefaultLocale();
 
@@ -1127,8 +1128,8 @@ void tst_QLocale::macDefaultLocale()
     QCOMPARE(locale.toString(invalidDate, QLocale::NarrowFormat), QString());
     QCOMPARE(locale.toString(invalidTime, QLocale::LongFormat), QString());
     QCOMPARE(locale.toString(invalidDate, QLocale::LongFormat), QString());
-    QCOMPARE(locale.decimalPoint(), QChar('.'));
-    QCOMPARE(locale.groupSeparator(), QChar(','));
+    QCOMPARE(locale.decimalPoint(), QString('.'));
+    QCOMPARE(locale.groupSeparator(), QString(','));
     QCOMPARE(locale.dateFormat(QLocale::ShortFormat), QString("M/d/yy"));
     QCOMPARE(locale.dateFormat(QLocale::LongFormat), QString("MMMM d, yyyy"));
     QCOMPARE(locale.timeFormat(QLocale::ShortFormat), QString("h:mm AP"));
@@ -1247,6 +1248,27 @@ public:
 
 #endif // Q_OS_WIN
 
+void tst_QLocale::cLocale()
+{
+    QLocale c = QLocale::c();
+
+    QCOMPARE(c.language(), QLocale::C);
+    QCOMPARE(c.script(), QLocale::AnyScript);
+    QCOMPARE(c.country(), QLocale::AnyCountry);
+    QCOMPARE(c.name(), QString('C'));
+    QCOMPARE(c.bcp47Name(), QString('C'));
+    QCOMPARE(c.nativeLanguageName(), QString());
+    QCOMPARE(c.nativeCountryName(), QString());
+
+    QCOMPARE(c.decimalPoint(), QString('.'));
+    QCOMPARE(c.groupSeparator(), QString(','));
+    QCOMPARE(c.percent(), QString('%'));
+    QCOMPARE(c.zeroDigit(), QString('0'));
+    QCOMPARE(c.negativeSign(), QString('-'));
+    QCOMPARE(c.positiveSign(), QString('+'));
+    QCOMPARE(c.exponential(), QString('e'));
+}
+
 void tst_QLocale::windowsDefaultLocale()
 {
 #ifdef Q_OS_WIN
@@ -1261,8 +1283,8 @@ void tst_QLocale::windowsDefaultLocale()
     setWinLocaleInfo(LOCALE_STIMEFORMAT, QLatin1String("h^m^s"));
     QLocale locale = QLocale::system();
     // make sure we are seeing the system's format strings
-    QCOMPARE(locale.decimalPoint(), QChar('@'));
-    QCOMPARE(locale.groupSeparator(), QChar('?'));
+    QCOMPARE(locale.decimalPoint(), QString('@'));
+    QCOMPARE(locale.groupSeparator(), QString('?'));
     QCOMPARE(locale.dateFormat(QLocale::ShortFormat), QString("d*M*yyyy"));
     QCOMPARE(locale.dateFormat(QLocale::LongFormat), QString("d@M@yyyy"));
     QCOMPARE(locale.timeFormat(QLocale::ShortFormat), QString("h^m^s"));
