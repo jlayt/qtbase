@@ -67,6 +67,10 @@ QtCore
  - QPointer
     * It is now possible to create a QPointer with a const templated type.
 
+ - QTimeZone
+    * New class to support fixed time zones using the Olsen ID's and the host
+      system time zone data.
+
  - QDateTime
     * Fully implement support for Qt::TimeSpec of Qt::OffsetFromUTC
     * Added new methods for offsetFromUTC(), setOffsetFromUTC(),

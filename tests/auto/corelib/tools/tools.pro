@@ -46,6 +46,7 @@ SUBDIRS=\
     qstringref \
     qtextboundaryfinder \
     qtime \
+    qtimezone \
     qtimeline \
     qvarlengtharray \
     qvector
