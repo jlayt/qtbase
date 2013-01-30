@@ -128,7 +128,7 @@ contains(QT_CONFIG, zlib) {
 }
 
 contains(QT_CONFIG,icu) {
-    SOURCES += tools/qlocale_icu.cpp
+    SOURCES += tools/qlocale_icu.cpp tools/qtimezoneprivate_icu.cpp
     DEFINES += QT_USE_ICU
     win32:LIBS_PRIVATE += -licuin -licuuc
     else:LIBS_PRIVATE += -licui18n -licuuc
