@@ -110,7 +110,7 @@ SOURCES += \
 
 !nacl:mac: {
     SOURCES += tools/qelapsedtimer_mac.cpp
-    OBJECTIVE_SOURCES += tools/qlocale_mac.mm
+    OBJECTIVE_SOURCES += tools/qlocale_mac.mm tools/qtimezoneprivate_mac.mm
 }
 else:unix:SOURCES += tools/qelapsedtimer_unix.cpp tools/qlocale_unix.cpp tools/qtimezoneprivate_tz.cpp
 else:win32:SOURCES += tools/qelapsedtimer_win.cpp tools/qlocale_win.cpp
