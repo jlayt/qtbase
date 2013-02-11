@@ -141,6 +141,8 @@ private slots:
 
     void debugOutput() const;
 
+    void timeZones() const;
+
 private:
     bool europeanTimeZone;
     QDate defDate() const { return QDate(1900, 1, 1); }
@@ -542,6 +544,8 @@ void tst_QDateTime::setMSecsSinceEpoch()
     dt.setMSecsSinceEpoch(msecs);
 
     QCOMPARE(dt, utc);
+    QCOMPARE(dt.date(), utc.date());
+    QCOMPARE(dt.time(), utc.time());
     QCOMPARE(dt.timeSpec(), Qt::UTC);
 
     if (europeanTimeZone) {
@@ -564,6 +568,19 @@ void tst_QDateTime::setMSecsSinceEpoch()
 
     QDateTime reference(QDate(1970, 1, 1), QTime(), Qt::UTC);
     QCOMPARE(dt, reference.addMSecs(msecs));
+
+    // Don't test with Mac and Win time zones where qint64 min/max values are not handled.
+    // So only test on Linux where max-min values are handled correctly.
+#if not defined Q_OS_WIN && not defined Q_OS_MAC
+    QTimeZone europe("Europe/Berlin");
+    QDateTime dt2;
+    dt2.setTimeZone(europe);
+    dt2.setMSecsSinceEpoch(msecs);
+    QCOMPARE(dt2.date(), european.date());
+    QCOMPARE(dt2.time(), european.time());
+    QCOMPARE(dt2.timeSpec(), Qt::TimeZone);
+    QCOMPARE(dt2.timeZone(), europe);
+#endif
 }
 
 void tst_QDateTime::fromMSecsSinceEpoch_data()
@@ -1975,6 +1992,12 @@ void tst_QDateTime::offsetFromUTC()
         QDateTime dt4(QDate(2013, 6, 1), QTime(0, 0, 0), Qt::LocalTime);
         QCOMPARE(dt4.offsetFromUTC(), 2 * 60 * 60);
     }
+
+    QDateTime dt5(QDate(2013, 1, 1), QTime(0, 0, 0), QTimeZone("Pacific/Auckland"));
+    QCOMPARE(dt5.offsetFromUTC(), 46800);
+
+    QDateTime dt6(QDate(2013, 6, 1), QTime(0, 0, 0), QTimeZone("Pacific/Auckland"));
+    QCOMPARE(dt6.offsetFromUTC(), 43200);
 }
 
 void tst_QDateTime::abbreviation()
@@ -2002,6 +2025,17 @@ void tst_QDateTime::abbreviation()
 #endif // Q_OS_WIN
         QCOMPARE(dt4.abbreviation(), QString("CEST"));
     }
+
+    QDateTime dt5(QDate(2013, 1, 1), QTime(0, 0, 0), QTimeZone("Europe/Berlin"));
+#ifdef Q_OS_WIN
+    QEXPECT_FAIL("", "QTimeZone windows backend only returns long name", Continue);
+#endif
+    QCOMPARE(dt5.abbreviation(), QString("CET"));
+    QDateTime dt6(QDate(2013, 6, 1), QTime(0, 0, 0), QTimeZone("Europe/Berlin"));
+#ifdef Q_OS_WIN
+    QEXPECT_FAIL("", "QTimeZone windows backend only returns long name", Continue);
+#endif
+    QCOMPARE(dt6.abbreviation(), QString("CEST"));
 }
 
 void tst_QDateTime::setOffsetFromUtc()
@@ -2190,12 +2224,149 @@ void tst_QDateTime::debugOutput() const
     QDateTime dt1(d1, t1);
     QDateTime dt2(d1, t1, Qt::UTC);
     QDateTime dt3(d1, t1, 60 * 60);
+    QDateTime dt4(d1, t1, QTimeZone("Europe/Berlin"));
 
     qDebug() << d1;
     qDebug() << t1;
     qDebug() << dt1;
     qDebug() << dt2;
     qDebug() << dt3;
+    qDebug() << dt4;
+}
+
+void tst_QDateTime::timeZones() const
+{
+    QTimeZone nzTz = QTimeZone("Pacific/Auckland");
+
+    // During Standard Time NZ is +12:00
+    QDateTime utcStd(QDate(2012, 6, 1), QTime(0, 0, 0), Qt::UTC);
+    QDateTime nzStd(QDate(2012, 6, 1), QTime(12, 0, 0), nzTz);
+
+    QCOMPARE(nzStd.isValid(), true);
+    QCOMPARE(nzStd.timeSpec(), Qt::TimeZone);
+    QCOMPARE(nzStd.date(), QDate(2012, 6, 1));
+    QCOMPARE(nzStd.time(), QTime(12, 0, 0));
+    QVERIFY(nzStd.timeZone() == nzTz);
+    QCOMPARE(nzStd.timeZone().id(), QByteArray("Pacific/Auckland"));
+    QCOMPARE(nzStd.offsetFromUTC(), 43200);
+    QCOMPARE(nzStd.isDaylightTime(), false);
+    QCOMPARE(nzStd.toMSecsSinceEpoch(), utcStd.toMSecsSinceEpoch());
+
+    // During Daylight Time NZ is +13:00
+    QDateTime utcDst(QDate(2012, 1, 1), QTime(0, 0, 0), Qt::UTC);
+    QDateTime nzDst(QDate(2012, 1, 1), QTime(13, 0, 0), nzTz);
+
+    QCOMPARE(nzDst.isValid(), true);
+    QCOMPARE(nzDst.date(), QDate(2012, 1, 1));
+    QCOMPARE(nzDst.time(), QTime(13, 0, 0));
+    QCOMPARE(nzDst.offsetFromUTC(), 46800);
+    QCOMPARE(nzDst.isDaylightTime(), true);
+    QCOMPARE(nzDst.toMSecsSinceEpoch(), utcDst.toMSecsSinceEpoch());
+
+    QDateTime utc = nzStd.toUTC();
+    QCOMPARE(utc.date(), utcStd.date());
+    QCOMPARE(utc.time(), utcStd.time());
+
+    utc = nzDst.toUTC();
+    QCOMPARE(utc.date(), utcDst.date());
+    QCOMPARE(utc.time(), utcDst.time());
+
+    // Sydney is 2 hours behind New Zealand
+    QTimeZone ausTz = QTimeZone("Australia/Sydney");
+    QDateTime aus = nzStd.toTimeZone(ausTz);
+    QCOMPARE(aus.date(), QDate(2012, 6, 1));
+    QCOMPARE(aus.time(), QTime(10, 0, 0));
+
+    QDateTime dt1(QDate(2012, 6, 1), QTime(0, 0, 0), Qt::UTC);
+    QCOMPARE(dt1.timeSpec(), Qt::UTC);
+    dt1.setTimeZone(nzTz);
+    QCOMPARE(dt1.timeSpec(), Qt::TimeZone);
+    QCOMPARE(dt1.date(), QDate(2012, 6, 1));
+    QCOMPARE(dt1.time(), QTime(0, 0, 0));
+    QCOMPARE(dt1.timeZone(), nzTz);
+
+    QDateTime dt2 = QDateTime::fromTime_t(1338465600, nzTz);
+    QCOMPARE(dt2.date(), dt1.date());
+    QCOMPARE(dt2.time(), dt1.time());
+    QCOMPARE(dt2.timeSpec(), dt1.timeSpec());
+    QCOMPARE(dt2.timeZone(), dt1.timeZone());
+
+    QDateTime dt3 = QDateTime::fromMSecsSinceEpoch(1338465600000, nzTz);
+    QCOMPARE(dt3.date(), dt1.date());
+    QCOMPARE(dt3.time(), dt1.time());
+    QCOMPARE(dt3.timeSpec(), dt1.timeSpec());
+    QCOMPARE(dt3.timeZone(), dt1.timeZone());
+
+    // Check datastream serialises the time zone
+    QByteArray tmp;
+    {
+        QDataStream ds(&tmp, QIODevice::WriteOnly);
+        ds << dt1;
+    }
+    QDateTime dt4;
+    {
+        QDataStream ds(&tmp, QIODevice::ReadOnly);
+        ds >> dt4;
+    }
+    QCOMPARE(dt4, dt1);
+    QCOMPARE(dt4.timeSpec(), Qt::TimeZone);
+    QCOMPARE(dt4.timeZone(), nzTz);
+
+    // Check handling of transition times
+    QTimeZone cet("Europe/Berlin");
+
+    // Standard Time to Daylight Time 2013 on 2013-03-31 is 2:00 local time / 1:00 UTC
+    qint64 stdToDstMSecs = 1364691600000;
+
+    // Test MSecs to local
+    // - Test 1 msec before tran = 01:59:59.999
+    QDateTime beforeDst = QDateTime::fromMSecsSinceEpoch(stdToDstMSecs - 1, cet);
+    QCOMPARE(beforeDst.date(), QDate(2013, 3, 31));
+    QCOMPARE(beforeDst.time(), QTime(1, 59, 59, 999));
+    // - Test at tran = 03:00:00
+    QDateTime atDst = QDateTime::fromMSecsSinceEpoch(stdToDstMSecs, cet);
+    QCOMPARE(atDst.date(), QDate(2013, 3, 31));
+    QCOMPARE(atDst.time(), QTime(3, 0, 0));
+
+    // Test local to MSecs
+    // - Test 1 msec before tran = 01:59:59.999
+    beforeDst = QDateTime(QDate(2013, 3, 31), QTime(1, 59, 59, 999), cet);
+    QCOMPARE(beforeDst.toMSecsSinceEpoch(), stdToDstMSecs - 1);
+    // - Test at tran = 03:00:00
+    atDst = QDateTime(QDate(2013, 3, 31), QTime(3, 0, 0), cet);
+    QCOMPARE(atDst.toMSecsSinceEpoch(), stdToDstMSecs);
+    // - Test transition hole, setting 02:00:00 should be 03:00:00
+    atDst = QDateTime(QDate(2013, 3, 31), QTime(2, 0, 0), cet);
+    QCOMPARE(atDst.date(), QDate(2013, 3, 31));
+    QEXPECT_FAIL("", "QDateTime does not handle transition hole", Abort);
+    QCOMPARE(atDst.time(), QTime(3, 0, 0));
+    QCOMPARE(atDst.toMSecsSinceEpoch(), stdToDstMSecs);
+
+    // Standard Time to Daylight Time 2013 on 2013-10-27 is 3:00 local time / 1:00 UTC
+    qint64 dstToStdMSecs = 1382835600000;
+
+    // Test MSecs to local
+    // - Test 1 msec before tran = 02:59:59.999 local
+    QDateTime beforeStd = QDateTime::fromMSecsSinceEpoch(dstToStdMSecs - 1, cet);
+    QCOMPARE(beforeStd.date(), QDate(2013, 10, 27));
+    QCOMPARE(beforeStd.time(), QTime(2, 59, 59, 999));
+    // - Test at tran = 03:00:00 local becomes 02:00:00 local
+    QDateTime atStd = QDateTime::fromMSecsSinceEpoch(dstToStdMSecs, cet);
+    QCOMPARE(atStd.date(), QDate(2013, 10, 27));
+    QCOMPARE(atStd.time(), QTime(2, 0, 0));
+    // - Test 1 hour after tran = 03:00:00 local
+    QDateTime afterStd = QDateTime::fromMSecsSinceEpoch(dstToStdMSecs + 3600000, cet);
+    QCOMPARE(afterStd.date(), QDate(2013, 10, 27));
+    QCOMPARE(afterStd.time(), QTime(3, 0, 0));
+
+    // Test local to MSecs
+    // - Test 1 msec before tran = 02:59:59.999
+    beforeStd = QDateTime(QDate(2013, 10, 27), QTime(2, 59, 59, 999), cet);
+    QCOMPARE(beforeStd.toMSecsSinceEpoch(), dstToStdMSecs - 1);
+    // NOTE Only First Occurrence supported at moment, so cannot test second occrrence here!
+    // - Test 1 hour after tran = 03:00:00
+    afterStd = QDateTime(QDate(2013, 3, 31), QTime(3, 0, 0), cet);
+    QCOMPARE(afterStd.toMSecsSinceEpoch(), dstToStdMSecs + 3600000);
 }
 
 QTEST_APPLESS_MAIN(tst_QDateTime)

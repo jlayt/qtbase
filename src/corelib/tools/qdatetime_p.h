@@ -62,6 +62,9 @@
 # include "QtCore/qvariant.h"
 #endif
 #include "QtCore/qvector.h"
+#ifndef QT_BOOTSTRAPPED
+#include "qtimezone.h"
+#endif // QT_BOOTSTRAPPED
 
 
 #define QDATETIMEEDIT_TIME_MIN QTime(0, 0, 0, 0)
@@ -79,20 +82,39 @@ QT_BEGIN_NAMESPACE
 class QDateTimePrivate : public QSharedData
 {
 public:
-    enum Spec { LocalUnknown = -1, LocalStandard = 0, LocalDST = 1, UTC = 2, OffsetFromUTC = 3};
+    enum Spec {
+        LocalUnknown = -1,
+        LocalStandard = 0,
+        LocalDST = 1,
+        UTC = 2,
+        OffsetFromUTC = 3,
+        TimeZone = 4
+    };
 
     QDateTimePrivate() : spec(LocalUnknown), m_offsetFromUtc(0) {}
-    QDateTimePrivate(const QDateTimePrivate &other)
-        : QSharedData(other), date(other.date), time(other.time), spec(other.spec),
-          m_offsetFromUtc(other.m_offsetFromUtc)
+
+    QDateTimePrivate(const QDateTimePrivate &other) : QSharedData(other),
+                                                      date(other.date),
+                                                      time(other.time),
+                                                      spec(other.spec),
+#ifndef QT_BOOTSTRAPPED
+                                                      m_timeZone(other.m_timeZone),
+#endif // QT_BOOTSTRAPPED
+                                                      m_offsetFromUtc(other.m_offsetFromUtc)
     {}
 
     QDate date;
     QTime time;
     Spec spec;
+#ifndef QT_BOOTSTRAPPED
+    QTimeZone m_timeZone;
+#endif // QT_BOOTSTRAPPED
     int m_offsetFromUtc;
 
     void init(const QDate &toDate, const QTime &toTime, Qt::TimeSpec toSpec, int offsetSeconds);
+#ifndef QT_BOOTSTRAPPED
+    void init(const QDate &toDate, const QTime &toTime, const QTimeZone &toTimeZone);
+#endif // QT_BOOTSTRAPPED
 
     // Get current date/time into LocalTime and put result in outDate and outTime
     Spec getLocal(QDate &outDate, QTime &outTime) const;
@@ -103,6 +125,13 @@ public:
     static QDateTimePrivate::Spec utcToLocal(QDate &date, QTime &time);
     // Convert passed in LocalTime datetime into UTC
     static void localToUtc(QDate &date, QTime &time, int isdst);
+
+#ifndef QT_BOOTSTRAPPED
+    // Convert passed in UTC date/time into given TimeZone
+    static void utcToTz(QDate *utcDate, QTime *utcTime, const QTimeZone &toZone);
+    // Convert passed in TimeZone date/time into UTC
+    static void tzToUtc(QDate *tzDate, QTime *tzTime, const QTimeZone &fromZone);
+#endif // QT_BOOTSTRAPPED
 
     // Convert passed in UTC datetime and offset into OffsetFromUTC
     static void utcToOffset(QDate *date, QTime *time, qint32 offset);

@@ -73,10 +73,12 @@ QtCore
 
  - QDateTime
     * Fully implement support for Qt::TimeSpec of Qt::OffsetFromUTC
+    * Support for a new time spec of Qt::TimeZone using QTimeZone
     * Added new methods for offsetFromUTC(), setOffsetFromUTC(),
-      toOffsetFromUTC(), and abbreviation().
+      toOffsetFromUTC(), abbreviation(), timeZone(), setTimeZone(),
+      toTimeZone() and isDaylightTime().
     * Added convenience methods for fromMSecsSinceEpoch() and fromTime_t()
-      to take time spec to be used in returned datetime.
+      to take time spec or time zone to be used in returned datetime.
     * The debug datastream is now an ISO format instead of Qt::TextDate
 
 QtGui
