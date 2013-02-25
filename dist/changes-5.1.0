@@ -67,7 +67,10 @@ QtCore
  - QPointer
     * It is now possible to create a QPointer with a const templated type.
 
- -
+ - QDateTime
+    * Fully implement support for Qt::TimeSpec of Qt::OffsetFromUTC
+    * Added new methods for offsetFromUTC(), setOffsetFromUTC(), and
+      toOffsetFromUTC().
 
 QtGui
 -----
