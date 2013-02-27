@@ -191,12 +191,12 @@ QString QLocalePrivate::scriptCode() const
     return QString::fromLatin1((const char *)c, 4);
 }
 
-QString QLocalePrivate::countryCode() const
+QString QLocalePrivate::countryToCode(QLocale::Country country)
 {
-    if (m_data->m_country_id == QLocale::AnyCountry)
+    if (country == QLocale::AnyCountry)
         return QString();
 
-    const unsigned char *c = country_code_list + 3*(uint(m_data->m_country_id));
+    const unsigned char *c = country_code_list + 3*(uint(country));
 
     QString code(c[2] == 0 ? 2 : 3, Qt::Uninitialized);
 
@@ -206,6 +206,11 @@ QString QLocalePrivate::countryCode() const
         code[2] = ushort(c[2]);
 
     return code;
+}
+
+QString QLocalePrivate::countryCode() const
+{
+    return countryToCode(QLocale::Country(m_data->m_country_id));
 }
 
 // http://www.unicode.org/reports/tr35/#Likely_Subtags

@@ -242,6 +242,8 @@ public:
     QString scriptCode() const;
     QString countryCode() const;
 
+    static QString countryToCode(QLocale::Country country);
+
     static QLocale::Language codeToLanguage(const QString &code);
     static QLocale::Script codeToScript(const QString &code);
     static QLocale::Country codeToCountry(const QString &code);
