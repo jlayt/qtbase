@@ -3338,9 +3338,22 @@ qint64 QDateTime::currentMSecsSinceEpoch() Q_DECL_NOTHROW
 */
 QDateTime QDateTime::fromTime_t(uint seconds)
 {
-    QDateTime d;
-    d.setTime_t(seconds);
-    return d;
+    return fromMSecsSinceEpoch((qint64)seconds * 1000, Qt::LocalTime);
+}
+
+/*!
+  \since 5.1
+
+  Returns a datetime whose date and time are the number of \a seconds
+  that have passed since 1970-01-01T00:00:00, Coordinated Universal
+  Time (Qt::UTC) and with the given \a spec. If the \a spec is Qt::OffsetFromUTC
+  then the offset will be set to \a offsetFromUtc, otherwise it will be ignored.
+
+  \sa toTime_t(), setTime_t()
+*/
+QDateTime QDateTime::fromTime_t(uint seconds, Qt::TimeSpec spec, int offsetFromUtc)
+{
+    return fromMSecsSinceEpoch((qint64)seconds * 1000, spec, offsetFromUtc);
 }
 
 /*!
@@ -3359,9 +3372,35 @@ QDateTime QDateTime::fromTime_t(uint seconds)
 */
 QDateTime QDateTime::fromMSecsSinceEpoch(qint64 msecs)
 {
-    QDateTime d;
-    d.setMSecsSinceEpoch(msecs);
-    return d;
+    return fromMSecsSinceEpoch(msecs, Qt::LocalTime);
+}
+
+/*!
+  \since 5.1
+
+  Returns a datetime whose date and time are the number of milliseconds \a msecs
+  that have passed since 1970-01-01T00:00:00.000, Coordinated Universal
+  Time (Qt::UTC) and with the given \a spec.  If the \a spec is Qt::OffsetFromUTC
+  then the offset will be set to \a offsetSeconds, otherwise it will be ignored.
+
+  \sa fromTime_t()
+*/
+QDateTime QDateTime::fromMSecsSinceEpoch(qint64 msecs, Qt::TimeSpec spec, int offsetSeconds)
+{
+    QDate newDate = QDate(1970, 1, 1);
+    QTime newTime = QTime(0, 0, 0);
+    QDateTimePrivate::addMSecs(newDate, newTime, msecs);
+
+    switch (spec) {
+    case Qt::UTC :
+        return QDateTime(newDate, newTime, Qt::UTC);
+    case Qt::OffsetFromUTC :
+        QDateTimePrivate::utcToOffset(&newDate, &newTime, offsetSeconds);
+        return QDateTime(newDate, newTime, offsetSeconds);
+    default :
+        QDateTimePrivate::utcToLocal(newDate, newTime);
+        return QDateTime(newDate, newTime, Qt::LocalTime);
+    }
 }
 
 #if QT_DEPRECATED_SINCE(5, 1)

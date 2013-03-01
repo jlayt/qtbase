@@ -267,7 +267,10 @@ public:
     static QDateTime fromString(const QString &s, const QString &format);
 #endif
     static QDateTime fromTime_t(uint secsSince1Jan1970UTC);
+    static QDateTime fromTime_t(uint secsSince1Jan1970UTC, Qt::TimeSpec spec,
+                                int offsetFromUtc = 0);
     static QDateTime fromMSecsSinceEpoch(qint64 msecs);
+    static QDateTime fromMSecsSinceEpoch(qint64 msecs, Qt::TimeSpec spec, int offsetFromUtc = 0);
     static qint64 currentMSecsSinceEpoch() Q_DECL_NOTHROW;
 
 private:
