@@ -1587,7 +1587,7 @@ QString QLocale::toString(qulonglong i) const
 
 QString QLocale::toString(const QDate &date, const QString &format) const
 {
-    return d->dateTimeToString(format, &date, 0, this);
+    return d->dateTimeToString(format, QDateTime(), date, QTime(), this);
 }
 
 /*!
@@ -1631,33 +1631,6 @@ static bool timeFormatContainsAP(const QString &format)
     return false;
 }
 
-static QString timeZone()
-{
-#if defined(Q_OS_WINCE)
-    TIME_ZONE_INFORMATION info;
-    DWORD res = GetTimeZoneInformation(&info);
-    if (res == TIME_ZONE_ID_UNKNOWN)
-        return QString();
-    return QString::fromWCharArray(info.StandardName);
-#elif defined(Q_OS_WIN)
-    _tzset();
-# if defined(_MSC_VER) && _MSC_VER >= 1400
-    size_t returnSize = 0;
-    char timeZoneName[512];
-    if (_get_tzname(&returnSize, timeZoneName, 512, 1))
-        return QString();
-    return QString::fromLocal8Bit(timeZoneName);
-# else
-    return QString::fromLocal8Bit(_tzname[1]);
-# endif
-#elif defined(Q_OS_VXWORKS)
-    return QString();
-#else
-    tzset();
-    return QString::fromLocal8Bit(tzname[1]);
-#endif
-}
-
 /*!
     Returns a localized string representation of the given \a time according
     to the specified \a format.
@@ -1665,7 +1638,7 @@ static QString timeZone()
 */
 QString QLocale::toString(const QTime &time, const QString &format) const
 {
-    return d->dateTimeToString(format, 0, &time, this);
+    return d->dateTimeToString(format, QDateTime(), QDate(), time, this);
 }
 
 /*!
@@ -1678,9 +1651,7 @@ QString QLocale::toString(const QTime &time, const QString &format) const
 
 QString QLocale::toString(const QDateTime &dateTime, const QString &format) const
 {
-    const QDate dt = dateTime.date();
-    const QTime tm = dateTime.time();
-    return d->dateTimeToString(format, &dt, &tm, this);
+    return d->dateTimeToString(format, dateTime, QDate(), QTime(), this);
 }
 
 /*!
@@ -2559,28 +2530,27 @@ QString QLocale::pmText() const
 }
 
 
-QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *date, const QTime *time,
+QString QLocalePrivate::dateTimeToString(const QString &format, const QDateTime &datetime,
+                                         const QDate &dateOnly, const QTime &timeOnly,
                                          const QLocale *q) const
 {
-    Q_ASSERT(date || time);
-    if ((date && !date->isValid()) || (time && !time->isValid()))
+    QDate date;
+    QTime time;
+    bool formatDate = false;
+    bool formatTime = false;
+    if (datetime.isValid()) {
+        date = datetime.date();
+        time = datetime.time();
+        formatDate = true;
+        formatTime = true;
+    } else if (dateOnly.isValid()) {
+        date = dateOnly;
+        formatDate = true;
+    } else if (timeOnly.isValid()) {
+        time = timeOnly;
+        formatTime = true;
+    } else {
         return QString();
-    const bool format_am_pm = time && timeFormatContainsAP(format);
-
-    enum { AM, PM } am_pm = AM;
-    int hour12 = time ? time->hour() : -1;
-    if (time) {
-        if (hour12 == 0) {
-            am_pm = AM;
-            hour12 = 12;
-        } else if (hour12 < 12) {
-            am_pm = AM;
-        } else if (hour12 == 12) {
-            am_pm = PM;
-        } else {
-            am_pm = PM;
-            hour12 -= 12;
-        }
     }
 
     QString result;
@@ -2595,7 +2565,7 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
         const QChar c = format.at(i);
         int repeat = qt_repeatCount(format, i);
         bool used = false;
-        if (date) {
+        if (formatDate) {
             switch (c.unicode()) {
             case 'y':
                 used = true;
@@ -2605,11 +2575,14 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                     repeat = 2;
 
                 switch (repeat) {
-                case 4:
-                    result.append(longLongToString(date->year(), -1, 10, 4, QLocalePrivate::ZeroPadded));
+                case 4: {
+                    const int yr = date.year();
+                    const int len = (yr < 0) ? 5 : 4;
+                    result.append(longLongToString(yr, -1, 10, len, QLocalePrivate::ZeroPadded));
                     break;
+                }
                 case 2:
-                    result.append(longLongToString(date->year() % 100, -1, 10, 2,
+                    result.append(longLongToString(date.year() % 100, -1, 10, 2,
                                                    QLocalePrivate::ZeroPadded));
                     break;
                 default:
@@ -2624,16 +2597,16 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 repeat = qMin(repeat, 4);
                 switch (repeat) {
                 case 1:
-                    result.append(longLongToString(date->month()));
+                    result.append(longLongToString(date.month()));
                     break;
                 case 2:
-                    result.append(longLongToString(date->month(), -1, 10, 2, QLocalePrivate::ZeroPadded));
+                    result.append(longLongToString(date.month(), -1, 10, 2, QLocalePrivate::ZeroPadded));
                     break;
                 case 3:
-                    result.append(q->monthName(date->month(), QLocale::ShortFormat));
+                    result.append(q->monthName(date.month(), QLocale::ShortFormat));
                     break;
                 case 4:
-                    result.append(q->monthName(date->month(), QLocale::LongFormat));
+                    result.append(q->monthName(date.month(), QLocale::LongFormat));
                     break;
                 }
                 break;
@@ -2643,16 +2616,16 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 repeat = qMin(repeat, 4);
                 switch (repeat) {
                 case 1:
-                    result.append(longLongToString(date->day()));
+                    result.append(longLongToString(date.day()));
                     break;
                 case 2:
-                    result.append(longLongToString(date->day(), -1, 10, 2, QLocalePrivate::ZeroPadded));
+                    result.append(longLongToString(date.day(), -1, 10, 2, QLocalePrivate::ZeroPadded));
                     break;
                 case 3:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::ShortFormat));
+                    result.append(q->dayName(date.dayOfWeek(), QLocale::ShortFormat));
                     break;
                 case 4:
-                    result.append(q->dayName(date->dayOfWeek(), QLocale::LongFormat));
+                    result.append(q->dayName(date.dayOfWeek(), QLocale::LongFormat));
                     break;
                 }
                 break;
@@ -2661,12 +2634,18 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 break;
             }
         }
-        if (!used && time) {
+        if (!used && formatTime) {
             switch (c.unicode()) {
             case 'h': {
                 used = true;
                 repeat = qMin(repeat, 2);
-                const int hour = format_am_pm ? hour12 : time->hour();
+                int hour = time.hour();
+                if (timeFormatContainsAP(format)) {
+                    if (hour > 12)
+                        hour -= 12;
+                    else if (hour == 0)
+                        hour = 12;
+                }
 
                 switch (repeat) {
                 case 1:
@@ -2683,10 +2662,10 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 repeat = qMin(repeat, 2);
                 switch (repeat) {
                 case 1:
-                    result.append(longLongToString(time->hour()));
+                    result.append(longLongToString(time.hour()));
                     break;
                 case 2:
-                    result.append(longLongToString(time->hour(), -1, 10, 2, QLocalePrivate::ZeroPadded));
+                    result.append(longLongToString(time.hour(), -1, 10, 2, QLocalePrivate::ZeroPadded));
                     break;
                 }
                 break;
@@ -2696,10 +2675,10 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 repeat = qMin(repeat, 2);
                 switch (repeat) {
                 case 1:
-                    result.append(longLongToString(time->minute()));
+                    result.append(longLongToString(time.minute()));
                     break;
                 case 2:
-                    result.append(longLongToString(time->minute(), -1, 10, 2, QLocalePrivate::ZeroPadded));
+                    result.append(longLongToString(time.minute(), -1, 10, 2, QLocalePrivate::ZeroPadded));
                     break;
                 }
                 break;
@@ -2709,10 +2688,10 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 repeat = qMin(repeat, 2);
                 switch (repeat) {
                 case 1:
-                    result.append(longLongToString(time->second()));
+                    result.append(longLongToString(time.second()));
                     break;
                 case 2:
-                    result.append(longLongToString(time->second(), -1, 10, 2, QLocalePrivate::ZeroPadded));
+                    result.append(longLongToString(time.second(), -1, 10, 2, QLocalePrivate::ZeroPadded));
                     break;
                 }
                 break;
@@ -2724,7 +2703,7 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 } else {
                     repeat = 1;
                 }
-                result.append(am_pm == AM ? q->amText().toLower() : q->pmText().toLower());
+                result.append(time.hour() < 12 ? q->amText().toLower() : q->pmText().toLower());
                 break;
 
             case 'A':
@@ -2734,7 +2713,7 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 } else {
                     repeat = 1;
                 }
-                result.append(am_pm == AM ? q->amText().toUpper() : q->pmText().toUpper());
+                result.append(time.hour() < 12 ? q->amText().toUpper() : q->pmText().toUpper());
                 break;
 
             case 'z':
@@ -2746,10 +2725,10 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
                 }
                 switch (repeat) {
                 case 1:
-                    result.append(longLongToString(time->msec()));
+                    result.append(longLongToString(time.msec()));
                     break;
                 case 3:
-                    result.append(longLongToString(time->msec(), -1, 10, 3, QLocalePrivate::ZeroPadded));
+                    result.append(longLongToString(time.msec(), -1, 10, 3, QLocalePrivate::ZeroPadded));
                     break;
                 }
                 break;
@@ -2757,8 +2736,14 @@ QString QLocalePrivate::dateTimeToString(const QString &format, const QDate *dat
             case 't':
                 used = true;
                 repeat = 1;
-                result.append(timeZone());
+                // If we have a QDateTime use the time spec otherwise use the current system tzname
+                if (formatDate) {
+                    result.append(datetime.abbreviation());
+                } else {
+                    result.append(QDateTime::currentDateTime().abbreviation());
+                }
                 break;
+
             default:
                 break;
             }

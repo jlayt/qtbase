@@ -69,8 +69,8 @@ QtCore
 
  - QDateTime
     * Fully implement support for Qt::TimeSpec of Qt::OffsetFromUTC
-    * Added new methods for offsetFromUTC(), setOffsetFromUTC(), and
-      toOffsetFromUTC().
+    * Added new methods for offsetFromUTC(), setOffsetFromUTC(),
+      toOffsetFromUTC(), and abbreviation().
     * Added convenience methods for fromMSecsSinceEpoch() and fromTime_t()
       to take time spec to be used in returned datetime.
 

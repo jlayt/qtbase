@@ -218,6 +218,7 @@ public:
     QTime time() const;
     Qt::TimeSpec timeSpec() const;
     int offsetFromUTC() const;
+    QString abbreviation() const;
 
     qint64 toMSecsSinceEpoch() const;
     uint toTime_t() const;
