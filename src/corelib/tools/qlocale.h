@@ -773,13 +773,14 @@ public:
         SouthSudan = 254,
         Bonaire = 255,
         SintMaarten = 256,
+        NoCountry = 257,
         DemocraticRepublicOfCongo = CongoKinshasa,
         PeoplesRepublicOfCongo = CongoBrazzaville,
         DemocraticRepublicOfKorea = NorthKorea,
         RepublicOfKorea = SouthKorea,
         RussianFederation = Russia,
         SyrianArabRepublic = Syria,
-        LastCountry = SintMaarten
+        LastCountry = NoCountry
     };
 // GENERATED PART ENDS HERE
 

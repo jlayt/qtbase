@@ -726,6 +726,7 @@
     \value CuraSao
     \value Bonaire
     \value SintMaarten
+    \value NoCountry
     \omitvalue LastCountry
 
     \sa country(), countryToString()

@@ -193,7 +193,7 @@ QString QLocalePrivate::scriptCode() const
 
 QString QLocalePrivate::countryToCode(QLocale::Country country)
 {
-    if (country == QLocale::AnyCountry)
+    if (country == QLocale::AnyCountry || country == QLocale::NoCountry)
         return QString();
 
     const unsigned char *c = country_code_list + 3*(uint(country));
@@ -780,7 +780,7 @@ QLocale::QLocale()
     \list
     \li If the language/country pair is found in the database, it is used.
     \li If the language is found but the country is not, or if the country
-       is \c AnyCountry, the language is used with the most
+       is \c AnyCountry or \c NoCountry, the language is used with the most
        appropriate available country (for example, Germany for German),
     \li If neither the language nor the country are found, QLocale
        defaults to the default locale (see setDefault()).
@@ -816,10 +816,10 @@ QLocale::QLocale(Language language, Country country)
 
     \list
     \li If the language/script/country is found in the database, it is used.
-    \li If both \a script is AnyScript and \a country is AnyCountry, the
+    \li If both \a script is AnyScript and \a country is AnyCountry or NoCountry, the
        language is used with the most appropriate available script and country
        (for example, Germany for German),
-    \li If either \a script is AnyScript or \a country is AnyCountry, the
+    \li If either \a script is AnyScript or \a country is AnyCountry or NoCountry, the
        language is used with the first locale that matches the given \a script
        and \a country.
     \li If neither the language nor the country are found, QLocale
@@ -2111,8 +2111,11 @@ QLocale QLocale::system()
 */
 QList<QLocale> QLocale::matchingLocales(QLocale::Language language,
                                         QLocale::Script script,
-                                        QLocale::Country country)
+                                        QLocale::Country cntry)
 {
+    QLocale::Country country = cntry;
+    if (country == QLocale::NoCountry)
+        country = QLocale::AnyCountry;
     if (uint(language) > QLocale::LastLanguage || uint(script) > QLocale::LastScript ||
             uint(country) > QLocale::LastCountry)
         return QList<QLocale>();

@@ -141,8 +141,11 @@ namespace QIcu {
 struct QLocaleId
 {
     // bypass constructors
-    static inline QLocaleId fromIds(ushort language, ushort script, ushort country)
+    static inline QLocaleId fromIds(ushort language, ushort script, ushort cntry)
     {
+        ushort country = cntry;
+        if (cntry == (ushort)QLocale::NoCountry)
+            country = (ushort)QLocale::AnyCountry;
         const QLocaleId localeId = { language, script, country };
         return localeId;
     }

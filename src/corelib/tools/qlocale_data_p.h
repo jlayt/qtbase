@@ -77,7 +77,7 @@ static const int ImperialMeasurementSystemsCount =
 // GENERATED PART STARTS HERE
 
 /*
-    This part of the file was generated on 2012-12-19 from the
+    This part of the file was generated on 2013-03-13 from the
     Common Locale Data Repository v22.1
 
     http://www.unicode.org/cldr/
@@ -6367,6 +6367,7 @@ static const char country_name_list[] =
 "SouthSudan\0"
 "Bonaire\0"
 "SintMaarten\0"
+"NoCountry\0"
 ;
 
 static const quint16 country_name_index[] = {
@@ -6627,6 +6628,7 @@ static const quint16 country_name_index[] = {
   2676, // SouthSudan
   2687, // Bonaire
   2695, // SintMaarten
+  2707, // NoCountry
 };
 
 static const unsigned char language_code_list[] =
@@ -7307,6 +7309,7 @@ static const unsigned char country_code_list[] =
 "SS\0" // SouthSudan
 "BQ\0" // Bonaire
 "SX\0" // SintMaarten
+"XX\0" // NoCountry
 ;
 
 // GENERATED PART ENDS HERE
