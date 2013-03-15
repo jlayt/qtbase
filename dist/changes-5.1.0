@@ -81,6 +81,8 @@ QtCore
     * Added convenience methods for fromMSecsSinceEpoch() and fromTime_t()
       to take time spec or time zone to be used in returned datetime.
     * The debug datastream is now an ISO format instead of Qt::TextDate
+    * Add support for first and second occurrence of local time at the
+      Daylight Time to Standard Time transition.
 
 QtGui
 -----

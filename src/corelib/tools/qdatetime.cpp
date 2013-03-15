@@ -212,7 +212,7 @@ static int fromOffsetString(const QString offsetString, bool *valid)
 
 // Calls the platform variant of mktime for the given date and time,
 // and updates with the returned values
-static time_t qt_mktime(QDate &date, QTime &time, QDateTimePrivate::Spec *spec,
+static time_t qt_mktime(QDate &date, QTime &time, QDateTimePrivate::Status *status,
                         QString *abbreviation, bool *ok)
 {
     if (ok)
@@ -236,21 +236,22 @@ static time_t qt_mktime(QDate &date, QTime &time, QDateTimePrivate::Spec *spec,
     tzset();
 #endif
     // mktime not only returns the time_t but also updates the passed-in tm details
+    // TODO Use local.tm_isdst for occurrence
     const time_t secsSinceEpoch = mktime(&local);
     if (secsSinceEpoch != (uint)-1) {
         if (local.tm_isdst == 1) {
-            if (spec)
-                *spec = QDateTimePrivate::LocalDST;
+            if (status)
+                *status = QDateTimePrivate::Daylight;
             if (abbreviation)
                 *abbreviation = QString::fromLocal8Bit(tzname[1]);
         } else if (local.tm_isdst == 0) {
-            if (spec)
-                *spec = QDateTimePrivate::LocalStandard;
+            if (status)
+                *status = QDateTimePrivate::Standard;
             if (abbreviation)
                 *abbreviation = QString::fromLocal8Bit(tzname[0]);
         } else {
-            if (spec)
-                *spec = QDateTimePrivate::LocalUnknown;
+            if (status)
+                *status = QDateTimePrivate::Unknown;
             if (abbreviation)
                 *abbreviation = QString::fromLocal8Bit(tzname[0]);
         }
@@ -2223,6 +2224,20 @@ int QTime::elapsed() const
 */
 
 /*!
+    \since 5.1
+
+    \enum QDateTime::LocalTimeOccurrence
+
+    This enum describes if the datetime is the first or second occurrence of
+    the Local Time.  At the end of Daylight Savings Time the Local Time may
+    occur twice, e.g. at 2am the clock is "turned back" to 1am so all local
+    times between 1am and 2am are repeated a second time.
+
+    \value FirstOccurrence This datetime is the first occurrence of a Local Time
+    \value SecondOccurrence This datetime is the second occurrence of a Local Time
+*/
+
+/*!
     Constructs a null datetime (i.e. null date and null time). A null
     datetime is invalid, since the date is invalid.
 
@@ -2339,25 +2354,15 @@ void QDateTimePrivate::init(const QDate &toDate, const QTime &toTime, Qt::TimeSp
 #ifndef QT_BOOTSTRAPPED
     m_timeZone = QTimeZone();
 #endif // QT_BOOTSTRAPPED
+    m_spec = toSpec;
 
-    switch (toSpec) {
-    case Qt::UTC :
-        spec = QDateTimePrivate::UTC;
-        break;
-    case Qt::OffsetFromUTC :
-        if (offsetSeconds == 0) {
-            spec = QDateTimePrivate::UTC;
-        } else {
-            spec = QDateTimePrivate::OffsetFromUTC;
+    if (toSpec == Qt::OffsetFromUTC) {
+        if (offsetSeconds == 0)
+            m_spec = Qt::UTC;
+        else
             m_offsetFromUtc = offsetSeconds;
-        }
-        break;
-    case Qt::ClockTime :
-        spec = QDateTimePrivate::ClockTime;
-        break;
-    case Qt::TimeZone :
-    case Qt::LocalTime :
-        spec = QDateTimePrivate::LocalUnknown;
+    } else if (toSpec == Qt::TimeZone) {
+        m_spec = Qt::LocalTime;
     }
 }
 
@@ -2377,7 +2382,7 @@ void QDateTimePrivate::init(const QDate &toDate, const QTime &toTime, const QTim
         time = QTime(0, 0, 0);
     else
         time = toTime;
-    spec = QDateTimePrivate::TimeZone;
+    m_spec = Qt::TimeZone;
     m_timeZone = toTimeZone;
     m_offsetFromUtc = 0;
 }
@@ -2471,21 +2476,7 @@ QTime QDateTime::time() const
 
 Qt::TimeSpec QDateTime::timeSpec() const
 {
-    switch (d->spec) {
-    case QDateTimePrivate::UTC:
-        return Qt::UTC;
-    case QDateTimePrivate::OffsetFromUTC:
-        return Qt::OffsetFromUTC;
-    case QDateTimePrivate::TimeZone:
-        return Qt::TimeZone;
-    case QDateTimePrivate::ClockTime:
-        return Qt::ClockTime;
-    case QDateTimePrivate::LocalUnknown:
-    case QDateTimePrivate::LocalStandard:
-    case QDateTimePrivate::LocalDST:
-        return Qt::LocalTime;
-    }
-    return Qt::LocalTime;
+    return d->m_spec;
 }
 
 #ifndef QT_BOOTSTRAPPED
@@ -2505,21 +2496,19 @@ Qt::TimeSpec QDateTime::timeSpec() const
 
 QTimeZone QDateTime::timeZone() const
 {
-    switch (d->spec) {
-    case QDateTimePrivate::OffsetFromUTC:
+    switch (d->m_spec) {
+    case Qt::OffsetFromUTC:
         if (!d->m_timeZone.isValid())
             d->m_timeZone = QTimeZone(d->m_offsetFromUtc);
         // fall through
-    case QDateTimePrivate::UTC:
+    case Qt::UTC:
         if (!d->m_timeZone.isValid())
             d->m_timeZone = QTimeZone("UTC");
         // fall through
-    case QDateTimePrivate::ClockTime :
-    case QDateTimePrivate::TimeZone :
+    case Qt::ClockTime :
+    case Qt::TimeZone :
         return d->m_timeZone;
-    case QDateTimePrivate::LocalUnknown:
-    case QDateTimePrivate::LocalStandard:
-    case QDateTimePrivate::LocalDST:
+    case Qt::LocalTime:
         return QTimeZone(QTimeZone::systemTimeZoneId());
     }
     return QTimeZone();
@@ -2548,20 +2537,18 @@ QTimeZone QDateTime::timeZone() const
 
 int QDateTime::offsetFromUTC() const
 {
-    switch (d->spec) {
-    case QDateTimePrivate::OffsetFromUTC:
+    switch (d->m_spec) {
+    case Qt::OffsetFromUTC:
         return d->m_offsetFromUtc;
-    case QDateTimePrivate::UTC:
-    case QDateTimePrivate::ClockTime:
+    case Qt::UTC:
+    case Qt::ClockTime:
         return 0;
-    case QDateTimePrivate::TimeZone:
+    case Qt::TimeZone:
 #ifndef QT_BOOTSTRAPPED
         // TODO Do we want to cache this? Means always updating everywhere.
         return d->m_timeZone.d->offsetFromUTC(toMSecsSinceEpoch());
 #endif // QT_BOOTSTRAPPED
-    case QDateTimePrivate::LocalUnknown:
-    case QDateTimePrivate::LocalStandard:
-    case QDateTimePrivate::LocalDST:
+    case Qt::LocalTime:
         const QDateTime fakeDate(d->date, d->time, Qt::UTC);
         return (fakeDate.toMSecsSinceEpoch() - toMSecsSinceEpoch()) / 1000;
     }
@@ -2591,20 +2578,18 @@ int QDateTime::offsetFromUTC() const
 
 QString QDateTime::abbreviation() const
 {
-    switch (d->spec) {
-    case QDateTimePrivate::UTC:
+    switch (d->m_spec) {
+    case Qt::UTC:
         return QStringLiteral("UTC");
-    case QDateTimePrivate::OffsetFromUTC:
+    case Qt::OffsetFromUTC:
         return QStringLiteral("UTC") + toOffsetString(Qt::ISODate, d->m_offsetFromUtc);
-    case QDateTimePrivate::TimeZone:
+    case Qt::TimeZone:
 #ifndef QT_BOOTSTRAPPED
         return d->m_timeZone.d->abbreviation(toMSecsSinceEpoch());
 #endif // QT_BOOTSTRAPPED
-    case QDateTimePrivate::ClockTime:
+    case Qt::ClockTime:
         return QString();
-    case QDateTimePrivate::LocalUnknown:
-    case QDateTimePrivate::LocalStandard:
-    case QDateTimePrivate::LocalDST: {
+    case Qt::LocalTime: {
         QString abbrev;
         qt_mktime(d->date, d->time, 0, &abbrev, 0);
         return abbrev;
@@ -2626,24 +2611,57 @@ QString QDateTime::abbreviation() const
 
 bool QDateTime::isDaylightTime() const
 {
-    if (d->spec == QDateTimePrivate::LocalUnknown)
-        qt_mktime(d->date, d->time, &d->spec, 0, 0);
+    if (d->m_spec == Qt::UTC 
+        || d->m_spec == Qt::OffsetFromUTC
+        || d->m_spec == Qt::ClockTime
+        || d->m_status == QDateTimePrivate::SetToSecond)
+        return false;
 
-    switch (d->spec) {
-    case QDateTimePrivate::LocalDST:
-        return true;
-    case QDateTimePrivate::TimeZone :
 #ifndef QT_BOOTSTRAPPED
+    if (d->m_spec == Qt::TimeZone)
         return d->m_timeZone.d->isDaylightTime(toMSecsSinceEpoch());
 #endif // QT_BOOTSTRAPPED
-    case QDateTimePrivate::LocalUnknown:
-    case QDateTimePrivate::LocalStandard:
-    case QDateTimePrivate::UTC:
-    case QDateTimePrivate::OffsetFromUTC:
-    case QDateTimePrivate::ClockTime:
-        return false;
-    }
-    return false;
+
+    // System tz may have changed since last check
+    QDateTimePrivate::Status currentStatus;
+    qt_mktime(d->date, d->time, &currentStatus, 0, 0);
+
+    if (d->m_status == QDateTimePrivate::Unknown || d->m_status == QDateTimePrivate::Standard
+        || d->m_status == QDateTimePrivate::Daylight)
+        d->m_status = currentStatus;
+
+    return (currentStatus == QDateTimePrivate::Daylight);
+}
+
+/*!
+    \since 5.1
+
+    Returns if the datetime is the first or second occurrence of the local time.
+
+    When local time changes back from Daylight Savings Time to Standard Time
+    then the local time occurs for a second time, i.e. if local time goes back
+    at 2am to 1am then that is the second occurrence of 1am that day.
+
+    If the Qt::TimeSpec is not Qt::LocalTime then will always
+    return QDateTime::FirstOccurrence.
+
+    \sa setOccurrence()
+*/
+
+QDateTime::LocalTimeOccurrence QDateTime::occurrence() const
+{
+    if (d->m_spec == Qt::UTC
+        || d->m_spec == Qt::OffsetFromUTC
+        || d->m_status == QDateTimePrivate::SetToFirst
+        || d->m_status == QDateTimePrivate::Daylight)
+        return QDateTime::FirstOccurrence;
+
+    if (d->m_status == QDateTimePrivate::SetToSecond)
+        return QDateTime::SecondOccurrence;
+
+    // TODO Is in Standard Time so is a second occurrence if falls in the ambiguous hour
+    // Calculate if time falls in the gap, if it does then is Second, otherwise first
+    return QDateTime::FirstOccurrence;
 }
 
 /*!
@@ -2657,9 +2675,6 @@ void QDateTime::setDate(const QDate &date)
 {
     detach();
     d->date = date;
-    if (d->spec == QDateTimePrivate::LocalStandard
-        || d->spec == QDateTimePrivate::LocalDST)
-        d->spec = QDateTimePrivate::LocalUnknown;
     if (date.isValid() && !d->time.isValid())
         d->time = QTime(0, 0, 0);
 }
@@ -2673,10 +2688,38 @@ void QDateTime::setDate(const QDate &date)
 void QDateTime::setTime(const QTime &time)
 {
     detach();
-    if (d->spec == QDateTimePrivate::LocalStandard
-        || d->spec == QDateTimePrivate::LocalDST)
-        d->spec = QDateTimePrivate::LocalUnknown;
     d->time = time;
+}
+
+/*!
+    \since 5.1
+
+    Sets if the datetime is the first or second occurrence of the time around
+    the daylight savings to standard time transition.
+
+    The datetime will refer to a different point in time.
+
+    If the set time cannot have a second occurrence then setting to the second
+    occurrence will have no effect.
+
+    If the Qt::TimeSpec is not Qt::LocalTime then setting
+    to the second occurrence will have no effect.
+
+    \sa occurrence(), Qt::TimeSpec
+*/
+
+void QDateTime::setOccurrence(QDateTime::LocalTimeOccurrence occurrence)
+{
+    if (d->m_spec == Qt::UTC || d->m_spec == Qt::OffsetFromUTC)
+        return;
+
+    detach();
+
+    if (occurrence == FirstOccurrence)
+        d->m_status = QDateTimePrivate::SetToFirst;
+
+    // TODO Make intelligent, check first of falls in possible window
+    d->m_status = QDateTimePrivate::SetToSecond;
 }
 
 /*!
@@ -2702,14 +2745,14 @@ void QDateTime::setTimeSpec(Qt::TimeSpec spec)
     switch (spec) {
     case Qt::UTC:
     case Qt::OffsetFromUTC:
-        d->spec = QDateTimePrivate::UTC;
+        d->m_spec = Qt::UTC;
         break;
     case Qt::ClockTime:
-        d->spec = QDateTimePrivate::ClockTime;
+        d->m_spec = Qt::ClockTime;
         break;
     case Qt::TimeZone:
     case Qt::LocalTime:
-        d->spec = QDateTimePrivate::LocalUnknown;
+        d->m_spec = Qt::LocalTime;
         break;
     }
 }
@@ -2729,7 +2772,7 @@ void QDateTime::setTimeSpec(Qt::TimeSpec spec)
 void QDateTime::setTimeZone(const QTimeZone &toZone)
 {
     detach();
-    d->spec = QDateTimePrivate::TimeZone;
+    d->m_spec = Qt::TimeZone;
     d->m_timeZone = toZone;
 }
 #endif // QT_BOOTSTRAPPED
@@ -2752,14 +2795,8 @@ void QDateTime::setTimeZone(const QTimeZone &toZone)
 void QDateTime::setOffsetFromUtc(int offsetSeconds)
 {
     detach();
-
-    if (offsetSeconds == 0) {
-        d->spec = QDateTimePrivate::UTC;
-        d->m_offsetFromUtc = 0;
-    } else {
-        d->spec = QDateTimePrivate::OffsetFromUTC;
-        d->m_offsetFromUtc = offsetSeconds;
-    }
+    d->m_spec = (offsetSeconds == 0) ? Qt::UTC : Qt::OffsetFromUTC;
+    d->m_offsetFromUtc = offsetSeconds;
 }
 
 qint64 toMSecsSinceEpoch_helper(qint64 jd, int msecs)
@@ -2788,7 +2825,7 @@ qint64 QDateTime::toMSecsSinceEpoch() const
 {
     QDate utcDate;
     QTime utcTime;
-    d->getUTC(utcDate, utcTime);
+    d->getUTC(&utcDate, &utcTime);
 
     return toMSecsSinceEpoch_helper(utcDate.toJulianDay(), QTime(0, 0, 0).msecsTo(utcTime));
 }
@@ -2854,14 +2891,14 @@ void QDateTime::setMSecsSinceEpoch(qint64 msecs)
     d->date = QDate(1970, 1, 1).addDays(ddays);
     d->time = QTime(0, 0, 0).addMSecs(msecs);
 
-    if (d->spec == QDateTimePrivate::OffsetFromUTC)
+    if (d->m_spec == Qt::OffsetFromUTC)
         d->utcToOffset(&d->date, &d->time, d->m_offsetFromUtc);
 #ifndef QT_BOOTSTRAPPED
-    else if (d->spec == QDateTimePrivate::TimeZone)
+    else if (d->m_spec == Qt::TimeZone)
         d->utcToTz(&d->date, &d->time, d->m_timeZone);
 #endif // QT_BOOTSTRAPPED
-    else if (d->spec != QDateTimePrivate::UTC && d->spec != QDateTimePrivate::ClockTime)
-        d->utcToLocal(d->date, d->time);
+    else if (d->m_spec == Qt::LocalTime && d->m_spec != Qt::ClockTime)
+        d->utcToLocal(&d->date, &d->time);
 }
 
 /*!
@@ -2884,14 +2921,14 @@ void QDateTime::setTime_t(uint secsSince1Jan1970UTC)
     d->date = QDate(1970, 1, 1).addDays(secsSince1Jan1970UTC / SECS_PER_DAY);
     d->time = QTime(0, 0, 0).addSecs(secsSince1Jan1970UTC % SECS_PER_DAY);
 
-    if (d->spec == QDateTimePrivate::OffsetFromUTC)
+    if (d->m_spec == Qt::OffsetFromUTC)
         d->utcToOffset(&d->date, &d->time, d->m_offsetFromUtc);
 #ifndef QT_BOOTSTRAPPED
-    else if (d->spec == QDateTimePrivate::TimeZone)
+    else if (d->m_spec == Qt::TimeZone)
         d->utcToTz(&d->date, &d->time, d->m_timeZone);
 #endif // QT_BOOTSTRAPPED
-    else if (d->spec != QDateTimePrivate::UTC && d->spec != QDateTimePrivate::ClockTime)
-        d->utcToLocal(d->date, d->time);
+    else if (d->m_spec == Qt::LocalTime && d->m_spec != Qt::ClockTime)
+        d->utcToLocal(&d->date, &d->time);
 }
 
 #ifndef QT_NO_DATESTRING
@@ -2969,9 +3006,9 @@ QString QDateTime::toString(Qt::DateFormat format) const
         buf += d->time.toString(Qt::TextDate);
         buf += QLatin1Char(' ');
         buf += QString::number(d->date.year());
-        if (timeSpec() != Qt::LocalTime) {
+        if (d->m_spec != Qt::LocalTime) {
             buf += QStringLiteral(" GMT");
-            if (d->spec == QDateTimePrivate::OffsetFromUTC)
+            if (d->m_spec == Qt::OffsetFromUTC)
                 buf += toOffsetString(format, d->m_offsetFromUtc);
         }
         return buf;
@@ -2982,11 +3019,11 @@ QString QDateTime::toString(Qt::DateFormat format) const
             return QString();   // failed to convert
         buf += QLatin1Char('T');
         buf += d->time.toString(Qt::ISODate);
-        switch (d->spec) {
-        case QDateTimePrivate::UTC:
+        switch (d->m_spec) {
+        case Qt::UTC:
             buf += QLatin1Char('Z');
             break;
-        case QDateTimePrivate::OffsetFromUTC:
+        case Qt::OffsetFromUTC:
             buf += toOffsetString(format, d->m_offsetFromUtc);
             break;
         default:
@@ -3125,7 +3162,7 @@ QDateTime QDateTimePrivate::addMSecs(const QDateTime &dt, qint64 msecs)
 
     QDate utcDate;
     QTime utcTime;
-    dt.d->getUTC(utcDate, utcTime);
+    dt.d->getUTC(&utcDate, &utcTime);
     addMSecs(utcDate, utcTime, msecs);
     QDateTime utc(utcDate, utcTime, Qt::UTC);
 
@@ -3256,8 +3293,8 @@ qint64 QDateTime::secsTo(const QDateTime &other) const
     QDate date1, date2;
     QTime time1, time2;
 
-    d->getUTC(date1, time1);
-    other.d->getUTC(date2, time2);
+    d->getUTC(&date1, &time1);
+    other.d->getUTC(&date2, &time2);
 
     return (date1.daysTo(date2) * SECS_PER_DAY) + time1.secsTo(time2);
 }
@@ -3289,8 +3326,8 @@ qint64 QDateTime::msecsTo(const QDateTime &other) const
     QTime selfTime;
     QTime otherTime;
 
-    d->getUTC(selfDate, selfTime);
-    other.d->getUTC(otherDate, otherTime);
+    d->getUTC(&selfDate, &selfTime);
+    other.d->getUTC(&otherDate, &otherTime);
 
     return (static_cast<qint64>(selfDate.daysTo(otherDate)) * static_cast<qint64>(MSECS_PER_DAY))
            + static_cast<qint64>(selfTime.msecsTo(otherTime));
@@ -3318,19 +3355,17 @@ qint64 QDateTime::msecsTo(const QDateTime &other) const
 
 QDateTime QDateTime::toTimeSpec(Qt::TimeSpec spec) const
 {
+    QDate date;
+    QTime time;
     if (spec == Qt::UTC || spec == Qt::OffsetFromUTC) {
-        QDate date;
-        QTime time;
-        d->getUTC(date, time);
-        return QDateTime(date, time, Qt::UTC, 0);
+        d->getUTC(&date, &time);
+    } else if (spec == Qt::ClockTime) {
+        date = d->date;
+        time = d->time;
+    } else {
+        d->getLocal(&date, &time);
     }
-
-    if (spec == Qt::ClockTime)
-        return QDateTime(d->date, d->time, Qt::ClockTime, 0);
-
-    QDateTime ret;
-    ret.d->spec = d->getLocal(ret.d->date, ret.d->time);
-    return ret;
+    return QDateTime(date, time, spec, 0);
 }
 
 #ifndef QT_BOOTSTRAPPED
@@ -3346,7 +3381,7 @@ QDateTime QDateTime::toTimeZone(const QTimeZone &timeZone) const
 {
     QDate date;
     QTime time;
-    d->getUTC(date, time);
+    d->getUTC(&date, &time);
     if (timeZone.isValid()) {
         d->utcToTz(&date, &time, timeZone);
     }
@@ -3371,7 +3406,7 @@ QDateTime QDateTime::toOffsetFromUtc(int offsetSeconds) const
 {
     QDate date;
     QTime time;
-    d->getUTC(date, time);
+    d->getUTC(&date, &time);
     d->addMSecs(date, time, offsetSeconds * 1000);
     return QDateTime(date, time, Qt::OffsetFromUTC, offsetSeconds);
 }
@@ -3387,21 +3422,21 @@ bool QDateTime::operator==(const QDateTime &other) const
 {
     // If all spec components are equal then just test the datetime
     // Otherwise convert to UTC and compare
-    if (d->spec == other.d->spec
+    if (d->m_spec == other.d->m_spec
 #ifndef QT_BOOTSTRAPPED
         && d->m_timeZone == other.d->m_timeZone
 #endif // QT_BOOTSTRAPPED
         && d->m_offsetFromUtc == other.d->m_offsetFromUtc) {
         return d->time == other.d->time
                && d->date == other.d->date;
-    } else if (d->spec == QDateTimePrivate::ClockTime) {
+    } else if (d->m_spec == Qt::ClockTime) {
         return false;
     } else {
         QDate date1, date2;
         QTime time1, time2;
 
-        d->getUTC(date1, time1);
-        other.d->getUTC(date2, time2);
+        d->getUTC(&date1, &time1);
+        other.d->getUTC(&date2, &time2);
         return time1 == time2 && date1 == date2;
     }
 }
@@ -3427,7 +3462,7 @@ bool QDateTime::operator<(const QDateTime &other) const
 {
     // If all spec components are equal then just test the datetime
     // Otherwise convert to UTC and compare
-    if (d->spec == other.d->spec
+    if (d->m_spec == other.d->m_spec
 #ifndef QT_BOOTSTRAPPED
         && d->m_timeZone == other.d->m_timeZone
 #endif // QT_BOOTSTRAPPED
@@ -3435,13 +3470,13 @@ bool QDateTime::operator<(const QDateTime &other) const
         if (d->date != other.d->date)
             return d->date < other.d->date;
         return d->time < other.d->time;
-    } else if (d->spec == QDateTimePrivate::ClockTime) {
+    } else if (d->m_spec == Qt::ClockTime) {
         return false;
     } else {
         QDate date1, date2;
         QTime time1, time2;
-        d->getUTC(date1, time1);
-        other.d->getUTC(date2, time2);
+        d->getUTC(&date1, &time1);
+        other.d->getUTC(&date2, &time2);
         if (date1 != date2)
             return date1 < date2;
         return time1 < time2;
@@ -3630,9 +3665,8 @@ QDateTime QDateTime::currentDateTime()
     dt.d->time.mds = msecsFromDecomposed(t->tm_hour, t->tm_min, t->tm_sec, tv.tv_usec / 1000);
 
     dt.d->date.jd = julianDayFromDate(t->tm_year + 1900, t->tm_mon + 1, t->tm_mday);
-    dt.d->spec = t->tm_isdst > 0  ? QDateTimePrivate::LocalDST :
-                 t->tm_isdst == 0 ? QDateTimePrivate::LocalStandard :
-                 QDateTimePrivate::LocalUnknown;
+    dt.d->m_spec = Qt::LocalTime;
+    // TODO Use t->tm_isdst result to set occurrence
     return dt;
 }
 
@@ -3657,7 +3691,7 @@ QDateTime QDateTime::currentDateTimeUtc()
     dt.d->time.mds = msecsFromDecomposed(t->tm_hour, t->tm_min, t->tm_sec, tv.tv_usec / 1000);
 
     dt.d->date.jd = julianDayFromDate(t->tm_year + 1900, t->tm_mon + 1, t->tm_mday);
-    dt.d->spec = QDateTimePrivate::UTC;
+    dt.d->m_spec = Qt::UTC;
     return dt;
 }
 
@@ -3771,7 +3805,7 @@ QDateTime QDateTime::fromMSecsSinceEpoch(qint64 msecs, Qt::TimeSpec spec, int of
         return QDateTime(newDate, newTime, offsetSeconds);
     case Qt::TimeZone:
     case Qt::LocalTime :
-        QDateTimePrivate::utcToLocal(newDate, newTime);
+        QDateTimePrivate::utcToLocal(&newDate, &newTime);
         return QDateTime(newDate, newTime, Qt::LocalTime);
     }
     return QDateTime();
@@ -4284,7 +4318,8 @@ QDataStream &operator<<(QDataStream &out, const QDateTime &dateTime)
     } else {
         out << dateTime.d->date << dateTime.d->time;
         if (out.version() >= 7)
-            out << (qint8)dateTime.d->spec;
+            // TODO need to keep old spec for here?
+            out << (qint8)dateTime.d->m_spec;
     }
     return out;
 }
@@ -4320,7 +4355,7 @@ QDataStream &operator>>(QDataStream &in, QDateTime &dateTime)
         }
         if (dateTime.isValid()) {
             // We always store the datetime as UTC in 13 onwards except for ClockTime.
-            dateTime.d->spec = QDateTimePrivate::UTC;
+            dateTime.d->m_spec = Qt::UTC;
             if (ts == qint8(Qt::OffsetFromUTC))
                 dateTime = dateTime.toOffsetFromUtc(offset);
 #ifndef QT_BOOTSTRAPPED
@@ -4328,15 +4363,16 @@ QDataStream &operator>>(QDataStream &in, QDateTime &dateTime)
                 dateTime = dateTime.toTimeZone(tz);
 #endif // QT_BOOTSTRAPPED
             else if (ts == qint8(Qt::ClockTime))
-                dateTime.d->spec = QDateTimePrivate::ClockTime;
+                dateTime.d->m_spec = Qt::ClockTime;
             else
                 dateTime = dateTime.toTimeSpec(static_cast<Qt::TimeSpec>(ts));
         }
     } else {
+        // TODO need to keep old spec for here?
         qint8 ts = (qint8)QDateTimePrivate::LocalUnknown;
         if (in.version() >= 7)
             in >> ts;
-        dateTime.d->spec = (QDateTimePrivate::Spec)ts;
+        dateTime.d->m_spec = (Qt::TimeSpec)ts;
     }
     return in;
 }
@@ -4376,12 +4412,12 @@ static QDate adjustDate(QDate date)
     return date;
 }
 
-QDateTimePrivate::Spec QDateTimePrivate::utcToLocal(QDate &date, QTime &time)
+int QDateTimePrivate::utcToLocal(QDate *date, QTime *time)
 {
-    QDate fakeDate = adjustDate(date);
+    QDate fakeDate = adjustDate(*date);
 
     // won't overflow because of fakeDate
-    time_t secsSince1Jan1970UTC = toMSecsSinceEpoch_helper(fakeDate.toJulianDay(), QTime(0, 0, 0).msecsTo(time)) / 1000;
+    time_t secsSince1Jan1970UTC = toMSecsSinceEpoch_helper(fakeDate.toJulianDay(), QTime(0, 0, 0).msecsTo(*time)) / 1000;
     tm *brokenDown = 0;
 
 #if defined(Q_OS_WINCE)
@@ -4412,40 +4448,35 @@ QDateTimePrivate::Spec QDateTimePrivate::utcToLocal(QDate &date, QTime &time)
     brokenDown = localtime(&secsSince1Jan1970UTC);
 #endif
     if (!brokenDown) {
-        date = QDate(1970, 1, 1);
-        time = QTime();
-        return QDateTimePrivate::LocalUnknown;
+        *date = QDate(1970, 1, 1);
+        *time = QTime();
+        return -1;
     } else {
-        qint64 deltaDays = fakeDate.daysTo(date);
-        date = QDate(brokenDown->tm_year + 1900, brokenDown->tm_mon + 1, brokenDown->tm_mday);
-        time = QTime(brokenDown->tm_hour, brokenDown->tm_min, brokenDown->tm_sec, time.msec());
-        date = date.addDays(deltaDays);
-        if (brokenDown->tm_isdst > 0)
-            return QDateTimePrivate::LocalDST;
-        else if (brokenDown->tm_isdst < 0)
-            return QDateTimePrivate::LocalUnknown;
-        else
-            return QDateTimePrivate::LocalStandard;
+        qint64 deltaDays = fakeDate.daysTo(*date);
+        *date = QDate(brokenDown->tm_year + 1900, brokenDown->tm_mon + 1, brokenDown->tm_mday);
+        *time = QTime(brokenDown->tm_hour, brokenDown->tm_min, brokenDown->tm_sec, time->msec());
+        *date = date->addDays(deltaDays);
+        return brokenDown->tm_isdst;
     }
 }
 
-void QDateTimePrivate::localToUtc(QDate &date, QTime &time, int isdst)
+void QDateTimePrivate::localToUtc(QDate *date, QTime *time, int isdst)
 {
-    if (!date.isValid())
+    if (!date->isValid())
         return;
 
-    QDate fakeDate = adjustDate(date);
+    QDate fakeDate = adjustDate(*date);
 
     tm localTM;
-    localTM.tm_sec = time.second();
-    localTM.tm_min = time.minute();
-    localTM.tm_hour = time.hour();
+    localTM.tm_sec = time->second();
+    localTM.tm_min = time->minute();
+    localTM.tm_hour = time->hour();
     localTM.tm_mday = fakeDate.day();
     localTM.tm_mon = fakeDate.month() - 1;
     localTM.tm_year = fakeDate.year() - 1900;
-    localTM.tm_isdst = (int)isdst;
+    localTM.tm_isdst = isdst;
 #if defined(Q_OS_WINCE)
-    time_t secsSince1Jan1970UTC = (toMSecsSinceEpoch_helper(fakeDate.toJulianDay(), QTime().msecsTo(time)) / 1000);
+    time_t secsSince1Jan1970UTC = (toMSecsSinceEpoch_helper(fakeDate.toJulianDay(), QTime().msecsTo(*time)) / 1000);
 #else
 #if defined(Q_OS_WIN)
     _tzset();
@@ -4456,8 +4487,8 @@ void QDateTimePrivate::localToUtc(QDate &date, QTime &time, int isdst)
     if (secsSince1Jan1970UTC == (time_t)-1) {
         QDateTime tempTime = QDateTime(date, time, Qt::UTC);;
         tempTime = tempTime.addMSecs(timezone * 1000);
-        date = tempTime.date();
-        time = tempTime.time();
+        *date = tempTime.date();
+        *time = tempTime.time();
         return;
     }
 #endif
@@ -4477,7 +4508,7 @@ void QDateTimePrivate::localToUtc(QDate &date, QTime &time, int isdst)
     res.tm_mday = sysTime.wDay;
     res.tm_mon = sysTime.wMonth - 1;
     res.tm_year = sysTime.wYear - 1900;
-    res.tm_isdst = (int)isdst;
+    res.tm_isdst = isdst;
     brokenDown = &res;
 #elif !defined(QT_NO_THREAD) && defined(_POSIX_THREAD_SAFE_FUNCTIONS)
     // use the reentrant version of gmtime() where available
@@ -4491,13 +4522,13 @@ void QDateTimePrivate::localToUtc(QDate &date, QTime &time, int isdst)
     brokenDown = gmtime(&secsSince1Jan1970UTC);
 #endif // !QT_NO_THREAD && _POSIX_THREAD_SAFE_FUNCTIONS
     if (!brokenDown) {
-        date = QDate(1970, 1, 1);
-        time = QTime();
+        *date = QDate(1970, 1, 1);
+        *time = QTime();
     } else {
-        qint64 deltaDays = fakeDate.daysTo(date);
-        date = QDate(brokenDown->tm_year + 1900, brokenDown->tm_mon + 1, brokenDown->tm_mday);
-        time = QTime(brokenDown->tm_hour, brokenDown->tm_min, brokenDown->tm_sec, time.msec());
-        date = date.addDays(deltaDays);
+        qint64 deltaDays = fakeDate.daysTo(*date);
+        *date = QDate(brokenDown->tm_year + 1900, brokenDown->tm_mon + 1, brokenDown->tm_mday);
+        *time = QTime(brokenDown->tm_hour, brokenDown->tm_min, brokenDown->tm_sec, time->msec());
+        *date = date->addDays(deltaDays);
     }
 }
 
@@ -4532,36 +4563,38 @@ void QDateTimePrivate::utcToOffset(QDate *outDate, QTime *outTime, qint32 offset
     addMSecs(*outDate, *outTime, (qint64(offset) * 1000));
 }
 
-QDateTimePrivate::Spec QDateTimePrivate::getLocal(QDate &outDate, QTime &outTime) const
+int QDateTimePrivate::getLocal(QDate *outDate, QTime *outTime) const
 {
-    outDate = date;
-    outTime = time;
-    if (spec == QDateTimePrivate::UTC) {
+    *outDate = date;
+    *outTime = time;
+    if (m_spec == Qt::UTC) {
         return utcToLocal(outDate, outTime);
-    } else if (spec == QDateTimePrivate::OffsetFromUTC) {
-        offsetToUtc(&outDate, &outTime, m_offsetFromUtc);
+    } else if (m_spec == Qt::OffsetFromUTC) {
+        offsetToUtc(outDate, outTime, m_offsetFromUtc);
         return utcToLocal(outDate, outTime);
 #ifndef QT_BOOTSTRAPPED
-    } else if (spec == QDateTimePrivate::TimeZone) {
-        utcToTz(&outDate, &outTime, m_timeZone);
+    } else if (m_spec == Qt::TimeZone) {
+        utcToTz(outDate, outTime, m_timeZone);
 #endif // QT_BOOTSTRAPPED
     }
-    return spec;
+    // TODO return occurrence
+    return -1;
 }
 
-void QDateTimePrivate::getUTC(QDate &outDate, QTime &outTime) const
+void QDateTimePrivate::getUTC(QDate *outDate, QTime *outTime) const
 {
-    outDate = date;
-    outTime = time;
+    *outDate = date;
+    *outTime = time;
 
-    if (spec == QDateTimePrivate::OffsetFromUTC)
-        offsetToUtc(&outDate, &outTime, m_offsetFromUtc);
+    if (m_spec == Qt::OffsetFromUTC)
+        offsetToUtc(outDate, outTime, m_offsetFromUtc);
 #ifndef QT_BOOTSTRAPPED
-    else if (spec == QDateTimePrivate::TimeZone)
-        tzToUtc(&outDate, &outTime, m_timeZone);
+    else if (m_spec == Qt::TimeZone)
+        tzToUtc(outDate, outTime, m_timeZone);
 #endif // QT_BOOTSTRAPPED
-    else if (spec != QDateTimePrivate::UTC && spec != QDateTimePrivate::ClockTime)
-        localToUtc(outDate, outTime, (int)spec);
+    else if (m_spec != Qt::UTC && m_spec != Qt::ClockTime)
+        // TODO Set to -1 for now as we don't know what occurrence it is.
+        localToUtc(outDate, outTime, -1);
 }
 
 #if !defined(QT_NO_DEBUG_STREAM) && !defined(QT_NO_DATESTRING)

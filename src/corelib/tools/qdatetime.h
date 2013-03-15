@@ -201,9 +201,15 @@ class QDateTimePrivate;
 class Q_CORE_EXPORT QDateTime
 {
 public:
+    enum LocalTimeOccurrence {
+        FirstOccurrence = 1,
+        SecondOccurrence = 2
+    };
+
     QDateTime();
     explicit QDateTime(const QDate &);
     QDateTime(const QDate &, const QTime &, Qt::TimeSpec spec = Qt::LocalTime);
+    QDateTime(const QDate &date, const QTime &time, LocalTimeOccurrence occurrence);
     QDateTime(const QDate &date, const QTime &time, int offsetSeconds);
 #ifndef QT_BOOTSTRAPPED
     QDateTime(const QDate &date, const QTime &time, const QTimeZone &timeZone);
@@ -227,6 +233,7 @@ public:
     int offsetFromUTC() const;
     QString abbreviation() const;
     bool isDaylightTime() const;
+    QDateTime::LocalTimeOccurrence occurrence() const;
 
     qint64 toMSecsSinceEpoch() const;
     uint toTime_t() const;
@@ -238,6 +245,7 @@ public:
     void setTimeZone(const QTimeZone &toZone);
 #endif // QT_BOOTSTRAPPED
     void setOffsetFromUtc(int seconds);
+    void setOccurrence(QDateTime::LocalTimeOccurrence occurrence);
     void setMSecsSinceEpoch(qint64 msecs);
     void setTime_t(uint secsSince1Jan1970UTC);
 
