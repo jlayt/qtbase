@@ -73,6 +73,7 @@ QtCore
       toOffsetFromUTC(), and abbreviation().
     * Added convenience methods for fromMSecsSinceEpoch() and fromTime_t()
       to take time spec to be used in returned datetime.
+    * The debug datastream is now an ISO format instead of Qt::TextDate
 
 QtGui
 -----

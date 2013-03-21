@@ -139,6 +139,8 @@ private slots:
     void roundtripGermanLocale() const;
     void utcOffsetLessThan() const;
 
+    void debugOutput() const;
+
 private:
     bool europeanTimeZone;
     QDate defDate() const { return QDate(1900, 1, 1); }
@@ -2179,6 +2181,21 @@ void tst_QDateTime::utcOffsetLessThan() const
     QVERIFY(!(dt1 == dt2));
     QVERIFY(dt1 < dt2);
     QVERIFY(!(dt2 < dt1));
+}
+
+void tst_QDateTime::debugOutput() const
+{
+    QDate d1(2013, 1, 1);
+    QTime t1(1, 2, 3);
+    QDateTime dt1(d1, t1);
+    QDateTime dt2(d1, t1, Qt::UTC);
+    QDateTime dt3(d1, t1, 60 * 60);
+
+    qDebug() << d1;
+    qDebug() << t1;
+    qDebug() << dt1;
+    qDebug() << dt2;
+    qDebug() << dt3;
 }
 
 QTEST_APPLESS_MAIN(tst_QDateTime)
