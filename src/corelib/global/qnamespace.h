@@ -1172,7 +1172,8 @@ public:
         LocalTime,
         UTC,
         OffsetFromUTC,
-        TimeZone
+        TimeZone,
+        ClockTime
     };
 
     enum DayOfWeek {

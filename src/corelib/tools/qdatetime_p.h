@@ -88,7 +88,8 @@ public:
         LocalDST = 1,
         UTC = 2,
         OffsetFromUTC = 3,
-        TimeZone = 4
+        TimeZone = 4,
+        ClockTime = 5
     };
 
     QDateTimePrivate() : spec(LocalUnknown), m_offsetFromUtc(0) {}

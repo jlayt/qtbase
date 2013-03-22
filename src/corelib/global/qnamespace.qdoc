@@ -592,6 +592,7 @@
     \value UTC Coordinated Universal Time, replaces Greenwich Mean Time.
     \value OffsetFromUTC An offset in seconds from Coordinated Universal Time.
     \value TimeZone A named time zone using a specific set of Daylight Savings rules.
+    \value ClockTime A time independent of any time zone information.
 */
 
 /*!

@@ -2211,6 +2211,14 @@ int QTime::elapsed() const
     applied depend on the platform support.  See the QTimeZone documentation
     for more details.
 
+    \section2 Clock Time
+
+    A Qt::TimeSpec of Qt::ClockTime is also supported. This allows you
+    to define a QDateTime independent of any time zone and unaffected by
+    changes in the system time zone, system clock, or Daylight Savings Time.
+    The behaviour of a number of methods that require a set time zone such as
+    fromMSecsSinceEpoch() and offsetFromUTC() are undefined with this spec.
+
     \sa QDate, QTime, QDateTimeEdit, QTimeZone
 */
 
@@ -2344,6 +2352,9 @@ void QDateTimePrivate::init(const QDate &toDate, const QTime &toTime, Qt::TimeSp
             m_offsetFromUtc = offsetSeconds;
         }
         break;
+    case Qt::ClockTime :
+        spec = QDateTimePrivate::ClockTime;
+        break;
     case Qt::TimeZone :
     case Qt::LocalTime :
         spec = QDateTimePrivate::LocalUnknown;
@@ -2467,6 +2478,8 @@ Qt::TimeSpec QDateTime::timeSpec() const
         return Qt::OffsetFromUTC;
     case QDateTimePrivate::TimeZone:
         return Qt::TimeZone;
+    case QDateTimePrivate::ClockTime:
+        return Qt::ClockTime;
     case QDateTimePrivate::LocalUnknown:
     case QDateTimePrivate::LocalStandard:
     case QDateTimePrivate::LocalDST:
@@ -2485,6 +2498,8 @@ Qt::TimeSpec QDateTime::timeSpec() const
     time zone will be returned. Note however that if you copy this time zone
     the instance will not remain in sync if the system time zone changes.
 
+    If the timeSpec() is Qt::ClockTime then an invalid time zone will be returned.
+
     \sa setTimeZone(), Qt::TimeSpec
 */
 
@@ -2499,6 +2514,7 @@ QTimeZone QDateTime::timeZone() const
         if (!d->m_timeZone.isValid())
             d->m_timeZone = QTimeZone("UTC");
         // fall through
+    case QDateTimePrivate::ClockTime :
     case QDateTimePrivate::TimeZone :
         return d->m_timeZone;
     case QDateTimePrivate::LocalUnknown:
@@ -2525,6 +2541,8 @@ QTimeZone QDateTime::timeZone() const
 
     If the timeSpec() is Qt::UTC this will be 0.
 
+    If the timeSpec() is Qt::ClockTime the behaviour is undefined.
+
     \sa timeZone(), isDst(), offsetFromUtc()
 */
 
@@ -2534,6 +2552,7 @@ int QDateTime::offsetFromUTC() const
     case QDateTimePrivate::OffsetFromUTC:
         return d->m_offsetFromUtc;
     case QDateTimePrivate::UTC:
+    case QDateTimePrivate::ClockTime:
         return 0;
     case QDateTimePrivate::TimeZone:
 #ifndef QT_BOOTSTRAPPED
@@ -2581,6 +2600,8 @@ QString QDateTime::abbreviation() const
 #ifndef QT_BOOTSTRAPPED
         return d->m_timeZone.d->abbreviation(toMSecsSinceEpoch());
 #endif // QT_BOOTSTRAPPED
+    case QDateTimePrivate::ClockTime:
+        return QString();
     case QDateTimePrivate::LocalUnknown:
     case QDateTimePrivate::LocalStandard:
     case QDateTimePrivate::LocalDST: {
@@ -2619,6 +2640,7 @@ bool QDateTime::isDaylightTime() const
     case QDateTimePrivate::LocalStandard:
     case QDateTimePrivate::UTC:
     case QDateTimePrivate::OffsetFromUTC:
+    case QDateTimePrivate::ClockTime:
         return false;
     }
     return false;
@@ -2681,6 +2703,9 @@ void QDateTime::setTimeSpec(Qt::TimeSpec spec)
     case Qt::UTC:
     case Qt::OffsetFromUTC:
         d->spec = QDateTimePrivate::UTC;
+        break;
+    case Qt::ClockTime:
+        d->spec = QDateTimePrivate::ClockTime;
         break;
     case Qt::TimeZone:
     case Qt::LocalTime:
@@ -2810,6 +2835,8 @@ uint QDateTime::toTime_t() const
     (\c{std::numeric_limits<qint64>::min()}) to \a msecs will result in
     undefined behavior.
 
+    If the timeSpec() is Qt::ClockTime the behaviour is undefined.
+
     \sa toMSecsSinceEpoch(), setTime_t()
 */
 void QDateTime::setMSecsSinceEpoch(qint64 msecs)
@@ -2833,7 +2860,7 @@ void QDateTime::setMSecsSinceEpoch(qint64 msecs)
     else if (d->spec == QDateTimePrivate::TimeZone)
         d->utcToTz(&d->date, &d->time, d->m_timeZone);
 #endif // QT_BOOTSTRAPPED
-    else if (d->spec != QDateTimePrivate::UTC)
+    else if (d->spec != QDateTimePrivate::UTC && d->spec != QDateTimePrivate::ClockTime)
         d->utcToLocal(d->date, d->time);
 }
 
@@ -2844,6 +2871,8 @@ void QDateTime::setMSecsSinceEpoch(qint64 msecs)
     passed since 1970-01-01T00:00:00, Coordinated Universal Time
     (Qt::UTC). On systems that do not support time zones this function
     will behave as if local time were Qt::UTC.
+
+    If the timeSpec() is Qt::ClockTime the behaviour is undefined.
 
     \sa toTime_t()
 */
@@ -2861,7 +2890,7 @@ void QDateTime::setTime_t(uint secsSince1Jan1970UTC)
     else if (d->spec == QDateTimePrivate::TimeZone)
         d->utcToTz(&d->date, &d->time, d->m_timeZone);
 #endif // QT_BOOTSTRAPPED
-    else if (d->spec != QDateTimePrivate::UTC)
+    else if (d->spec != QDateTimePrivate::UTC && d->spec != QDateTimePrivate::ClockTime)
         d->utcToLocal(d->date, d->time);
 }
 
@@ -3185,6 +3214,9 @@ QDateTime QDateTime::addMSecs(qint64 msecs) const
     If the \a other datetime is earlier than this datetime,
     the value returned is negative.
 
+    If the timeSpec() of either datetime is Qt::ClockTime then both must be
+    Qt::ClockTime otherwise the behaviour is undefined.
+
     Example:
     \snippet code/src_corelib_tools_qdatetime.cpp 15
 
@@ -3204,6 +3236,9 @@ qint64 QDateTime::daysTo(const QDateTime &other) const
     Before performing the comparison, the two datetimes are converted
     to Qt::UTC to ensure that the result is correct if one of the two
     datetimes has daylight saving time (DST) and the other doesn't.
+
+    If the timeSpec() of either datetime is Qt::ClockTime then both must be
+    Qt::ClockTime otherwise the behaviour is undefined.
 
     Returns 0 if either datetime is invalid.
 
@@ -3235,6 +3270,9 @@ qint64 QDateTime::secsTo(const QDateTime &other) const
     Before performing the comparison, the two datetimes are converted
     to Qt::UTC to ensure that the result is correct if one of the two
     datetimes has daylight saving time (DST) and the other doesn't.
+
+    If the timeSpec() of either datetime is Qt::ClockTime then both must be
+    Qt::ClockTime otherwise the behaviour is undefined.
 
     Returns 0 if either datetime is invalid.
 
@@ -3269,6 +3307,9 @@ qint64 QDateTime::msecsTo(const QDateTime &other) const
     If \a spec is Qt::TimeZone then it is set to Qt::LocalTime,
     i.e. the local Time Zone.
 
+    If \a spec is Qt::ClockTime then the current local time in the
+    current time spec will be used, i.e. date() and time().
+
     Example:
     \snippet code/src_corelib_tools_qdatetime.cpp 16
 
@@ -3283,6 +3324,9 @@ QDateTime QDateTime::toTimeSpec(Qt::TimeSpec spec) const
         d->getUTC(date, time);
         return QDateTime(date, time, Qt::UTC, 0);
     }
+
+    if (spec == Qt::ClockTime)
+        return QDateTime(d->date, d->time, Qt::ClockTime, 0);
 
     QDateTime ret;
     ret.d->spec = d->getLocal(ret.d->date, ret.d->time);
@@ -3350,6 +3394,8 @@ bool QDateTime::operator==(const QDateTime &other) const
         && d->m_offsetFromUtc == other.d->m_offsetFromUtc) {
         return d->time == other.d->time
                && d->date == other.d->date;
+    } else if (d->spec == QDateTimePrivate::ClockTime) {
+        return false;
     } else {
         QDate date1, date2;
         QTime time1, time2;
@@ -3389,6 +3435,8 @@ bool QDateTime::operator<(const QDateTime &other) const
         if (d->date != other.d->date)
             return d->date < other.d->date;
         return d->time < other.d->time;
+    } else if (d->spec == QDateTimePrivate::ClockTime) {
+        return false;
     } else {
         QDate date1, date2;
         QTime time1, time2;
@@ -3649,6 +3697,8 @@ QDateTime QDateTime::fromTime_t(uint seconds)
   Time (Qt::UTC) and with the given \a spec. If the \a spec is Qt::OffsetFromUTC
   then the offset will be set to \a offsetFromUtc, otherwise it will be ignored.
 
+  If the \a spec is Qt::ClockTime the behaviour is undefined.
+
   \sa toTime_t(), setTime_t()
 */
 QDateTime QDateTime::fromTime_t(uint seconds, Qt::TimeSpec spec, int offsetFromUtc)
@@ -3702,6 +3752,8 @@ QDateTime QDateTime::fromMSecsSinceEpoch(qint64 msecs)
   If the \a spec is Qt::TimeZone then Qt::LocalTime will be used, i.e. the
   system time zone.
 
+  If the \a spec is Qt::ClockTime the behaviour is undefined.
+
   \sa fromTime_t()
 */
 QDateTime QDateTime::fromMSecsSinceEpoch(qint64 msecs, Qt::TimeSpec spec, int offsetSeconds)
@@ -3712,6 +3764,7 @@ QDateTime QDateTime::fromMSecsSinceEpoch(qint64 msecs, Qt::TimeSpec spec, int of
 
     switch (spec) {
     case Qt::UTC :
+    case Qt::ClockTime :
         return QDateTime(newDate, newTime, Qt::UTC);
     case Qt::OffsetFromUTC :
         QDateTimePrivate::utcToOffset(&newDate, &newTime, offsetSeconds);
@@ -4213,7 +4266,7 @@ QDataStream &operator>>(QDataStream &in, QTime &time)
 QDataStream &operator<<(QDataStream &out, const QDateTime &dateTime)
 {
     if (out.version() >= 13) {
-        if (dateTime.isValid()) {
+        if (dateTime.isValid() && dateTime.timeSpec() != Qt::ClockTime) {
             QDateTime asUTC = dateTime.toUTC();
             out << asUTC.d->date << asUTC.d->time;
         } else {
@@ -4266,7 +4319,7 @@ QDataStream &operator>>(QDataStream &in, QDateTime &dateTime)
 #endif // QT_BOOTSTRAPPED
         }
         if (dateTime.isValid()) {
-            // We always store the datetime as UTC in 13 onwards.
+            // We always store the datetime as UTC in 13 onwards except for ClockTime.
             dateTime.d->spec = QDateTimePrivate::UTC;
             if (ts == qint8(Qt::OffsetFromUTC))
                 dateTime = dateTime.toOffsetFromUtc(offset);
@@ -4274,6 +4327,8 @@ QDataStream &operator>>(QDataStream &in, QDateTime &dateTime)
             else if (ts == qint8(Qt::TimeZone))
                 dateTime = dateTime.toTimeZone(tz);
 #endif // QT_BOOTSTRAPPED
+            else if (ts == qint8(Qt::ClockTime))
+                dateTime.d->spec = QDateTimePrivate::ClockTime;
             else
                 dateTime = dateTime.toTimeSpec(static_cast<Qt::TimeSpec>(ts));
         }
@@ -4505,7 +4560,7 @@ void QDateTimePrivate::getUTC(QDate &outDate, QTime &outTime) const
     else if (spec == QDateTimePrivate::TimeZone)
         tzToUtc(&outDate, &outTime, m_timeZone);
 #endif // QT_BOOTSTRAPPED
-    else if (spec != QDateTimePrivate::UTC)
+    else if (spec != QDateTimePrivate::UTC && spec != QDateTimePrivate::ClockTime)
         localToUtc(outDate, outTime, (int)spec);
 }
 

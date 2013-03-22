@@ -74,6 +74,7 @@ QtCore
  - QDateTime
     * Fully implement support for Qt::TimeSpec of Qt::OffsetFromUTC
     * Support for a new time spec of Qt::TimeZone using QTimeZone
+    * Support for a new time spec of Qt::ClockTime
     * Added new methods for offsetFromUTC(), setOffsetFromUTC(),
       toOffsetFromUTC(), abbreviation(), timeZone(), setTimeZone(),
       toTimeZone() and isDaylightTime().
