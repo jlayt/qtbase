@@ -2169,9 +2169,19 @@ QString QLocale::monthName(int month, FormatType type) const
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d->m_data == systemData()) {
-        QVariant res = systemLocale()->query(type == LongFormat
-                                             ? QSystemLocale::MonthNameLong : QSystemLocale::MonthNameShort,
-                                             month);
+        QSystemLocale::QueryType query = QSystemLocale::MonthNameLong;
+        switch (type) {
+        case QLocale::LongFormat:
+            query = QSystemLocale::MonthNameLong;
+            break;
+        case QLocale::ShortFormat:
+            query = QSystemLocale::MonthNameShort;
+            break;
+        case QLocale::NarrowFormat:
+            query = QSystemLocale::MonthNameNarrow;
+            break;
+        }
+        QVariant res = systemLocale()->query(query, month);
         if (!res.isNull())
             return res.toString();
     }
@@ -2215,9 +2225,19 @@ QString QLocale::standaloneMonthName(int month, FormatType type) const
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d->m_data == systemData()) {
-        QVariant res = systemLocale()->query(type == LongFormat
-                                             ? QSystemLocale::StandaloneMonthNameLong : QSystemLocale::StandaloneMonthNameShort,
-                                             month);
+        QSystemLocale::QueryType query = QSystemLocale::StandaloneMonthNameLong;
+        switch (type) {
+        case QLocale::LongFormat:
+            query = QSystemLocale::StandaloneMonthNameLong;
+            break;
+        case QLocale::ShortFormat:
+            query = QSystemLocale::StandaloneMonthNameShort;
+            break;
+        case QLocale::NarrowFormat:
+            query = QSystemLocale::StandaloneMonthNameNarrow;
+            break;
+        }
+        QVariant res = systemLocale()->query(query, month);
         if (!res.isNull())
             return res.toString();
     }
@@ -2262,9 +2282,19 @@ QString QLocale::dayName(int day, FormatType type) const
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d->m_data == systemData()) {
-        QVariant res = systemLocale()->query(type == LongFormat
-                                             ? QSystemLocale::DayNameLong : QSystemLocale::DayNameShort,
-                                             day);
+        QSystemLocale::QueryType query = QSystemLocale::DayNameLong;
+        switch (type) {
+        case QLocale::LongFormat:
+            query = QSystemLocale::DayNameLong;
+            break;
+        case QLocale::ShortFormat:
+            query = QSystemLocale::DayNameShort;
+            break;
+        case QLocale::NarrowFormat:
+            query = QSystemLocale::DayNameNarrow;
+            break;
+        }
+        QVariant res = systemLocale()->query(query, day);
         if (!res.isNull())
             return res.toString();
     }
@@ -2311,9 +2341,19 @@ QString QLocale::standaloneDayName(int day, FormatType type) const
 
 #ifndef QT_NO_SYSTEMLOCALE
     if (d->m_data == systemData()) {
-        QVariant res = systemLocale()->query(type == LongFormat
-                                             ? QSystemLocale::DayNameLong : QSystemLocale::DayNameShort,
-                                             day);
+        QSystemLocale::QueryType query = QSystemLocale::StandaloneDayNameLong;
+        switch (type) {
+        case QLocale::LongFormat:
+            query = QSystemLocale::StandaloneDayNameLong;
+            break;
+        case QLocale::ShortFormat:
+            query = QSystemLocale::StandaloneDayNameShort;
+            break;
+        case QLocale::NarrowFormat:
+            query = QSystemLocale::StandaloneDayNameNarrow;
+            break;
+        }
+        QVariant res = systemLocale()->query(query, day);
         if (!res.isNull())
             return res.toString();
     }
