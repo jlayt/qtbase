@@ -96,7 +96,7 @@ struct QSystemLocalePrivate
     QVariant timeFormat(QLocale::FormatType);
     QVariant dateTimeFormat(QLocale::FormatType);
     QVariant dayName(int, QLocale::FormatType);
-    QVariant monthName(int, QLocale::FormatType);
+    QVariant monthName(int, QLocale::FormatType, bool standalone);
     QVariant toString(const QDate &, QLocale::FormatType);
     QVariant toString(const QTime &, QLocale::FormatType);
     QVariant toString(const QDateTime &, QLocale::FormatType);
@@ -272,8 +272,12 @@ QVariant QSystemLocalePrivate::dateTimeFormat(QLocale::FormatType type)
     return QString(dateFormat(type).toString() + QLatin1Char(' ') + timeFormat(type).toString());
 }
 
+// Note Win32 always uses Nominative/Standalone form, Genitive not supported
 QVariant QSystemLocalePrivate::dayName(int day, QLocale::FormatType type)
 {
+    if (day < 1 || day > 7)
+        return QString();
+
     static const LCTYPE short_day_map[]
         = { LOCALE_SABBREVDAYNAME1, LOCALE_SABBREVDAYNAME2,
             LOCALE_SABBREVDAYNAME3, LOCALE_SABBREVDAYNAME4, LOCALE_SABBREVDAYNAME5,
@@ -299,8 +303,26 @@ QVariant QSystemLocalePrivate::dayName(int day, QLocale::FormatType type)
     return getLocaleInfo(short_day_map[day]);
 }
 
-QVariant QSystemLocalePrivate::monthName(int month, QLocale::FormatType type)
+// Note Win32 doesn't support narrow month names
+QVariant QSystemLocalePrivate::monthName(int month, QLocale::FormatType type, bool standalone)
 {
+    if (month < 1 || month > 12)
+        return QString();
+
+    if (!standalone) {
+        // No Win32 API to directly obtain Genitive/Format form
+        // Need to use GetDateFormat with a day number close to the month code
+        // to force Windows to return the Genitive form.
+        // See http://msdn.microsoft.com/en-us/library/windows/desktop/dd373856%28v=vs.85%29.aspx
+        SYSTEMTIME st = {2013, WORD(month), 0, 1, 0, 0, 0, 0};
+        wchar_t buf[255];
+        if (type == QLocale::LongFormat)
+            GetDateFormat(lcid, 0, &st, L"ddMMMM", buf, 255);
+        else
+            GetDateFormat(lcid, 0, &st, L"ddMMM", buf, 255);
+        return QString::fromWCharArray(buf + 2);
+    }
+
     static const LCTYPE short_month_map[]
         = { LOCALE_SABBREVMONTHNAME1, LOCALE_SABBREVMONTHNAME2, LOCALE_SABBREVMONTHNAME3,
             LOCALE_SABBREVMONTHNAME4, LOCALE_SABBREVMONTHNAME5, LOCALE_SABBREVMONTHNAME6,
@@ -313,13 +335,10 @@ QVariant QSystemLocalePrivate::monthName(int month, QLocale::FormatType type)
             LOCALE_SMONTHNAME7, LOCALE_SMONTHNAME8, LOCALE_SMONTHNAME9,
             LOCALE_SMONTHNAME10, LOCALE_SMONTHNAME11, LOCALE_SMONTHNAME12 };
 
-    month -= 1;
-    if (month < 0 || month > 11)
-    return QString();
-
-    LCTYPE lctype = (type == QLocale::ShortFormat || type == QLocale::NarrowFormat)
-            ? short_month_map[month] : long_month_map[month];
-    return getLocaleInfo(lctype);
+    if (type == QLocale::LongFormat)
+        return getLocaleInfo(long_month_map[month - 1]);
+    else
+        return getLocaleInfo(short_month_map[month - 1]);
 }
 
 QVariant QSystemLocalePrivate::toString(const QDate &date, QLocale::FormatType type)
@@ -680,15 +699,26 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
     case DateTimeFormatShort:
         return d->dateTimeFormat(QLocale::ShortFormat);
     case DayNameLong:
+    case StandaloneDayNameLong:
         return d->dayName(in.toInt(), QLocale::LongFormat);
     case DayNameShort:
+    case StandaloneDayNameShort:
         return d->dayName(in.toInt(), QLocale::ShortFormat);
+    case DayNameNarrow:
+    case StandaloneDayNameNarrow:
+        return d->dayName(in.toInt(), QLocale::NarrowFormat);
     case MonthNameLong:
+        return d->monthName(in.toInt(), QLocale::LongFormat, false);
     case StandaloneMonthNameLong:
-        return d->monthName(in.toInt(), QLocale::LongFormat);
+        return d->monthName(in.toInt(), QLocale::LongFormat, true);
     case MonthNameShort:
+        return d->monthName(in.toInt(), QLocale::ShortFormat, false);
     case StandaloneMonthNameShort:
-        return d->monthName(in.toInt(), QLocale::ShortFormat);
+        return d->monthName(in.toInt(), QLocale::ShortFormat, true);
+    case MonthNameNarrow:
+    case StandaloneMonthNameNarrow:
+        // Windows doesn't support narrow months, fallback to CLDR
+        return QString();
     case DateToStringShort:
         return d->toString(in.toDate(), QLocale::ShortFormat);
     case DateToStringLong:

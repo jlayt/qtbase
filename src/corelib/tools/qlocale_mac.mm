@@ -83,7 +83,7 @@ static QByteArray getMacLocaleName()
     return result;
 }
 
-static QString macMonthName(int month, bool short_format)
+static QString macMonthName(int month, QSystemLocale::QueryType type)
 {
     month -= 1;
     if (month < 0 || month > 11)
@@ -92,10 +92,31 @@ static QString macMonthName(int month, bool short_format)
     QCFType<CFDateFormatterRef> formatter
         = CFDateFormatterCreate(0, QCFType<CFLocaleRef>(CFLocaleCopyCurrent()),
                                 kCFDateFormatterNoStyle,  kCFDateFormatterNoStyle);
-    QCFType<CFArrayRef> values
-        = static_cast<CFArrayRef>(CFDateFormatterCopyProperty(formatter,
-                                  short_format ? kCFDateFormatterShortMonthSymbols
-                                               : kCFDateFormatterMonthSymbols));
+    CFStringRef key = kCFDateFormatterMonthSymbols;
+    switch (type) {
+    case QSystemLocale::MonthNameLong:
+        key = kCFDateFormatterMonthSymbols;
+        break;
+    case QSystemLocale::StandaloneMonthNameLong:
+        key = kCFDateFormatterStandaloneMonthSymbols;
+        break;
+    case QSystemLocale::MonthNameShort:
+        key = kCFDateFormatterShortMonthSymbols;
+        break;
+    case QSystemLocale::StandaloneMonthNameShort:
+        key = kCFDateFormatterShortStandaloneMonthSymbols;
+        break;
+    case QSystemLocale::MonthNameNarrow:
+        key = kCFDateFormatterVeryShortMonthSymbols;
+        break;
+    case QSystemLocale::StandaloneMonthNameNarrow:
+        key = kCFDateFormatterVeryShortStandaloneMonthSymbols;
+        break;
+    default:
+        key = kCFDateFormatterMonthSymbols;
+        break;
+    }
+    QCFType<CFArrayRef> values = static_cast<CFArrayRef>(CFDateFormatterCopyProperty(formatter, key));
     if (values != 0) {
         CFStringRef cfstring = static_cast<CFStringRef>(CFArrayGetValueAtIndex(values, month));
         return QCFString::toQString(cfstring);
@@ -103,7 +124,7 @@ static QString macMonthName(int month, bool short_format)
     return QString();
 }
 
-static QString macDayName(int day, bool short_format)
+static QString macDayName(int day, QSystemLocale::QueryType type)
 {
     if (day < 1 || day > 7)
         return QString();
@@ -111,9 +132,31 @@ static QString macDayName(int day, bool short_format)
     QCFType<CFDateFormatterRef> formatter
         = CFDateFormatterCreate(0, QCFType<CFLocaleRef>(CFLocaleCopyCurrent()),
                                 kCFDateFormatterNoStyle,  kCFDateFormatterNoStyle);
-    QCFType<CFArrayRef> values = static_cast<CFArrayRef>(CFDateFormatterCopyProperty(formatter,
-                                            short_format ? kCFDateFormatterShortWeekdaySymbols
-                                                         : kCFDateFormatterWeekdaySymbols));
+    CFStringRef key = kCFDateFormatterWeekdaySymbols;
+    switch (type) {
+    case QSystemLocale::DayNameLong:
+        key = kCFDateFormatterWeekdaySymbols;
+        break;
+    case QSystemLocale::StandaloneDayNameLong:
+        key = kCFDateFormatterStandaloneWeekdaySymbols;
+        break;
+    case QSystemLocale::DayNameShort:
+        key = kCFDateFormatterShortWeekdaySymbols;
+        break;
+    case QSystemLocale::StandaloneDayNameShort:
+        key = kCFDateFormatterShortStandaloneWeekdaySymbols;
+        break;
+    case QSystemLocale::DayNameNarrow:
+        key = kCFDateFormatterVeryShortWeekdaySymbols;
+        break;
+    case QSystemLocale::StandaloneDayNameNarrow:
+        key = kCFDateFormatterVeryShortStandaloneWeekdaySymbols;
+        break;
+    default:
+        key = kCFDateFormatterWeekdaySymbols;
+        break;
+    }
+    QCFType<CFArrayRef> values = static_cast<CFArrayRef>(CFDateFormatterCopyProperty(formatter, key));
     if (values != 0) {
         CFStringRef cfstring = static_cast<CFStringRef>(CFArrayGetValueAtIndex(values, day % 7));
         return QCFString::toQString(cfstring);
@@ -445,12 +488,18 @@ QVariant QSystemLocale::query(QueryType type, QVariant in = QVariant()) const
                                 : kCFDateFormatterLongStyle);
     case DayNameLong:
     case DayNameShort:
-        return macDayName(in.toInt(), (type == DayNameShort));
+    case DayNameNarrow:
+    case StandaloneDayNameLong:
+    case StandaloneDayNameShort:
+    case StandaloneDayNameNarrow:
+        return macDayName(in.toInt(), type);
     case MonthNameLong:
     case MonthNameShort:
+    case MonthNameNarrow:
     case StandaloneMonthNameLong:
     case StandaloneMonthNameShort:
-        return macMonthName(in.toInt(), (type == MonthNameShort || type == StandaloneMonthNameShort));
+    case StandaloneMonthNameNarrow:
+        return macMonthName(in.toInt(), type);
     case DateToStringShort:
     case DateToStringLong:
         return macDateToString(in.toDate(), (type == DateToStringShort));

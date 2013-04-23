@@ -90,8 +90,10 @@ public:
         TimeFormatShort, // QString
         DayNameLong, // QString, in: int
         DayNameShort, // QString, in: int
+        DayNameNarrow, // QString, in: int
         MonthNameLong, // QString, in: int
         MonthNameShort, // QString, in: int
+        MonthNameNarrow, // QString, in: int
         DateToStringLong, // QString, in: QDate
         DateToStringShort, // QString in: QDate
         TimeToStringLong, // QString in: QTime
@@ -117,7 +119,11 @@ public:
         NativeLanguageName, // QString
         NativeCountryName, // QString
         StandaloneMonthNameLong, // QString, in: int
-        StandaloneMonthNameShort // QString, in: int
+        StandaloneMonthNameShort, // QString, in: int
+        StandaloneMonthNameNarrow, // QString, in: int
+        StandaloneDayNameLong, // QString, in: int
+        StandaloneDayNameShort, // QString, in: int
+        StandaloneDayNameNarrow // QString, in: int
     };
     virtual QVariant query(QueryType type, QVariant in) const;
     virtual QLocale fallbackUiLocale() const;
