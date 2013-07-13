@@ -114,14 +114,22 @@ SOURCES += \
         tools/qvsnprintf.cpp
 
 !nacl:mac: {
+    HEADERS += tools/qnumberformatter.h \
+               tools/qnumberformatterprivate_p.h
     SOURCES += tools/qelapsedtimer_mac.cpp
     OBJECTIVE_SOURCES += tools/qlocale_mac.mm \
+                         tools/qnumberformatterprivate_mac.mm \
                          tools/qtimezoneprivate_mac.mm \
                          tools/qstring_mac.mm
 }
 else:blackberry {
-    SOURCES += tools/qelapsedtimer_unix.cpp tools/qlocale_blackberry.cpp tools/qtimezoneprivate_tz.cpp
-    HEADERS += tools/qlocale_blackberry.h
+    SOURCES += tools/qelapsedtimer_unix.cpp \
+               tools/qlocale_blackberry.cpp \
+               tools/qnumberformatterprivate_icu.cpp \
+               tools/qtimezoneprivate_tz.cpp
+    HEADERS += tools/qlocale_blackberry.h \
+               tools/qnumberformatter.h \
+               tools/qnumberformatterprivate_p.h
 }
 else:unix:SOURCES += tools/qelapsedtimer_unix.cpp tools/qlocale_unix.cpp tools/qtimezoneprivate_tz.cpp
 else:win32 {
@@ -142,7 +150,10 @@ contains(QT_CONFIG, zlib) {
 }
 
 contains(QT_CONFIG,icu) {
+    HEADERS += tools/qnumberformatter.h \
+               tools/qnumberformatterprivate_p.h
     SOURCES += tools/qlocale_icu.cpp \
+               tools/qnumberformatterprivate_icu.cpp \
                tools/qcollator_icu.cpp \
                tools/qtimezoneprivate_icu.cpp
     DEFINES += QT_USE_ICU

@@ -806,6 +806,18 @@ public:
         CurrencyDisplayName
     };
 
+    // ICU ULocDataLocaleType
+    enum LocaleCodeType {
+        RequestedLocaleCode = 1, // The locale code the user requested
+        EffectiveLocaleCode      // The locale code effectively being used
+    };
+
+    enum ParsingMode {
+        DefaultParsingMode = 0,
+        LenientParsing,
+        StrictParsing
+    };
+
     QLocale();
     QLocale(const QString &name);
     QLocale(Language language, Country country = AnyCountry);

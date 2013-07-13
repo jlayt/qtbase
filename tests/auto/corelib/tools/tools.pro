@@ -25,6 +25,7 @@ SUBDIRS=\
     qmap \
     qmargins \
     qmessageauthenticationcode \
+    qnumberformatter \
     qpair \
     qpoint \
     qpointf \
