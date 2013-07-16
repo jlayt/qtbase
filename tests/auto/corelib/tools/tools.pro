@@ -13,6 +13,7 @@ SUBDIRS=\
     qcryptographichash \
     qdate \
     qdatetime \
+    qdatetimeformatter \
     qeasingcurve \
     qelapsedtimer \
     qexplicitlyshareddatapointer \
