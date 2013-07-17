@@ -220,14 +220,6 @@ public:
         return retval;
     }
 
-    QChar decimal() const { return QChar(m_data->m_decimal); }
-    QChar group() const { return QChar(m_data->m_group); }
-    QChar list() const { return QChar(m_data->m_list); }
-    QChar percent() const { return QChar(m_data->m_percent); }
-    QChar zero() const { return QChar(m_data->m_zero); }
-    QChar plus() const { return QChar(m_data->m_plus); }
-    QChar minus() const { return QChar(m_data->m_minus); }
-    QChar exponential() const { return QChar(m_data->m_exponential); }
 
     quint16 languageId() const { return m_data->m_language_id; }
     quint16 countryId() const { return m_data->m_country_id; }
