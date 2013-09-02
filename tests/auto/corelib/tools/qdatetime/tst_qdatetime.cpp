@@ -1732,6 +1732,9 @@ void tst_QDateTime::operator_insert_extract()
         dataStream >> deserialisedDate;
         QTime deserialisedTime;
         dataStream >> deserialisedTime;
+        qint8 deserialisedOccurrence;
+        if (dataStreamVersion >= QDataStream::Qt_5_2)
+            dataStream >> deserialisedOccurrence;
         qint8 deserialisedSpec;
         if (dataStreamVersion >= QDataStream::Qt_4_0)
             dataStream >> deserialisedSpec;

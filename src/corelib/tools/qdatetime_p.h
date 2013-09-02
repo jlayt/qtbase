@@ -92,7 +92,8 @@ public:
         ValidDateTime       = 0x10,
         TimeZoneCached      = 0x20,
         SetToStandardTime   = 0x40,
-        SetToDaylightTime   = 0x80
+        SetToDaylightTime   = 0x80,
+        SecondOccurrence    = 0x100
     };
     Q_DECLARE_FLAGS(StatusFlags, StatusFlag)
 
@@ -102,11 +103,14 @@ public:
                          m_status(NullDate | NullTime)
     {}
 
-    QDateTimePrivate(const QDate &toDate, const QTime &toTime, Qt::TimeSpec toSpec,
-                     int offsetSeconds);
+    QDateTimePrivate(const QDate &toDate, const QTime &toTime,
+                     QDateTime::LocalTimeOccurrence toOccurrence,
+                     Qt::TimeSpec toSpec, int offsetSeconds);
 
 #ifndef QT_BOOTSTRAPPED
-    QDateTimePrivate(const QDate &toDate, const QTime &toTime, const QTimeZone & timeZone);
+    QDateTimePrivate(const QDate &toDate, const QTime &toTime,
+                     QDateTime::LocalTimeOccurrence toOccurrence,
+                     const QTimeZone & timeZone);
 #endif // QT_BOOTSTRAPPED
 
     QDateTimePrivate(const QDateTimePrivate &other) : QSharedData(other),
@@ -128,7 +132,8 @@ public:
     StatusFlags m_status;
 
     void setTimeSpec(Qt::TimeSpec spec, int offsetSeconds);
-    void setDateTime(const QDate &date, const QTime &time);
+    void setDateTime(const QDate &date, const QTime &time,
+                     QDateTime::LocalTimeOccurrence occurrence);
     void getDateTime(QDate *date, QTime *time) const;
 
     void setDaylightStatus(DaylightStatus status);
@@ -152,6 +157,7 @@ public:
     inline void setTimeZoneCached() { m_status = m_status | TimeZoneCached; }
     inline void clearTimeZoneCached() { m_status = m_status & ~TimeZoneCached; }
     inline void clearSetToDaylightStatus() { m_status = m_status & ~SetToStandardTime & ~SetToDaylightTime; }
+    inline bool isSecondOccurrence() const { return (m_status & SecondOccurrence) == SecondOccurrence; }
 
 #ifndef QT_BOOTSTRAPPED
     static qint64 zoneMSecsToEpochMSecs(qint64 msecs, const QTimeZone &zone,
