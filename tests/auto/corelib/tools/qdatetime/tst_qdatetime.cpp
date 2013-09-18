@@ -2047,6 +2047,21 @@ void tst_QDateTime::fromStringStringFormat_data()
     QTest::newRow("data16") << QString("2005-06-28T07:57:30.001Z")
                             << QString("yyyy-MM-ddThh:mm:ss.zZ")
                             << QDateTime(QDate(2005, 06, 28), QTime(07, 57, 30, 1));
+    QTest::newRow("data17") << QString("9999-12-31T23:59:59.999Z")
+                            << QString("yyyy-MM-ddThh:mm:ss.zZ")
+                            << QDateTime(QDate(9999, 12, 31), QTime(23, 59, 59, 999));
+    QTest::newRow("data18") << QString("0001-01-01T00:00:00.000Z")
+                            << QString("yyyy-MM-ddThh:mm:ss.zZ")
+                            << QDateTime(QDate(1, 1, 1), QTime(0, 0, 0));
+    QTest::newRow("data19") << QString("1-01-01T00:00:00.000Z")
+                            << QString("yyyy-MM-ddThh:mm:ss.zZ")
+                            << QDateTime();
+    QTest::newRow("data20") << QString("10000-01-01T00:00:00.000Z")
+                            << QString("yyyy-MM-ddThh:mm:ss.zZ")
+                            << QDateTime();
+    QTest::newRow("data21") << QString("-999-01-01T00:00:00.000Z")
+                            << QString("yyyy-MM-ddThh:mm:ss.zZ")
+                            << QDateTime();
 }
 
 void tst_QDateTime::fromStringStringFormat()

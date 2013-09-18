@@ -937,8 +937,8 @@ QCalendarModel::QCalendarModel(QObject *parent)
     : QAbstractTableModel(parent)
 {
     m_date = QDate::currentDate();
-    m_minimumDate = QDate::fromJulianDay(1);
-    m_maximumDate = QDate(7999, 12, 31);
+    m_minimumDate = QDate(-9999, 1, 1);
+    m_maximumDate = QDate(9999, 12, 31);
     m_shownYear = m_date.year();
     m_shownMonth = m_date.month();
     m_firstDay = QLocale().firstDayOfWeek();
@@ -2203,7 +2203,7 @@ QSize QCalendarWidget::minimumSizeHint() const
         headerW += monthW + buttonDecoMargin;
 
         fm = d->yearButton->fontMetrics();
-        headerW += fm.boundingRect(QLatin1String("5555")).width() + buttonDecoMargin;
+        headerW += fm.boundingRect(QLatin1String("-5555")).width() + buttonDecoMargin;
 
         headerSize = QSize(headerW, headerH);
     }
@@ -2424,8 +2424,7 @@ void QCalendarWidget::showToday()
     \snippet code/src_gui_widgets_qcalendarwidget.cpp 1
     \endtable
 
-    By default, the minimum date is the earliest date that the QDate
-    class can handle.
+    By default, the minimum date is 1 Jan 9999 BC, i.e. -9999 years.
 
     When setting a minimum date, the maximumDate and selectedDate
     properties are adjusted if the selection range becomes invalid. If
@@ -2475,8 +2474,7 @@ void QCalendarWidget::setMinimumDate(const QDate &date)
     \snippet code/src_gui_widgets_qcalendarwidget.cpp 2
     \endtable
 
-    By default, the maximum date is the last day the QDate class can
-    handle.
+    By default, the maximum date is 31 Dec 9999.
 
     When setting a maximum date, the minimumDate and selectedDate
     properties are adjusted if the selection range becomes invalid. If

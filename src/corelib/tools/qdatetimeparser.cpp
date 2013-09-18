@@ -1219,8 +1219,8 @@ end:
         } else {
             if (context == FromString) {
                 // optimization
-                Q_ASSERT(getMaximum().date().toJulianDay() == 4642999);
-                if (newCurrentValue.date().toJulianDay() > 4642999)
+                Q_ASSERT(getMaximum().date().toJulianDay() == 5373484); // jd for 9999-12-31
+                if (newCurrentValue.date().toJulianDay() > 5373484)
                     state = Invalid;
             } else {
                 if (newCurrentValue > getMaximum())
@@ -1708,7 +1708,7 @@ QString QDateTimeParser::stateName(int s) const
 #ifndef QT_NO_DATESTRING
 bool QDateTimeParser::fromString(const QString &t, QDate *date, QTime *time) const
 {
-    QDateTime val(QDate(1900, 1, 1), QDATETIMEEDIT_TIME_MIN);
+    QDateTime val(QDate(1900, 1, 1));
     QString text = t;
     int copy = -1;
     const StateNode tmp = parse(text, copy, val, false);
@@ -1736,12 +1736,12 @@ bool QDateTimeParser::fromString(const QString &t, QDate *date, QTime *time) con
 
 QDateTime QDateTimeParser::getMinimum() const
 {
-    return QDateTime(QDATETIMEEDIT_DATE_MIN, QDATETIMEEDIT_TIME_MIN, spec);
+    return QDateTime(QDate(1, 1, 1), QTime(0, 0, 0), spec);
 }
 
 QDateTime QDateTimeParser::getMaximum() const
 {
-    return QDateTime(QDATETIMEEDIT_DATE_MAX, QDATETIMEEDIT_TIME_MAX, spec);
+    return QDateTime(QDate(9999, 12, 31), QTime(23, 59, 59, 999), spec);
 }
 
 QString QDateTimeParser::getAmPmText(AmPm ap, Case cs) const

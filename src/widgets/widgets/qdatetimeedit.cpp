@@ -89,12 +89,9 @@ QT_BEGIN_NAMESPACE
   today's date, and restricted the valid date range to today plus or
   minus 365 days. We've set the order to month, day, year.
 
-  The minimum value for QDateTimeEdit is 14 September 1752. You can
-  change this by calling setMinimumDate(), taking into account that
-  the minimum value for QDate is 2 January 4713BC.
-
-  Other useful functions are setMaximumDate(), setMinimumTime()
-  and setMaximumTime().
+  The minimum value for QDateTimeEdit is 1 January 100 AD and the maximum is
+  31 December 9999 AD. You can change this by calling setMinimumDate() and
+  setMaximumDate(), but cannot set it to a date outside this default range.
 
   \section1 Using a Pop-up Calendar Widget
 
@@ -327,8 +324,8 @@ void QDateTimeEdit::setTime(const QTime &time)
   The default minimumDateTime can be restored with
   clearMinimumDateTime()
 
-  By default, this property contains a date that refers to September 14,
-  1752 and a time of 00:00:00 and 0 milliseconds.
+  By default, this property contains a date that refers of 1 January 100 AD
+  and a time of 00:00:00 and 0 milliseconds.
 
   \sa maximumDateTime(), minimumTime(), maximumTime(), minimumDate(),
   maximumDate(), setDateTimeRange(), setDateRange(), setTimeRange(),
@@ -344,7 +341,7 @@ QDateTime QDateTimeEdit::minimumDateTime() const
 
 void QDateTimeEdit::clearMinimumDateTime()
 {
-    setMinimumDateTime(QDateTime(QDATETIMEEDIT_COMPAT_DATE_MIN, QDATETIMEEDIT_TIME_MIN));
+    setMinimumDateTime(QDATETIMEEDIT_DATETIME_MIN);
 }
 
 void QDateTimeEdit::setMinimumDateTime(const QDateTime &dt)
@@ -371,7 +368,7 @@ void QDateTimeEdit::setMinimumDateTime(const QDateTime &dt)
   clearMaximumDateTime().
 
   By default, this property contains a date that refers to 31 December,
-  7999 and a time of 23:59:59 and 999 milliseconds.
+  9999 and a time of 23:59:59 and 999 milliseconds.
 
   \sa minimumDateTime(), minimumTime(), maximumTime(), minimumDate(),
   maximumDate(), setDateTimeRange(), setDateRange(), setTimeRange(),
@@ -439,7 +436,7 @@ void QDateTimeEdit::setDateTimeRange(const QDateTime &min, const QDateTime &max)
   necessary, to ensure that the range remains valid. If the date is
   not a valid QDate object, this function does nothing.
 
-  By default, this property contains a date that refers to September 14, 1752.
+  By default, this property contains a date of 1 January 100 AD.
   The minimum date must be at least the first day in year 100, otherwise
   setMinimumDate() has no effect.
 
@@ -462,7 +459,7 @@ void QDateTimeEdit::setMinimumDate(const QDate &min)
 
 void QDateTimeEdit::clearMinimumDate()
 {
-    setMinimumDate(QDATETIMEEDIT_COMPAT_DATE_MIN);
+    setMinimumDate(QDATETIMEEDIT_DATE_MIN);
 }
 
 /*!
@@ -474,7 +471,7 @@ void QDateTimeEdit::clearMinimumDate()
   necessary to ensure that the range remains valid. If the date is
   not a valid QDate object, this function does nothing.
 
-  By default, this property contains a date that refers to December 31, 7999.
+  By default, this property contains a date that refers to December 31, 9999.
 
   \sa minimumDate, minimumTime, maximumTime, setDateRange()
 */
@@ -1685,7 +1682,7 @@ QDateTimeEditPrivate::QDateTimeEditPrivate()
     none.pos = -1;
     sections = 0;
     calendarPopup = false;
-    minimum = QDATETIMEEDIT_COMPAT_DATETIME_MIN;
+    minimum = QDATETIMEEDIT_DATETIME_MIN;
     maximum = QDATETIMEEDIT_DATETIME_MAX;
     arrowState = QStyle::State_None;
     monthCalendar = 0;
