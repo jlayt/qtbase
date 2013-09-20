@@ -280,7 +280,10 @@ QIcuTimeZonePrivate::QIcuTimeZonePrivate()
 QIcuTimeZonePrivate::QIcuTimeZonePrivate(const QByteArray &olsenId)
     : m_ucal(0)
 {
-    // Need to check validity here as ICu will create a GMT tz if name is invalid
+    // Need to check validity here as ICU will create a GMT tz if name is invalid
+    // TODO Checking the availability is slow, it would be faster to just create and check the
+    // ID afterwards, but ICU does not provide C api to obtain the ucal's current ID.  Draft api
+    // was introduced in v51 to provide the ID, once stable use it here instead.
     if (availableTimeZoneIds().contains(olsenId))
         init(olsenId);
 }
