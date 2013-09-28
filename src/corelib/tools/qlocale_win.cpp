@@ -258,7 +258,9 @@ QVariant QSystemLocalePrivate::timeFormat(QLocale::FormatType type)
 {
     switch (type) {
     case QLocale::ShortFormat:
-        return winToQtFormat(getLocaleInfo(LOCALE_STIMEFORMAT)); //###
+        if (QSysInfo::windowsVersion() >= QSysInfo::WV_WINDOWS7)
+            return winToQtFormat(getLocaleInfo(LOCALE_SSHORTTIME));
+        // fall through
     case QLocale::LongFormat:
         return winToQtFormat(getLocaleInfo(LOCALE_STIMEFORMAT));
     case QLocale::NarrowFormat:
