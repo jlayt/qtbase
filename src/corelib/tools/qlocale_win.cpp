@@ -314,17 +314,13 @@ QVariant QSystemLocalePrivate::monthName(int month, QLocale::FormatType type, bo
         // Need to use GetDateFormat with a day number close to the month code
         // to force Windows to return the Genitive form.
         // See http://msdn.microsoft.com/en-us/library/windows/desktop/dd373856%28v=vs.85%29.aspx
-        SYSTEMTIME st;
-        memset(&st, 0, sizeof(SYSTEMTIME));
-        st.wYear = 2013;
-        st.wMonth = month;
-        st.wDay = 1;
+        SYSTEMTIME st = {2013, month, 0, 1, 0, 0, 0, 0};
         wchar_t buf[255];
         if (type == QLocale::LongFormat)
-            GetDateFormat(lcid, NULL, &st, L"ddMMMM", buf, 255);
+            GetDateFormat(lcid, 0, &st, L"ddMMMM", buf, 255);
         else
-            GetDateFormat(lcid, NULL, &st, L"ddMMM", buf, 255);
-        return QString::fromWCharArray(buf).mid(2);
+            GetDateFormat(lcid, 0, &st, L"ddMMM", buf, 255);
+        return QString::fromWCharArray(buf + 2);
     }
 
     static const LCTYPE short_month_map[]
