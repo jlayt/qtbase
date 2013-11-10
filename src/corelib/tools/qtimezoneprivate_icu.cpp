@@ -48,6 +48,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 /*
     Private
 
@@ -500,5 +502,7 @@ QSet<QByteArray> QIcuTimeZonePrivate::availableTimeZoneIds(int offsetFromUtc) co
     return QTimeZonePrivate::availableTimeZoneIds(offsetFromUtc);
 #endif
 }
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE

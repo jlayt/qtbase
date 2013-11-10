@@ -50,7 +50,9 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
 class QTimeZone;
+#endif // QT_NO_TIMEZONE
 
 class Q_CORE_EXPORT QDate
 {
@@ -209,9 +211,9 @@ public:
     QDateTime(const QDate &, const QTime &, Qt::TimeSpec spec = Qt::LocalTime);
     // ### Qt 6: Merge with above with default offsetSeconds = 0
     QDateTime(const QDate &date, const QTime &time, Qt::TimeSpec spec, int offsetSeconds);
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     QDateTime(const QDate &date, const QTime &time, const QTimeZone &timeZone);
-#endif // QT_BOOTSTRAPPED
+#endif // QT_NO_TIMEZONE
     QDateTime(const QDateTime &other);
     ~QDateTime();
 
@@ -226,9 +228,9 @@ public:
     QTime time() const;
     Qt::TimeSpec timeSpec() const;
     int offsetFromUtc() const;
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     QTimeZone timeZone() const;
-#endif // QT_BOOTSTRAPPED
+#endif // QT_NO_TIMEZONE
     QString timeZoneAbbreviation() const;
     bool isDaylightTime() const;
 
@@ -240,9 +242,9 @@ public:
     void setTime(const QTime &time);
     void setTimeSpec(Qt::TimeSpec spec);
     void setOffsetFromUtc(int offsetSeconds);
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     void setTimeZone(const QTimeZone &toZone);
-#endif // QT_BOOTSTRAPPED
+#endif // QT_NO_TIMEZONE
     void setMSecsSinceEpoch(qint64 msecs);
     // ### Qt 6: use quint64 instead of uint
     void setTime_t(uint secsSince1Jan1970UTC);
@@ -261,9 +263,9 @@ public:
     inline QDateTime toLocalTime() const { return toTimeSpec(Qt::LocalTime); }
     inline QDateTime toUTC() const { return toTimeSpec(Qt::UTC); }
     QDateTime toOffsetFromUtc(int offsetSeconds) const;
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     QDateTime toTimeZone(const QTimeZone &toZone) const;
-#endif // QT_BOOTSTRAPPED
+#endif // QT_NO_TIMEZONE
 
     qint64 daysTo(const QDateTime &) const;
     qint64 secsTo(const QDateTime &) const;
@@ -292,15 +294,15 @@ public:
     // ### Qt 6: Merge with above with default spec = Qt::LocalTime
     static QDateTime fromTime_t(uint secsSince1Jan1970UTC, Qt::TimeSpec spec,
                                 int offsetFromUtc = 0);
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     static QDateTime fromTime_t(uint secsSince1Jan1970UTC, const QTimeZone &timeZone);
-#endif
+#endif // QT_NO_TIMEZONE
     static QDateTime fromMSecsSinceEpoch(qint64 msecs);
     // ### Qt 6: Merge with above with default spec = Qt::LocalTime
     static QDateTime fromMSecsSinceEpoch(qint64 msecs, Qt::TimeSpec spec, int offsetFromUtc = 0);
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     static QDateTime fromMSecsSinceEpoch(qint64 msecs, const QTimeZone &timeZone);
-#endif
+#endif // QT_NO_TIMEZONE
     static qint64 currentMSecsSinceEpoch() Q_DECL_NOTHROW;
 
 private:

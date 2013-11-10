@@ -160,7 +160,7 @@ bootstrap { #Qt code
         CFLAGS += -fhonor-std
         LFLAGS += -lcpp
     }
-    DEFINES *= QT_NO_QOBJECT QT_CRYPTOGRAPHICHASH_ONLY_SHA1
+    DEFINES *= QT_NO_QOBJECT QT_CRYPTOGRAPHICHASH_ONLY_SHA1 QT_NO_TIMEZONE
 } else {
     CONFIG += qt
     QT = core

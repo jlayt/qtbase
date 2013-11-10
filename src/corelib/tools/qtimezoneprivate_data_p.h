@@ -56,6 +56,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 /*
     Windows Zone ID support, included in default base class build so can be used on all platforms,
     e.g. an app running on Linux may need to communicate with a Windows Outlook server.  These
@@ -1116,6 +1118,8 @@ static const char olsenIdData[] = {
 0x0
 };
 // GENERATED PART ENDS HERE
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE
 

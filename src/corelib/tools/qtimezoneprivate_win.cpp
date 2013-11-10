@@ -48,6 +48,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 /*
     Private
 
@@ -641,5 +643,7 @@ QTimeZonePrivate::Data QWinTimeZonePrivate::ruleToData(const QWinTransitionRule 
     tran.offsetFromUtc = tran.standardTimeOffset + tran.daylightTimeOffset;
     return tran;
 }
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE

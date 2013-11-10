@@ -51,6 +51,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 /*
     Private
 
@@ -256,5 +258,7 @@ QSet<QByteArray> QMacTimeZonePrivate::availableTimeZoneIds() const
     [enumerator release];
     return set;
 }
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE

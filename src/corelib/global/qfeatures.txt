@@ -148,6 +148,12 @@ Section: Data structures
 Requires: TEXTDATE
 Name: QDate/QTime/QDateTime
 
+Feature: TIMEZONE
+Description: Supports use of time zones in datetimes
+Section: Data structures
+Requires:
+Name: QDateTime/QTimeZone
+
 # File I/O
 
 Feature: PROCESS

@@ -105,26 +105,26 @@ public:
     QDateTimePrivate(const QDate &toDate, const QTime &toTime, Qt::TimeSpec toSpec,
                      int offsetSeconds);
 
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     QDateTimePrivate(const QDate &toDate, const QTime &toTime, const QTimeZone & timeZone);
-#endif // QT_BOOTSTRAPPED
+#endif // QT_NO_TIMEZONE
 
     QDateTimePrivate(const QDateTimePrivate &other) : QSharedData(other),
                                                       m_msecs(other.m_msecs),
                                                       m_spec(other.m_spec),
                                                       m_offsetFromUtc(other.m_offsetFromUtc),
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
                                                       m_timeZone(other.m_timeZone),
-#endif // QT_BOOTSTRAPPED
+#endif // QT_NO_TIMEZONE
                                                       m_status(other.m_status)
     {}
 
     qint64 m_msecs;
     Qt::TimeSpec m_spec;
     int m_offsetFromUtc;
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     QTimeZone m_timeZone;
-#endif // QT_BOOTSTRAPPED
+#endif // QT_NO_TIMEZONE
     StatusFlags m_status;
 
     void setTimeSpec(Qt::TimeSpec spec, int offsetSeconds);
@@ -153,10 +153,10 @@ public:
     inline void clearTimeZoneCached() { m_status = m_status & ~TimeZoneCached; }
     inline void clearSetToDaylightStatus() { m_status = m_status & ~SetToStandardTime & ~SetToDaylightTime; }
 
-#ifndef QT_BOOTSTRAPPED
+#ifndef QT_NO_TIMEZONE
     static qint64 zoneMSecsToEpochMSecs(qint64 msecs, const QTimeZone &zone,
                                         QDate *localDate, QTime *localTime);
-#endif // QT_BOOTSTRAPPED
+#endif // QT_NO_TIMEZONE
 
     static inline qint64 minJd() { return QDate::minJd(); }
     static inline qint64 maxJd() { return QDate::maxJd(); }

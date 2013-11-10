@@ -51,6 +51,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 /*
     Private
 
@@ -913,5 +915,7 @@ QSet<QByteArray> QTzTimeZonePrivate::availableTimeZoneIds(QLocale::Country count
     }
     return set;
 }
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE

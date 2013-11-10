@@ -46,6 +46,9 @@
 #ifndef QT_NO_DATESTRING
 #  define QT_NO_DATESTRING
 #endif
+#ifndef QT_NO_TIMEZONE
+#  define QT_NO_TIMEZONE
+#endif
 
 /* Dialogs */
 #ifndef QT_NO_COLORDIALOG

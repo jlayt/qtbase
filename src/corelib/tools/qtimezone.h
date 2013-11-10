@@ -49,6 +49,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 class QTimeZonePrivate;
 
 class Q_CORE_EXPORT QTimeZone
@@ -158,6 +160,8 @@ Q_CORE_EXPORT QDataStream &operator>>(QDataStream &ds, QTimeZone &tz);
 #ifndef QT_NO_DEBUG_STREAM
 Q_CORE_EXPORT QDebug operator<<(QDebug dbg, const QTimeZone &tz);
 #endif
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE
 

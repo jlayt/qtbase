@@ -51,6 +51,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 // Create default time zone using appropriate backend
 static QTimeZonePrivate *newBackendTimeZone()
 {
@@ -942,5 +944,7 @@ QDebug operator<<(QDebug dbg, const QTimeZone &tz)
     return dbg.space();
 }
 #endif
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE

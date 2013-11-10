@@ -48,6 +48,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 enum {
     MSECS_TRAN_WINDOW = 21600000 // 6 hour window for possible recent transitions
 };
@@ -704,5 +706,7 @@ void QUtcTimeZonePrivate::serialize(QDataStream &ds) const
        << m_abbreviation << (qint32) m_country << m_comment;
 }
 #endif // QT_NO_DATASTREAM
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE

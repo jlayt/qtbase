@@ -75,6 +75,8 @@ class NSTimeZone;
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_TIMEZONE
+
 class Q_CORE_EXPORT QTimeZonePrivate : public QSharedData
 {
 public:
@@ -419,6 +421,8 @@ private:
     QList<QWinTransitionRule> m_tranRules;
 };
 #endif // Q_OS_WIN
+
+#endif // QT_NO_TIMEZONE
 
 QT_END_NAMESPACE
 
