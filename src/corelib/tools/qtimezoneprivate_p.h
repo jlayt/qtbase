@@ -57,6 +57,8 @@
 #include "qtimezone.h"
 #include "qlocale_p.h"
 
+#include <QtCore/qdir.h>
+
 #ifdef QT_USE_ICU
 #include <unicode/ucal.h>
 #endif // QT_USE_ICU
@@ -74,6 +76,51 @@ class NSTimeZone;
 #endif // Q_OS_WIN
 
 QT_BEGIN_NAMESPACE
+
+class QTzTimeZonePrivate;
+
+class Q_CORE_EXPORT QTimeZoneDatabasePrivate : public QSharedData
+{
+public:
+    // Create system database if exists
+    QTimeZoneDatabasePrivate();
+    // Create named database if exists
+    QTimeZoneDatabasePrivate(const QString &databasePath);
+    QTimeZoneDatabasePrivate(const QTimeZoneDatabasePrivate &other);
+    ~QTimeZoneDatabasePrivate();
+
+    QTimeZoneDatabasePrivate *clone();
+
+    bool operator==(const QTimeZoneDatabasePrivate &other) const;
+    bool operator!=(const QTimeZoneDatabasePrivate &other) const;
+
+    bool isValid() const;
+
+    // Path to directory holding zone.tab and tz files
+    QString databasePath() const;
+
+    // Create a named time zone using the rules held in this database
+    QTimeZonePrivate *createTimeZonePrivate(const QByteArray &ianaId);
+
+    // Time zones rules available in this database
+    QSet<QByteArray> availableTimeZoneIds() const;
+    QSet<QByteArray> availableTimeZoneIds(QLocale::Country country) const;
+
+    // Path to system database if exists
+    static QString systemDatabasePath();
+
+private:
+    friend class QTzTimeZonePrivate;
+
+    void init(const QString &databasePath);
+
+    struct QTzTimeZone {
+        QLocale::Country country;
+        QByteArray comment;
+    };
+    QDir m_dir;
+    QHash<QByteArray, QTzTimeZone> m_zones;
+};
 
 class Q_CORE_EXPORT QTimeZonePrivate : public QSharedData
 {
@@ -253,7 +300,6 @@ private:
 };
 #endif // QT_USE_ICU
 
-#if defined Q_OS_UNIX && !defined Q_OS_MAC
 class Q_AUTOTEST_EXPORT QTzTimeZonePrivate Q_DECL_FINAL : public QTimeZonePrivate
 {
 public:
@@ -261,6 +307,8 @@ public:
     QTzTimeZonePrivate();
     // Create named time zone
     QTzTimeZonePrivate(const QByteArray &ianaId);
+    // Create from named time zone and file
+    QTzTimeZonePrivate(const QByteArray &ianaId, QFile &tzFile, QLocale::Country country, const QByteArray &comment);
     QTzTimeZonePrivate(const QTzTimeZonePrivate &other);
     ~QTzTimeZonePrivate();
 
@@ -297,6 +345,7 @@ public:
 
 private:
     void init(const QByteArray &ianaId);
+    void init(const QByteArray &ianaId, QFile &tzif, QLocale::Country country, const QByteArray &comment);
 
     struct QTzTransitionTime {
         qint64 atMSecsSinceEpoch;
@@ -313,12 +362,13 @@ private:
     QList<QTzTransitionTime> m_tranTimes;
     QList<QTzTransitionRule> m_tranRules;
     QList<QByteArray> m_abbreviations;
-#ifdef QT_USE_ICU
-    mutable QSharedDataPointer<QTimeZonePrivate> m_icu;
-#endif // QT_USE_ICU
+#if defined QT_USE_ICU || defined Q_OS_MAC
+    mutable QSharedDataPointer<QTimeZonePrivate> m_hostZone;
+#endif // QT_USE_ICU || Q_OS_MAC
     QByteArray m_posixRule;
+    QLocale::Country m_country;
+    QByteArray m_comment;
 };
-#endif // Q_OS_UNIX
 
 #ifdef Q_OS_MAC
 class Q_AUTOTEST_EXPORT QMacTimeZonePrivate Q_DECL_FINAL : public QTimeZonePrivate

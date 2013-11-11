@@ -57,28 +57,65 @@ QT_BEGIN_NAMESPACE
     tz file implementation
 */
 
-struct QTzTimeZone {
-    QLocale::Country country;
-    QByteArray comment;
-};
+/*
+    TZ Database implementation
+*/
 
-// Define as a type as Q_GLOBAL_STATIC doesn't like it
-typedef QHash<QByteArray, QTzTimeZone> QTzTimeZoneHash;
+// System TZ database
+Q_GLOBAL_STATIC_WITH_ARGS(const QTimeZoneDatabasePrivate, tzDatabase, (QTimeZoneDatabasePrivate::systemDatabasePath()));
 
-// Parse zone.tab table, assume lists all installed zones, if not will need to read directories
-static QTzTimeZoneHash loadTzTimeZones()
+// Create a null time zone database
+QTimeZoneDatabasePrivate::QTimeZoneDatabasePrivate()
 {
-    QString path = QStringLiteral("/usr/share/zoneinfo/zone.tab");
-    if (!QFile::exists(path))
-        path = QStringLiteral("/usr/lib/zoneinfo/zone.tab");
+}
 
-    QFile tzif(path);
-    if (!tzif.open(QIODevice::ReadOnly))
-        return QTzTimeZoneHash();
+// Create a given time zone database
+QTimeZoneDatabasePrivate::QTimeZoneDatabasePrivate(const QString &databasePath)
+{
+    init(databasePath);
+}
 
-    QTzTimeZoneHash zonesHash;
+QTimeZoneDatabasePrivate::QTimeZoneDatabasePrivate(const QTimeZoneDatabasePrivate &other)
+    : QSharedData(other),
+      m_dir(other.m_dir),
+      m_zones(other.m_zones)
+{
+}
+
+QTimeZoneDatabasePrivate::~QTimeZoneDatabasePrivate()
+{
+}
+
+QTimeZoneDatabasePrivate *QTimeZoneDatabasePrivate::clone()
+{
+    return new QTimeZoneDatabasePrivate(*this);
+}
+
+bool QTimeZoneDatabasePrivate::operator==(const QTimeZoneDatabasePrivate &other) const
+{
+    return (m_dir == other.m_dir);
+}
+
+bool QTimeZoneDatabasePrivate::operator!=(const QTimeZoneDatabasePrivate &other) const
+{
+    return !(*this == other);
+}
+
+void QTimeZoneDatabasePrivate::init(const QString &databasePath)
+{
+    m_dir = QDir(databasePath);
+
+    // Needs to be a valid path and have a zone.tab file
+    if (!m_dir.exists(QLatin1String("zone.tab")))
+        return;
+
+    QFile zoneTab(m_dir.filePath(QLatin1String("zone.tab")));
+    if (!zoneTab.open(QIODevice::ReadOnly))
+        return;
+
+    // Parse zone.tab table, assume lists all installed zones, if not will need to read directories
     // TODO QTextStream inefficient, replace later
-    QTextStream ts(&tzif);
+    QTextStream ts(&zoneTab);
     while (!ts.atEnd()) {
         const QString line = ts.readLine();
         // Comment lines are prefixed with a #
@@ -89,14 +126,62 @@ static QTzTimeZoneHash loadTzTimeZones()
             zone.country = QLocalePrivate::codeToCountry(parts.at(0));
             if (parts.size() > 3)
                 zone.comment = parts.at(3).toUtf8();
-            zonesHash.insert(parts.at(2).toUtf8(), zone);
+            m_zones.insert(parts.at(2).toUtf8(), zone);
         }
     }
-    return zonesHash;
 }
 
-// Hash of available system tz files as loaded by loadTzTimeZones()
-Q_GLOBAL_STATIC_WITH_ARGS(const QTzTimeZoneHash, tzZones, (loadTzTimeZones()));
+bool QTimeZoneDatabasePrivate::isValid() const
+{
+    return m_zones.count() > 0;
+}
+
+QString QTimeZoneDatabasePrivate::databasePath() const
+{
+    if (isValid())
+        return m_dir.absolutePath();
+    return QString();
+}
+
+QTimeZonePrivate *QTimeZoneDatabasePrivate::createTimeZonePrivate(const QByteArray &ianaId)
+{
+    QFile tzFile(m_dir.filePath(QString::fromUtf8(ianaId)));
+    QTimeZoneDatabasePrivate::QTzTimeZone tzMetadata = m_zones.value(ianaId);
+    return new QTzTimeZonePrivate(ianaId, tzFile, tzMetadata.country, tzMetadata.comment);
+}
+
+QSet<QByteArray> QTimeZoneDatabasePrivate::availableTimeZoneIds() const
+{
+    return m_zones.keys().toSet();
+}
+
+QSet<QByteArray> QTimeZoneDatabasePrivate::availableTimeZoneIds(QLocale::Country country) const
+{
+    QSet<QByteArray> set;
+    foreach (const QByteArray &key, m_zones.keys()) {
+        if (m_zones.value(key).country == country)
+            set << key;
+    }
+    return set;
+}
+
+QString QTimeZoneDatabasePrivate::systemDatabasePath()
+{
+#ifdef QT_OS_WIN
+    // Windows doesn't have a system tz database
+    return QString();
+#else
+    // Modern Unixes, including Linux and Mac, use standard location
+    QDir tzdb(QLatin1String("/usr/share/zoneinfo/"));
+    if (!tzdb.exists()) {
+        // Older Unixes may use this path
+        tzdb.setPath(QLatin1String("/usr/lib/zoneinfo/"));
+        if (!tzdb.exists())
+            return QString();
+    }
+    return tzdb.absolutePath();
+#endif
+}
 
 /*
     The following is copied and modified from tzfile.h which is in the public domain.
@@ -515,29 +600,40 @@ static QList<QTimeZonePrivate::Data> calculatePosixTransitions(const QByteArray 
 
 // Create the system default time zone
 QTzTimeZonePrivate::QTzTimeZonePrivate()
-#ifdef QT_USE_ICU
-    : m_icu(0)
-#endif // QT_USE_ICU
+#if defined QT_USE_ICU || defined QT_OS_MAC
+    : m_hostZone(0)
+#endif // QT_USE_ICU || QT_OS_MAC
 {
     init(systemTimeZoneId());
 }
 
 // Create a named time zone
 QTzTimeZonePrivate::QTzTimeZonePrivate(const QByteArray &ianaId)
-#ifdef QT_USE_ICU
-    : m_icu(0)
-#endif // QT_USE_ICU
+#if defined QT_USE_ICU || defined QT_OS_MAC
+    : m_hostZone(0)
+#endif // QT_USE_ICU || QT_OS_MAC
 {
     init(ianaId);
 }
 
+// Create a named time zone from a given file
+QTzTimeZonePrivate::QTzTimeZonePrivate(const QByteArray &ianaId, QFile &tzFile, QLocale::Country country, const QByteArray &comment)
+#if defined QT_USE_ICU || defined QT_OS_MAC
+    : m_hostZone(0)
+#endif // QT_USE_ICU || QT_OS_MAC
+{
+    init(ianaId, tzFile, country, comment);
+}
+
 QTzTimeZonePrivate::QTzTimeZonePrivate(const QTzTimeZonePrivate &other)
-                  : QTimeZonePrivate(other), m_tranTimes(other.m_tranTimes),
-                    m_tranRules(other.m_tranRules), m_abbreviations(other.m_abbreviations),
-#ifdef QT_USE_ICU
-                    m_icu(other.m_icu),
-#endif // QT_USE_ICU
-                    m_posixRule(other.m_posixRule)
+    : QTimeZonePrivate(other), m_tranTimes(other.m_tranTimes),
+      m_tranRules(other.m_tranRules), m_abbreviations(other.m_abbreviations),
+#if defined QT_USE_ICU || defined QT_OS_MAC
+      m_hostZone(other.m_hostZone),
+#endif // QT_USE_ICU || QT_OS_MAC
+      m_posixRule(other.m_posixRule),
+      m_country(other.m_country),
+      m_comment(other.m_comment)
 {
 }
 
@@ -552,21 +648,15 @@ QTimeZonePrivate *QTzTimeZonePrivate::clone()
 
 void QTzTimeZonePrivate::init(const QByteArray &ianaId)
 {
-    QFile tzif;
-    if (ianaId.isEmpty()) {
-        // Open system tz
-        tzif.setFileName(QStringLiteral("/etc/localtime"));
-        if (!tzif.open(QIODevice::ReadOnly))
-            return;
-    } else {
-        // Open named tz, try modern path first, if fails try legacy path
-        tzif.setFileName(QLatin1String("/usr/share/zoneinfo/") + QString::fromLocal8Bit(ianaId));
-        if (!tzif.open(QIODevice::ReadOnly)) {
-            tzif.setFileName(QLatin1String("/usr/lib/zoneinfo/") + QString::fromLocal8Bit(ianaId));
-            if (!tzif.open(QIODevice::ReadOnly))
-                return;
-        }
-    }
+    QFile tzFile(tzDatabase->m_dir.filePath(QString::fromUtf8(ianaId)));
+    QTimeZoneDatabasePrivate::QTzTimeZone tzMetadata = tzDatabase->m_zones.value(ianaId);
+    init(ianaId, tzFile, tzMetadata.country, tzMetadata.comment);
+}
+
+void QTzTimeZonePrivate::init(const QByteArray &ianaId, QFile &tzif, QLocale::Country country, const QByteArray &comment)
+{
+    if (ianaId.isEmpty() || !tzif.open(QIODevice::ReadOnly))
+        return;
 
     QDataStream ds(&tzif);
 
@@ -667,37 +757,44 @@ void QTzTimeZonePrivate::init(const QByteArray &ianaId)
         m_tranTimes.append(tran);
     }
 
-    if (ianaId.isEmpty())
-        m_id = systemTimeZoneId();
-    else
-        m_id = ianaId;
+    tzif.close();
+    m_id = ianaId;
+    m_country = country;
+    m_comment = comment;
 }
 
 QLocale::Country QTzTimeZonePrivate::country() const
 {
-    return tzZones->value(m_id).country;
+    return m_country;
 }
 
 QString QTzTimeZonePrivate::comment() const
 {
-    return QString::fromUtf8(tzZones->value(m_id).comment);
+    return QString::fromUtf8(m_comment);
 }
 
 QString QTzTimeZonePrivate::displayName(qint64 atMSecsSinceEpoch,
                                         QTimeZone::NameType nameType,
                                         const QLocale &locale) const
 {
-#ifdef QT_USE_ICU
-    if (!m_icu)
-        m_icu = new QIcuTimeZonePrivate(m_id);
+#ifdef QT_OS_MAC
+    if (!m_hostZone)
+        m_hostZone = new QMacTimeZonePrivate(m_id);
     // TODO small risk may not match if tran times differ due to outdated files
     // TODO Some valid TZ names are not valid ICU names, use translation table?
-    if (m_icu->isValid())
-        return m_icu->displayName(atMSecsSinceEpoch, nameType, locale);
+    if (m_hostZone->isValid())
+        return m_hostZone->displayName(atMSecsSinceEpoch, nameType, locale);
+#elseif defined QT_USE_ICU
+    if (!m_hostZone)
+        m_hostZone = new QIcuTimeZonePrivate(m_id);
+    // TODO small risk may not match if tran times differ due to outdated files
+    // TODO Some valid TZ names are not valid ICU names, use translation table?
+    if (m_hostZone->isValid())
+        return m_hostZone->displayName(atMSecsSinceEpoch, nameType, locale);
 #else
     Q_UNUSED(nameType)
     Q_UNUSED(locale)
-#endif // QT_USE_ICU
+#endif // QT_USE_ICU || QT_OS_MAC
     return abbreviation(atMSecsSinceEpoch);
 }
 
@@ -705,19 +802,26 @@ QString QTzTimeZonePrivate::displayName(QTimeZone::TimeType timeType,
                                         QTimeZone::NameType nameType,
                                         const QLocale &locale) const
 {
-#ifdef QT_USE_ICU
-    if (!m_icu)
-        m_icu = new QIcuTimeZonePrivate(m_id);
+#ifdef QT_OS_MAC
+    if (!m_hostZone)
+        m_hostZone = new QMacTimeZonePrivate(m_id);
     // TODO small risk may not match if tran times differ due to outdated files
     // TODO Some valid TZ names are not valid ICU names, use translation table?
-    if (m_icu->isValid())
-        return m_icu->displayName(timeType, nameType, locale);
+    if (m_hostZone->isValid())
+        return m_hostZone->displayName(timeType, nameType, locale);
+#elseif defined QT_USE_ICU
+    if (!m_hostZone)
+        m_hostZone = new QIcuTimeZonePrivate(m_id);
+    // TODO small risk may not match if tran times differ due to outdated files
+    // TODO Some valid TZ names are not valid ICU names, use translation table?
+    if (m_hostZone->isValid())
+        return m_hostZone->displayName(timeType, nameType, locale);
 #else
-    Q_UNUSED(timeType)
     Q_UNUSED(nameType)
     Q_UNUSED(locale)
-#endif // QT_USE_ICU
-    // If no ICU available then have to use abbreviations instead
+#endif // QT_USE_ICU || QT_OS_MAC
+
+    // If no Host available then have to use abbreviations instead
     // Abbreviations don't have GenericTime
     if (timeType == QTimeZone::GenericTime)
         timeType = QTimeZone::StandardTime;
@@ -965,18 +1069,12 @@ QByteArray QTzTimeZonePrivate::systemTimeZoneId() const
 
 QSet<QByteArray> QTzTimeZonePrivate::availableTimeZoneIds() const
 {
-    return tzZones->keys().toSet();
+    return tzDatabase->availableTimeZoneIds();
 }
 
 QSet<QByteArray> QTzTimeZonePrivate::availableTimeZoneIds(QLocale::Country country) const
 {
-    // TODO AnyCountry
-    QSet<QByteArray> set;
-    foreach (const QByteArray &key, tzZones->keys()) {
-        if (tzZones->value(key).country == country)
-            set << key;
-    }
-    return set;
+    return tzDatabase->availableTimeZoneIds(country);
 }
 
 QT_END_NAMESPACE

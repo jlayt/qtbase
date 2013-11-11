@@ -145,6 +145,7 @@ private:
 #ifndef QT_NO_DATASTREAM
     friend Q_CORE_EXPORT QDataStream &operator<<(QDataStream &ds, const QTimeZone &tz);
 #endif
+    friend class QTimeZoneDatabase;
     friend class QTimeZonePrivate;
     friend class QDateTime;
     friend class QDateTimePrivate;

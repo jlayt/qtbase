@@ -41,6 +41,7 @@
 
 #include <QtTest/QtTest>
 #include <qtimezone.h>
+#include <qtimezonedatabase.h>
 #include <private/qtimezoneprivate_p.h>
 #include <qlocale.h>
 
@@ -66,6 +67,8 @@ private slots:
     void tzTest();
     void macTest();
     void winTest();
+    // Database tests
+    void databaseTest();
 
 private:
     void printTimeZone(const QTimeZone tz);
@@ -964,6 +967,43 @@ void tst_QTimeZone::testCetPrivate(const QTimeZonePrivate &tzp)
     }
 }
 #endif // QT_BUILD_INTERNAL
+
+void tst_QTimeZone::databaseTest()
+{
+    QTimeZoneDatabase null;
+    QCOMPARE(null.isValid(), false);
+    QCOMPARE(null.databasePath(), QString());
+
+#if defined Q_OS_UNIX
+    QCOMPARE(QTimeZoneDatabase::systemDatabasePath().isEmpty(), false);
+    QTimeZoneDatabase system = QTimeZoneDatabase::systemDatabase();
+    QCOMPARE(system.isValid(), true);
+    QTimeZone newyork = system.createTimeZone("America/New_York");
+    QCOMPARE(newyork.isValid(), true);
+    QCOMPARE(newyork.id(), QByteArrayLiteral("America/New_York"));
+#else
+    QCOMPARE(QTimeZoneDatabase::systemDatabasePath().isEmpty(), true);
+#endif
+
+    // TODO Assume auto tests run from either qtbase directory or from qtimezone directory
+    QDir dir = QDir::currentPath();
+    if (dir.dirName() == "qtbase")
+        dir = QDir(dir.absolutePath() + "/tests/auto/corelib/tools/qtimezone");
+    QCOMPARE(dir.exists("zone.tab"), true);
+    QTimeZoneDatabase custom(dir.absolutePath());
+    QCOMPARE(custom.isValid(), true);
+    QCOMPARE(custom.databasePath(), dir.absolutePath());
+    QCOMPARE(custom.isTimeZoneIdAvailable("Europe/Berlin"), true);
+    QCOMPARE(custom.isTimeZoneIdAvailable("Tatooine/Mos_Eisley"), false);
+    QList<QByteArray> available;
+    available << "Europe/Berlin";
+    QCOMPARE(custom.availableTimeZoneIds(), available);
+    QCOMPARE(custom.availableTimeZoneIds(QLocale::Germany), available);
+    QCOMPARE(custom.availableTimeZoneIds(QLocale::France), QList<QByteArray>());
+    QTimeZone berlin = custom.createTimeZone("Europe/Berlin");
+    QCOMPARE(berlin.isValid(), true);
+    QCOMPARE(berlin.id(), QByteArrayLiteral("Europe/Berlin"));
+}
 
 QTEST_APPLESS_MAIN(tst_QTimeZone)
 #include "tst_qtimezone.moc"

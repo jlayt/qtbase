@@ -63,6 +63,7 @@ HEADERS +=  \
         tools/qtimezone.h \
         tools/qtimezoneprivate_p.h \
         tools/qtimezoneprivate_data_p.h \
+        tools/qtimezonedatabase.h \
         tools/qelapsedtimer.h \
         tools/qunicodetables_p.h \
         tools/qunicodetools_p.h \
@@ -110,6 +111,8 @@ SOURCES += \
         tools/qtimeline.cpp \
         tools/qtimezone.cpp \
         tools/qtimezoneprivate.cpp \
+        tools/qtimezoneprivate_tz.cpp \
+        tools/qtimezonedatabase.cpp \
         tools/qunicodetools.cpp \
         tools/qvector.cpp \
         tools/qvsnprintf.cpp
@@ -125,10 +128,10 @@ false: SOURCES += $$NO_PCH_SOURCES # Hack for QtCreator
                          tools/qstring_mac.mm
 }
 else:blackberry {
-    SOURCES += tools/qelapsedtimer_unix.cpp tools/qlocale_blackberry.cpp tools/qtimezoneprivate_tz.cpp
+    SOURCES += tools/qelapsedtimer_unix.cpp tools/qlocale_blackberry.cpp
     HEADERS += tools/qlocale_blackberry.h
 }
-else:unix:SOURCES += tools/qelapsedtimer_unix.cpp tools/qlocale_unix.cpp tools/qtimezoneprivate_tz.cpp
+else:unix:SOURCES += tools/qelapsedtimer_unix.cpp tools/qlocale_unix.cpp
 else:win32 {
     SOURCES += tools/qelapsedtimer_win.cpp tools/qlocale_win.cpp
     !winrt: SOURCES += tools/qtimezoneprivate_win.cpp
