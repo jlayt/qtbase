@@ -207,9 +207,6 @@ void tst_QPrinter::getSetCheck()
     QCOMPARE(obj1.printerSelectionOption(), QString::fromLatin1("--option"));
 #endif
 
-    obj1.setPrinterName(QString::fromLatin1("myPrinter"));
-    QCOMPARE(obj1.printerName(), QString::fromLatin1("myPrinter"));
-
     // bool QPrinter::fontEmbeddingEnabled()
     // void QPrinter::setFontEmbeddingEnabled(bool)
     obj1.setFontEmbeddingEnabled(false);
@@ -907,13 +904,6 @@ void tst_QPrinter::valuePreservation()
         printer.setOutputFormat(oldFormat);
         QString status = printer.printerName();
         printer.setOutputFormat(newFormat);
-        printer.setOutputFormat(oldFormat);
-        QCOMPARE(printer.printerName(), status);
-
-        status = QString::fromLatin1("SuperDuperPrinter");
-        printer.setPrinterName(status);
-        printer.setOutputFormat(newFormat);
-        QCOMPARE(printer.printerName(), status);
         printer.setOutputFormat(oldFormat);
         QCOMPARE(printer.printerName(), status);
     }
