@@ -458,7 +458,7 @@ void tst_QPrinter::testNonExistentPrinter()
     QPainter painter;
 
     // Make sure it doesn't crash on setting or getting properties
-    printer.setPrinterName("some non existing printer");
+    printer.printEngine()->setProperty(QPrintEngine::PPK_PrinterName, "some non existing printer");
     printer.setPageSize(QPrinter::A4);
     printer.setOrientation(QPrinter::Portrait);
     printer.setFullPage(true);
