@@ -885,7 +885,7 @@ void tst_QPrinter::collateCopies()
     // PdfFormat: Supported, default false
     // NativeFormat, Cups: Supported, default false
     // NativeFormat, Win: Part Supported if valid DevMode, can set but always returns false
-    // NativeFormat, Mac: Unsupported, always false
+    // NativeFormat, Mac: Supported, default true
 
     QPrinter pdf;
     pdf.setOutputFormat(QPrinter::PdfFormat);
@@ -896,14 +896,19 @@ void tst_QPrinter::collateCopies()
     QPrinter native;
     if (native.outputFormat() == QPrinter::NativeFormat) {
         // Test default
+#ifdef Q_OS_MAC
+        QCOMPARE(native.collateCopies(), true);
+#else
         QCOMPARE(native.collateCopies(), false);
+#endif // Q_OS_WIN
+
 
         // Test set/get
         bool expected = true;
         native.setCollateCopies(expected);
-#if defined Q_OS_MAC || defined Q_OS_WIN
+#ifdef Q_OS_WIN
         expected = false;
-#endif // Q_OS_MAC
+#endif // Q_OS_WIN
         QCOMPARE(native.collateCopies(), expected);
 
         // Test value preservation
