@@ -564,20 +564,52 @@ void QMacPrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &va
         return;
 
     switch (key) {
-    case PPK_CollateCopies:
+
+    // The following keys are properties or derived values and so cannot be set
+    case PPK_PageRect:
         break;
+    case PPK_PaperRect:
+        break;
+    case PPK_PaperSources:
+        break;
+    case PPK_SupportsMultipleCopies:
+        break;
+    case PPK_SupportedResolutions:
+        break;
+
+    // The following keys are settings that are unsupported by the Mac PrintEngine
     case PPK_ColorMode:
         break;
+    case PPK_CollateCopies:
+        // TODO Add support using PMSetCollate / PMGetCollate
+        break;
     case PPK_Creator:
+        // TODO Add value preservation support by using local variable
+        break;
+    case PPK_CustomBase:
         break;
     case PPK_DocumentName:
+        // TODO Add support using PMPrintSettingsSetJobName / PMPrintSettingsGetJobName
+        break;
+    case PPK_Duplex:
+        // TODO Add support using PMSetDuplex / PMGetDuplex
+        break;
+    case PPK_FontEmbedding:
         break;
     case PPK_PageOrder:
+        // TODO Check if can be supported via Cups Options
         break;
     case PPK_PaperSource:
+        // TODO Check if can be supported via Cups Options
+        break;
+    case PPK_PrinterProgram:
         break;
     case PPK_SelectionOption:
         break;
+    case PPK_WindowsPageSize:
+        break;
+
+    // The following keys are properties and settings that are supported by the Mac PrintEngine
     case PPK_Resolution:  {
         PMPrinter printer;
         UInt32 count;
@@ -682,9 +714,6 @@ void QMacPrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &va
         d->hasCustomPageMargins = true;
         break;
     }
-
-    default:
-        break;
     }
 }
 
@@ -697,16 +726,59 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
         return *d->valueCache.find(key);
 
     switch (key) {
+
+    // The following keys are settings that are unsupported by the Mac PrintEngine
+    // Return sensible default values to ensure consistent behavior across platforms
     case PPK_CollateCopies:
+        // TODO Add support using PMSetCollate / PMGetCollate
         ret = false;
         break;
     case PPK_ColorMode:
         ret = QPrinter::Color;
         break;
     case PPK_Creator:
+        ret = QString();
+        break;
+    case PPK_CustomBase:
+        // Special case, leave null
         break;
     case PPK_DocumentName:
+        // TODO Add support using PMPrintSettingsSetJobName / PMPrintSettingsGetJobName
+        ret = QString();
         break;
+    case PPK_Duplex:
+        // TODO Add support using PMSetDuplex / PMGetDuplex
+        ret = QPrinter::DuplexNone;
+        break;
+    case PPK_FontEmbedding:
+        ret = false;
+        break;
+    case PPK_PageOrder:
+        // TODO Check if can be supported via Cups Options
+        ret = QPrinter::FirstPageFirst;
+        break;
+    case PPK_PaperSource:
+        // TODO Check if can be supported via Cups Options
+        ret = QPrinter::Auto;
+        break;
+    case PPK_PaperSources: {
+        // TODO Check if can be supported via Cups Options
+        QList<QVariant> out;
+        out << int(QPrinter::Auto);
+        ret = out;
+        break;
+        }
+    case PPK_PrinterProgram:
+        ret = QString();
+        break;
+    case PPK_SelectionOption:
+        ret = QString();
+        break;
+    case PPK_WindowsPageSize:
+        // Special case, leave null
+        break;
+
+    // The following keys are properties and settings that are supported by the Mac PrintEngine
     case PPK_FullPage:
         ret = d->fullPage;
         break;
@@ -729,10 +801,6 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
         break;
     case PPK_OutputFileName:
         ret = d->outputFilename;
-        break;
-    case PPK_PageOrder:
-        break;
-    case PPK_PaperSource:
         break;
     case PPK_PageRect: {
         // PageRect is returned in device pixels
@@ -828,8 +896,6 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
         ret = margins;
         break;
     }
-    default:
-        break;
     }
     return ret;
 }

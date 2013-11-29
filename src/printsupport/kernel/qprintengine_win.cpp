@@ -1270,6 +1270,38 @@ void QWin32PrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &
 {
     Q_D(QWin32PrintEngine);
     switch (key) {
+
+    // The following keys are properties or derived values and so cannot be set
+    case PPK_PageRect:
+        break;
+    case PPK_PaperRect:
+        break;
+    case PPK_PaperSources:
+        break;
+    case PPK_SupportsMultipleCopies:
+        break;
+    case PPK_SupportedResolutions:
+        break;
+
+    // The following keys are settings that are unsupported by the Windows PrintEngine
+    case PPK_Creator:
+        // TODO Add value preservation support by using local variable
+        break;
+    case PPK_CustomBase:
+        break;
+    case PPK_Duplex:
+        // TODO Add support using DEVMODE.dmDuplex
+        break;
+    case PPK_FontEmbedding:
+        break;
+    case PPK_PageOrder:
+        break;
+    case PPK_PrinterProgram:
+        break;
+    case PPK_SelectionOption:
+        break;
+
+    // The following keys are properties and settings that are supported by the Windows PrintEngine
     case PPK_CollateCopies:
         {
             if (!d->devMode)
@@ -1286,10 +1318,6 @@ void QWin32PrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &
             d->devMode->dmColor = (value.toInt() == QPrinter::Color) ? DMCOLOR_COLOR : DMCOLOR_MONOCHROME;
             d->doReinit();
         }
-        break;
-
-    case PPK_Creator:
-
         break;
 
     case PPK_DocumentName:
@@ -1418,15 +1446,6 @@ void QWin32PrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &
         }
         break;
 
-    case PPK_SelectionOption:
-
-        break;
-
-    case PPK_SupportedResolutions:
-
-        break;
-
-
     case PPK_WindowsPageSize:
         if (!d->devMode)
             break;
@@ -1469,9 +1488,6 @@ void QWin32PrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &
         d->setPageMargins(left, top, right, bottom);
         break;
     }
-    default:
-        // Do nothing
-        break;
     }
 }
 
@@ -1481,10 +1497,33 @@ QVariant QWin32PrintEngine::property(PrintEnginePropertyKey key) const
     QVariant value;
     switch (key) {
 
+    // The following keys are settings that are unsupported by the Windows PrintEngine
+    // Return sensible default values to ensure consistent behavior across platforms
     case PPK_CollateCopies:
+        // TODO Add support using DEVMODE.dmCollate to match setting
         value = false;
         break;
+    case PPK_Creator:
+        value = QString();
+        break;
+    case PPK_Duplex:
+        // TODO Add support using DEVMODE.dmDuplex
+        value = QPrinter::DuplexNone;
+        break;
+    case PPK_FontEmbedding:
+        value = false;
+        break;
+    case PPK_PageOrder:
+        value = QPrinter::FirstPageFirst;
+        break;
+    case PPK_PrinterProgram:
+        value = QString();
+        break;
+    case PPK_SelectionOption:
+        value = QString();
+        break;
 
+    // The following keys are properties and settings that are supported by the Windows PrintEngine
     case PPK_ColorMode:
         {
             if (!d->devMode) {
@@ -1676,9 +1715,6 @@ QVariant QWin32PrintEngine::property(PrintEnginePropertyKey key) const
         value = margins;
         break;
     }
-    default:
-        // Do nothing
-        break;
     }
     return value;
 }
