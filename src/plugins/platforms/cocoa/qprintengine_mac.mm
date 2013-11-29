@@ -588,9 +588,6 @@ void QMacPrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &va
         break;
     case PPK_CustomBase:
         break;
-    case PPK_DocumentName:
-        // TODO Add support using PMPrintSettingsSetJobName / PMPrintSettingsGetJobName
-        break;
     case PPK_Duplex:
         // TODO Add support using PMSetDuplex / PMGetDuplex
         break;
@@ -638,7 +635,9 @@ void QMacPrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &va
         PMSessionValidatePageFormat(d->session(), d->format(), kPMDontWantBoolean);
         break;
     }
-
+    case PPK_DocumentName:
+        PMPrintSettingsSetJobName(d->settings(), QCFString(value.toString()));
+        break;
     case PPK_FullPage:
         d->fullPage = value.toBool();
         break;
@@ -742,10 +741,6 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
     case PPK_CustomBase:
         // Special case, leave null
         break;
-    case PPK_DocumentName:
-        // TODO Add support using PMPrintSettingsSetJobName / PMPrintSettingsGetJobName
-        ret = QString();
-        break;
     case PPK_Duplex:
         // TODO Add support using PMSetDuplex / PMGetDuplex
         ret = QPrinter::DuplexNone;
@@ -779,6 +774,12 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
         break;
 
     // The following keys are properties and settings that are supported by the Mac PrintEngine
+    case PPK_DocumentName: {
+        CFStringRef name;
+        PMPrintSettingsGetJobName(d->settings(), &name);
+        ret = QCFString::toQString(name);
+        break;
+    }
     case PPK_FullPage:
         ret = d->fullPage;
         break;

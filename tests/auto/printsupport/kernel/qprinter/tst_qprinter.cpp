@@ -1074,9 +1074,6 @@ void tst_QPrinter::docName()
         // Test set/get
         QString expected = QStringLiteral("Test Name");
         native.setDocName(expected);
-#ifdef Q_OS_MAC
-        expected.clear();
-#endif // Q_OS_MAC
         QCOMPARE(native.docName(), expected);
 
         // Test value preservation
