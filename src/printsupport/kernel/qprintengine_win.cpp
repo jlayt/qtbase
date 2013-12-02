@@ -992,9 +992,6 @@ void QWin32PrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &
     // The following keys are settings that are unsupported by the Windows PrintEngine
     case PPK_CustomBase:
         break;
-    case PPK_Duplex:
-        // TODO Add support using DEVMODE.dmDuplex
-        break;
     case PPK_FontEmbedding:
         break;
     case PPK_PageOrder:
@@ -1034,6 +1031,33 @@ void QWin32PrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &
         }
         d->docName = value.toString();
         break;
+
+    case PPK_Duplex: {
+        if (!d->devMode)
+            break;
+        switch (value.toInt()) {
+        case QPrinter::DuplexNone:
+            d->devMode->dmDuplex = DMDUP_SIMPLEX;
+            break;
+        case QPrinter::DuplexAuto:
+            if (d->m_pageLayout.orientation() == QPageLayout::Landscape)
+                d->devMode->dmDuplex = DMDUP_HORIZONTAL;
+            else
+                d->devMode->dmDuplex = DMDUP_VERTICAL;
+            break;
+        case QPrinter::DuplexLongSide:
+            d->devMode->dmDuplex = DMDUP_VERTICAL;
+            break;
+        case QPrinter::DuplexShortSide:
+            d->devMode->dmDuplex = DMDUP_HORIZONTAL;
+            break;
+        default:
+            // Don't change
+            break;
+        }
+        d->doReinit();
+        break;
+    }
 
     case PPK_FullPage:
         if (value.toBool())
@@ -1290,6 +1314,26 @@ QVariant QWin32PrintEngine::property(PrintEnginePropertyKey key) const
     case PPK_DocumentName:
         value = d->docName;
         break;
+
+    case PPK_Duplex: {
+        if (!d->devMode) {
+            value = QPrinter::DuplexNone;
+        } else {
+            switch (d->devMode->dmDuplex) {
+            case DMDUP_VERTICAL:
+                value = QPrinter::DuplexLongSide;
+                break;
+            case DMDUP_HORIZONTAL:
+                value = QPrinter::DuplexShortSide;
+                break;
+            case DMDUP_SIMPLEX:
+            default:
+                value = QPrinter::DuplexNone;
+                break;
+            }
+        }
+        break;
+    }
 
     case PPK_FullPage:
         value =  d->m_pageLayout.mode() == QPageLayout::FullPageMode;

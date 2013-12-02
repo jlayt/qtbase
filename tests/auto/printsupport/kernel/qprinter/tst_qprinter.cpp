@@ -1025,9 +1025,9 @@ void tst_QPrinter::duplex()
 {
     // duplex()) / setDuplex() / PPK_Duplex
     // PdfFormat: Supported, default QPrinter::DuplexNone
-    // NativeFormat, Cups: Supported, default QPrinter::DuplexNone
-    // NativeFormat, Win: Unsupported, always QPrinter::DuplexNone
-    // NativeFormat, Mac: Unsupported, always QPrinter::DuplexNone
+    // NativeFormat, Cups: Supported, default to printer default
+    // NativeFormat, Win: Supported, default to printer default
+    // NativeFormat, Mac: Supported, default to printer default
 
     QPrinter pdf;
     pdf.setOutputFormat(QPrinter::PdfFormat);
@@ -1044,9 +1044,6 @@ void tst_QPrinter::duplex()
         // Test set/get
         QPrinter::DuplexMode expected = QPrinter::DuplexAuto;
         native.setDuplex(expected);
-#if defined Q_OS_MAC || defined Q_OS_WIN
-        expected = QPrinter::DuplexNone;
-#endif // Q_OS_MAC || Q_OS_WIN
         QCOMPARE(native.duplex(), expected);
 
         // Test value preservation
@@ -1062,9 +1059,9 @@ void tst_QPrinter::duplex()
 void tst_QPrinter::doubleSidedPrinting()
 {
     // PdfFormat: Supported, default false
-    // NativeFormat, Cups: Supported, default false
-    // NativeFormat, Win: Unsupported, always false
-    // NativeFormat, Mac: Unsupported, always false
+    // NativeFormat, Cups: Supported, default to printer default
+    // NativeFormat, Win: Supported, default to printer default
+    // NativeFormat, Mac: Supported, default to printer default
 
     QPrinter pdf;
     pdf.setOutputFormat(QPrinter::PdfFormat);
@@ -1081,9 +1078,6 @@ void tst_QPrinter::doubleSidedPrinting()
         // Test set/get
         bool expected = true;
         native.setDoubleSidedPrinting(expected);
-#if defined Q_OS_MAC || defined Q_OS_WIN
-        expected = false;
-#endif // Q_OS_MAC || Q_OS_WIN
         QCOMPARE(native.doubleSidedPrinting(), expected);
 
         // Test value preservation
