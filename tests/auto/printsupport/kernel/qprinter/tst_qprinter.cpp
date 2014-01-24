@@ -1158,41 +1158,6 @@ void tst_QPrinter::testPdfTitle()
     QVERIFY(file.readAll().contains(QByteArray(expected, 26)));
 }
 
-void tst_QPrinter::testPageMetrics_data()
-{
-    QTest::addColumn<int>("pageSize");
-    QTest::addColumn<int>("widthMM");
-    QTest::addColumn<int>("heightMM");
-    QTest::addColumn<float>("widthMMf");
-    QTest::addColumn<float>("heightMMf");
-
-    QTest::newRow("A4")     << int(QPrinter::A4)     << 210 << 297 << 210.0f << 297.0f;
-    QTest::newRow("A5")     << int(QPrinter::A5)     << 148 << 210 << 148.0f << 210.0f;
-    QTest::newRow("Letter") << int(QPrinter::Letter) << 216 << 279 << 215.9f << 279.4f;
-}
-
-void tst_QPrinter::testPageMetrics()
-{
-    QFETCH(int, pageSize);
-    QFETCH(int, widthMM);
-    QFETCH(int, heightMM);
-    QFETCH(float, widthMMf);
-    QFETCH(float, heightMMf);
-
-    QPrinter printer(QPrinter::HighResolution);
-    printer.setFullPage(true);
-    printer.setPageSize(QPrinter::PageSize(pageSize));
-
-    if (printer.pageSize() != pageSize) {
-        QSKIP("Current page size is not supported on this printer");
-        return;
-    }
-
-    QCOMPARE(printer.widthMM(), int(widthMM));
-    QCOMPARE(printer.heightMM(), int(heightMM));
-    QCOMPARE(printer.pageSizeMM(), QSizeF(widthMMf, heightMMf));
-}
-
 void tst_QPrinter::customPaperNameSettingBySize()
 {
 #ifndef Q_OS_WIN
@@ -1253,6 +1218,205 @@ void tst_QPrinter::customPaperNameSettingByName()
         QVERIFY2(sqrt(pow(sizes.at(i).second.width() - paperSize.width(), 2.0) + pow(sizes.at(i).second.height() - paperSize.height(), 2.0)) < 0.01,
              msgSizeMismatch(sizes.at(i).second, paperSize));
     }
+}
+
+void tst_QPrinter::testPageMetrics_data()
+{
+    QTest::addColumn<int>("outputFormat");
+    QTest::addColumn<int>("pageSize");
+    QTest::addColumn<QSizeF>("sizefMM");
+    QTest::addColumn<int>("widthMM");
+    QTest::addColumn<int>("heightMM");
+    QTest::addColumn<qreal>("widthfMM");
+    QTest::addColumn<qreal>("heightfMM");
+    QTest::addColumn<int>("marginMM");
+    QTest::addColumn<qreal>("marginfMM");
+
+    QTest::newRow("PDF A4")           << int(QPrinter::PdfFormat)    << int(QPrinter::A4) << QSizeF(210.0, 297.0) << 210 << 297 << 210.0 << 297.0 << 20 << 20.0;
+    QTest::newRow("Native A4")        << int(QPrinter::NativeFormat) << int(QPrinter::A4) << QSizeF(210.0, 297.0) << 210 << 297 << 210.0 << 297.0 << 20 << 20.0;
+    QTest::newRow("PDF Portrait")     << int(QPrinter::PdfFormat)    << -1                << QSizeF(345.0, 678.0) << 345 << 678 << 345.0 << 678.0 << 20 << 20.0;
+    QTest::newRow("PDF Landscape")    << int(QPrinter::PdfFormat)    << -1                << QSizeF(678.0, 345.0) << 678 << 345 << 678.0 << 345.0 << 20 << 20.0;
+    QTest::newRow("Native Portrait")  << int(QPrinter::NativeFormat) << -1                << QSizeF(345.0, 678.0) << 345 << 678 << 345.0 << 678.0 << 20 << 20.0;
+    QTest::newRow("Native Landscape") << int(QPrinter::NativeFormat) << -1                << QSizeF(678.0, 345.0) << 678 << 345 << 678.0 << 345.0 << 20 << 20.0;
+}
+
+// Test relation of page size and orientation
+void tst_QPrinter::testPageMetrics()
+{
+    QFETCH(int, outputFormat);
+    QFETCH(int, pageSize);
+    QFETCH(QSizeF, sizefMM);
+    QFETCH(int, widthMM);
+    QFETCH(int, heightMM);
+    QFETCH(qreal, widthfMM);
+    QFETCH(qreal, heightfMM);
+    QFETCH(int, marginMM);
+    QFETCH(qreal, marginfMM);
+
+    QPrinter printer;
+    printer.setOutputFormat(QPrinter::OutputFormat(outputFormat));
+    if (printer.outputFormat() != QPrinter::OutputFormat(outputFormat))
+        QSKIP("Please install a native printer to run this test");
+    QCOMPARE(printer.outputFormat(), QPrinter::OutputFormat(outputFormat));
+
+    // Setup the given margins
+    QPrinter::Margins margins;
+    margins.left = marginfMM;
+    margins.right = marginfMM;
+    margins.top = marginfMM;
+    margins.bottom = marginfMM;
+    printer.setMargins(margins);
+    QCOMPARE(printer.orientation(), QPrinter::Portrait);
+    QCOMPARE(printer.margins().left, marginfMM);
+    QCOMPARE(printer.margins().right, marginfMM);
+    QCOMPARE(printer.margins().top, marginfMM);
+    QCOMPARE(printer.margins().bottom, marginfMM);
+
+
+    // Set the given size, in Portrait mode
+    if (pageSize < 0) {
+        printer.setPageSizeMM(sizefMM);
+        QCOMPARE(printer.pageSize(), QPrinter::Custom);
+    } else {
+        printer.setPageSize(QPrinter::PageSize(pageSize));
+        QCOMPARE(printer.pageSize(), QPrinter::PageSize(pageSize));
+    }
+    QCOMPARE(printer.orientation(), QPrinter::Portrait);
+
+    // QPagedPaintDevice::pageSizeMM() always returns Portrait
+    QCOMPARE(printer.pageSizeMM(), sizefMM);
+
+    // QPrinter::paperSize() always returns set orientation
+    QCOMPARE(printer.paperSize(QPrinter::Millimeter), sizefMM);
+
+    // QPagedPaintDevice::widthMM() and heightMM() are paint metrics and always return set orientation
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(printer.widthMM(), widthMM - marginMM - marginMM);
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(printer.heightMM(), heightMM - marginMM - marginMM);
+
+    // QPrinter::paperRect() always returns set orientation
+    QEXPECT_FAIL("", "Rect calculation lacks required precision", Continue);
+    QCOMPARE(printer.paperRect(QPrinter::Millimeter), QRectF(0, 0, widthfMM, heightfMM));
+    QCOMPARE(qRound(printer.paperRect(QPrinter::Millimeter).width()), widthMM);
+    QCOMPARE(qRound(printer.paperRect(QPrinter::Millimeter).height()), heightMM);
+
+    // QPrinter::pageRect() always returns set orientation
+    QEXPECT_FAIL("", "Rect calculation lacks required precision", Continue);
+    QCOMPARE(printer.pageRect(QPrinter::Millimeter), QRectF(marginfMM, marginfMM, widthfMM - marginfMM - marginfMM, heightfMM - marginfMM - marginfMM));
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(qRound(printer.pageRect(QPrinter::Millimeter).width()), widthMM - marginMM - marginMM);
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(qRound(printer.pageRect(QPrinter::Millimeter).height()), heightMM - marginMM - marginMM);
+
+
+    // Now switch to Landscape mode, size should be unchanged, but rect and metrics should change
+    printer.setOrientation(QPrinter::Landscape);
+    if (pageSize < 0) {
+        QCOMPARE(printer.pageSize(), QPrinter::Custom);
+    } else {
+        QCOMPARE(printer.pageSize(), QPrinter::PageSize(pageSize));
+    }
+    QCOMPARE(printer.orientation(), QPrinter::Landscape);
+
+    // QPagedPaintDevice::pageSizeMM() always returns Portrait
+    QCOMPARE(printer.pageSizeMM(), sizefMM);
+
+    // QPrinter::paperSize() always returns set orientation
+    QCOMPARE(printer.paperSize(QPrinter::Millimeter), sizefMM.transposed());
+
+    // QPagedPaintDevice::widthMM() and heightMM() are paint metrics and always return set orientation
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(printer.widthMM(), heightMM - marginMM - marginMM);
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(printer.heightMM(), widthMM - marginMM - marginMM);
+
+    // QPrinter::paperRect() always returns set orientation
+    QEXPECT_FAIL("", "Rect calculation lacks required precision", Continue);
+    QCOMPARE(printer.paperRect(QPrinter::Millimeter), QRectF(0, 0, heightfMM, widthfMM));
+    QCOMPARE(qRound(printer.paperRect(QPrinter::Millimeter).width()), heightMM);
+    QCOMPARE(qRound(printer.paperRect(QPrinter::Millimeter).height()), widthMM);
+
+    // QPrinter::pageRect() always returns set orientation
+    QEXPECT_FAIL("", "Rect calculation lacks required precision", Continue);
+    QCOMPARE(printer.pageRect(QPrinter::Millimeter), QRectF(marginfMM, marginfMM, heightfMM - marginfMM - marginfMM, widthfMM - marginfMM - marginfMM));
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(qRound(printer.pageRect(QPrinter::Millimeter).width()), heightMM - marginMM - marginMM);
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(qRound(printer.pageRect(QPrinter::Millimeter).height()), widthMM - marginMM - marginMM);
+
+
+    // Now while in Landscape mode, set the size again, results should be the same
+    if (pageSize < 0) {
+        printer.setPageSizeMM(sizefMM);
+        QCOMPARE(printer.pageSize(), QPrinter::Custom);
+    } else {
+        printer.setPageSize(QPrinter::PageSize(pageSize));
+        QCOMPARE(printer.pageSize(), QPrinter::PageSize(pageSize));
+    }
+    QCOMPARE(printer.orientation(), QPrinter::Landscape);
+
+    // QPagedPaintDevice::pageSizeMM() always returns Portrait
+    QCOMPARE(printer.pageSizeMM(), sizefMM);
+
+    // QPrinter::paperSize() always returns set orientation
+    QCOMPARE(printer.paperSize(QPrinter::Millimeter), sizefMM.transposed());
+
+    // QPagedPaintDevice::widthMM() and heightMM() are paint metrics and always return set orientation
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(printer.widthMM(), heightMM - marginMM - marginMM);
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(printer.heightMM(), widthMM - marginMM - marginMM);
+
+    // QPrinter::paperRect() always returns set orientation
+    QEXPECT_FAIL("", "Rect calculation lacks required precision", Continue);
+    QCOMPARE(printer.paperRect(QPrinter::Millimeter), QRectF(0, 0, heightfMM, widthfMM));
+    QCOMPARE(qRound(printer.paperRect(QPrinter::Millimeter).width()), heightMM);
+    QCOMPARE(qRound(printer.paperRect(QPrinter::Millimeter).height()), widthMM);
+
+    // QPrinter::pageRect() always returns set orientation
+    QEXPECT_FAIL("", "Rect calculation lacks required precision", Continue);
+    QCOMPARE(printer.pageRect(QPrinter::Millimeter), QRectF(marginfMM, marginfMM, heightfMM - marginfMM - marginfMM, widthfMM - marginfMM - marginfMM));
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(qRound(printer.pageRect(QPrinter::Millimeter).width()), heightMM - marginMM - marginMM);
+#if !defined(Q_OS_MAC) && defined(Q_OS_UNIX) && !defined(QT_NO_CUPS)
+    if (outputFormat == QPrinter::NativeFormat && pageSize > -1)
+        QEXPECT_FAIL("", "CUPS margins calculated wrong", Continue);
+#endif
+    QCOMPARE(qRound(printer.pageRect(QPrinter::Millimeter).height()), widthMM - marginMM - marginMM);
 }
 
 #endif // QT_NO_PRINTER

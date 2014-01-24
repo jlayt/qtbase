@@ -182,6 +182,8 @@ void QMacPrintEnginePrivate::setPaperSize(QPrinter::PaperSize ps)
             PMPageFormat tmp;
             PMCreatePageFormatWithPMPaper(&tmp, customPaper);
             PMCopyPageFormat(tmp, format());
+            // reset the orientation and resolution as they are lost in the copy.
+            q->setProperty(QPrintEngine::PPK_Orientation, orient);
             if (PMSessionValidatePageFormat(session(), format(), kPMDontWantBoolean) != noErr) {
                 // Don't know, warn for the moment.
                 qWarning("QMacPrintEngine, problem setting paper name");
@@ -291,69 +293,16 @@ bool QMacPrintEngine::abort()
     return ret;
 }
 
-static inline int qt_get_PDMWidth(PMPageFormat pformat, bool fullPage,
-                                  const PMResolution &resolution)
-{
-    int val = 0;
-    PMRect r;
-    qreal hRatio = resolution.hRes / 72;
-    if (fullPage) {
-        if (PMGetAdjustedPaperRect(pformat, &r) == noErr)
-            val = qRound((r.right - r.left) * hRatio);
-    } else {
-        if (PMGetAdjustedPageRect(pformat, &r) == noErr)
-            val = qRound((r.right - r.left) * hRatio);
-    }
-    return val;
-}
-
-static inline int qt_get_PDMHeight(PMPageFormat pformat, bool fullPage,
-                                   const PMResolution &resolution)
-{
-    int val = 0;
-    PMRect r;
-    qreal vRatio = resolution.vRes / 72;
-    if (fullPage) {
-        if (PMGetAdjustedPaperRect(pformat, &r) == noErr)
-            val = qRound((r.bottom - r.top) * vRatio);
-    } else {
-        if (PMGetAdjustedPageRect(pformat, &r) == noErr)
-            val = qRound((r.bottom - r.top) * vRatio);
-    }
-    return val;
-}
-
-
 int QMacPrintEngine::metric(QPaintDevice::PaintDeviceMetric m) const
 {
     Q_D(const QMacPrintEngine);
     int val = 1;
     switch (m) {
     case QPaintDevice::PdmWidth:
-        if (d->hasCustomPaperSize) {
-            val = qRound(d->customSize.width());
-            if (d->hasCustomPageMargins) {
-                val -= qRound(d->leftMargin + d->rightMargin);
-            } else {
-                QList<QVariant> margins = property(QPrintEngine::PPK_PageMargins).toList();
-                val -= qRound(margins.at(0).toDouble() + margins.at(2).toDouble());
-            }
-        } else {
-            val = qt_get_PDMWidth(d->format(), property(PPK_FullPage).toBool(), d->resolution);
-        }
+        val = property(QPrintEngine::PPK_PageRect).toRect().width();
         break;
     case QPaintDevice::PdmHeight:
-        if (d->hasCustomPaperSize) {
-            val = qRound(d->customSize.height());
-            if (d->hasCustomPageMargins) {
-                val -= qRound(d->topMargin + d->bottomMargin);
-            } else {
-                QList<QVariant> margins = property(QPrintEngine::PPK_PageMargins).toList();
-                val -= qRound(margins.at(1).toDouble() + margins.at(3).toDouble());
-            }
-        } else {
-            val = qt_get_PDMHeight(d->format(), property(PPK_FullPage).toBool(), d->resolution);
-        }
+        val = property(QPrintEngine::PPK_PageRect).toRect().height();
         break;
     case QPaintDevice::PdmWidthMM:
         val = metric(QPaintDevice::PdmWidth);
@@ -762,6 +711,8 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
     case PPK_PaperSource:
         break;
     case PPK_PageRect: {
+        if (d->fullPage)
+            return property(PPK_PaperRect);
         // PageRect is returned in device pixels
         QRect r;
         PMRect macrect, macpaper;
@@ -773,6 +724,7 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
                 r.adjust(qRound(d->leftMargin * hRatio), qRound(d->topMargin * vRatio),
                          -qRound(d->rightMargin * hRatio), -qRound(d->bottomMargin * vRatio));
             } else {
+                // Get the default printable paper margins
                 QList<QVariant> margins = property(QPrintEngine::PPK_PageMargins).toList();
                 r.adjust(qRound(margins.at(0).toDouble() * hRatio),
                          qRound(margins.at(1).toDouble() * vRatio),
@@ -780,16 +732,13 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
                          -qRound(margins.at(3).toDouble()) * vRatio);
             }
         } else if (PMGetAdjustedPageRect(d->format(), &macrect) == noErr
-                   && PMGetAdjustedPaperRect(d->format(), &macpaper) == noErr)
-        {
-            if (d->fullPage || d->hasCustomPageMargins) {
+                   && PMGetAdjustedPaperRect(d->format(), &macpaper) == noErr) {
+            if (d->hasCustomPageMargins) {
                 r.setCoords(int(macpaper.left * hRatio), int(macpaper.top * vRatio),
                             int(macpaper.right * hRatio), int(macpaper.bottom * vRatio));
                 r.translate(-r.x(), -r.y());
-                if (d->hasCustomPageMargins) {
-                    r.adjust(qRound(d->leftMargin * hRatio), qRound(d->topMargin * vRatio),
-                             -qRound(d->rightMargin * hRatio), -qRound(d->bottomMargin * vRatio));
-                }
+                r.adjust(qRound(d->leftMargin * hRatio), qRound(d->topMargin * vRatio),
+                         -qRound(d->rightMargin * hRatio), -qRound(d->bottomMargin * vRatio));
             } else {
                 r.setCoords(int(macrect.left * hRatio), int(macrect.top * vRatio),
                             int(macrect.right * hRatio), int(macrect.bottom * vRatio));

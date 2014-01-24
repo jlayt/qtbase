@@ -294,7 +294,10 @@ QVariant QPdfPrintEngine::property(PrintEnginePropertyKey key) const
         ret = d->duplex;
         break;
     case PPK_CustomPaperSize:
-        ret = d->customPaperSize;
+        if (d->landscape)
+            ret = d->customPaperSize.transposed();
+        else
+            ret = d->customPaperSize;
         break;
     case PPK_PageMargins:
     {
@@ -371,7 +374,8 @@ QPdfPrintEnginePrivate::~QPdfPrintEnginePrivate()
 {
 }
 
-
+// Update the paperSize variable in the QPdfEnginePrivate base class, and
+// the local customPaperSize, which are always stored in portrait orientation
 void QPdfPrintEnginePrivate::updatePaperSize()
 {
     if (printerPaperSize == QPrinter::Custom) {
@@ -379,6 +383,7 @@ void QPdfPrintEnginePrivate::updatePaperSize()
     } else {
         QPdf::PaperSize s = QPdf::paperSize(printerPaperSize);
         paperSize = QSize(s.width, s.height);
+        customPaperSize = paperSize;
     }
 }
 

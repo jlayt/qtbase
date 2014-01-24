@@ -150,7 +150,7 @@ private:
     QPrinter::PaperSource paperSource;
 
     QPrinter::PaperSize printerPaperSize;
-    QSizeF customPaperSize; // in postscript points
+    QSizeF customPaperSize; // in postscript points, in landscape orientation
     bool pageMarginsSet;
     int fd;
 };

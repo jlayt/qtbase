@@ -1029,6 +1029,9 @@ void QPrinter::setPageSize(PageSize newPageSize)
 
     Sets the paper size based on \a paperSize in \a unit.
 
+    Note that the paper size is retruned in a portrait layout, regardless of
+    what the current printer orientation is set to.
+
     \sa paperSize()
 */
 
@@ -1041,8 +1044,12 @@ void QPrinter::setPaperSize(const QSizeF &paperSize, QPrinter::Unit unit)
 }
 
 /*!
-  \reimp
-  */
+    \reimp
+
+    Note that the page size is returned in a portrait layout, regardless of
+    what the current printer orientation is set to.
+*/
+
 void QPrinter::setPageSizeMM(const QSizeF &size)
 {
     Q_D(QPrinter);
@@ -1058,6 +1065,8 @@ void QPrinter::setPageSizeMM(const QSizeF &size)
     \since 4.4
 
     Returns the paper size in \a unit.
+
+    Note that the returned size reflects the paper orientation.
 
     \sa setPaperSize()
 */
