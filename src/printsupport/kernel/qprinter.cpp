@@ -595,7 +595,7 @@ void QPrinterPrivate::setProperty(QPrintEngine::PrintEnginePropertyKey key, cons
 */
 
 
-/*
+/*!
   \enum QPrinter::PrintRange
 
   This enum is used to specify which print range the application
