@@ -259,7 +259,7 @@ void QPrinterPrivate::setProperty(QPrintEngine::PrintEnginePropertyKey key, cons
   \li setPaperSize() tells QPrinter what paper size to expect from the
   printer.
   \li setResolution() tells QPrinter what resolution you wish the
-  printer to provide, in dots per inch (DPI).
+  paint device to provide, in dots per inch (DPI).
   \li setFullPage() tells QPrinter whether you want to deal with the
   full page or just with the part the printer can draw on.
   \li setCopyCount() tells QPrinter how many copies of the document
@@ -309,10 +309,10 @@ void QPrinterPrivate::setProperty(QPrintEngine::PrintEnginePropertyKey key, cons
 /*!
     \enum QPrinter::PrinterMode
 
-    This enum describes the mode the printer should work in. It
-    basically presets a certain resolution and working mode.
+    This enum describes the mode the QPrinter should work in. It
+    basically presets a certain paint device resolution and working mode.
 
-    \value ScreenResolution Sets the resolution of the print device to
+    \value ScreenResolution Sets the resolution of the paint device to
     the screen resolution. This has the big advantage that the results
     obtained when painting on the printer will match more or less
     exactly the visible output on the screen. It is the easiest to
@@ -322,14 +322,14 @@ void QPrinterPrivate::setProperty(QPrintEngine::PrintEnginePropertyKey key, cons
     for drafts.
 
     \value PrinterResolution This value is deprecated. It is
-    equivalent to ScreenResolution on Unix and HighResolution on
-    Windows and Mac. Due to the difference between ScreenResolution
+    equivalent to ScreenResolution on Unix and PDF, and HighResolution
+    on Windows and Mac. Due to the difference between ScreenResolution
     and HighResolution, use of this value may lead to non-portable
     printer code.
 
-    \value HighResolution On Windows, sets the printer resolution to that
-    defined for the printer in use. For PDF printing, sets the
-    resolution of the PDF driver to 1200 dpi.
+    \value HighResolution Sets the resolution of the paint device to
+    the current physical resolution of the current printer. For PDF
+    printing, sets the painting resolution to 1200 dpi.
 
     \note When rendering text on a QPrinter device, it is important
     to realize that the size of text, when specified in points, is
@@ -1561,16 +1561,20 @@ bool QPrinter::fullPage() const
 
 
 /*!
-  Requests that the printer prints at \a dpi or as near to \a dpi as
-  possible.
+    Sets the resolution of the paint device to \a dpi.
 
-  This setting affects the coordinate system as returned by, for
-  example QPainter::viewport().
+    Setting the paint device resolution is independent of the physical printer
+    resolution, you may set it to any value you wish, but if it is different to
+    the physical printer resolution then your painted output may be scaled to
+    match.
 
-  This function must be called before QPainter::begin() to have an effect on
-  all platforms.
+    This setting affects the coordinate system, for example as returned by
+    QPainter::viewport().
 
-  \sa resolution(), setPaperSize()
+    This function must be called before QPainter::begin() to have an effect on
+    all platforms.
+
+    \sa resolution(), PrinterMode
 */
 
 void QPrinter::setResolution(int dpi)
@@ -1582,10 +1586,12 @@ void QPrinter::setResolution(int dpi)
 
 
 /*!
-  Returns the current assumed resolution of the printer, as set by
-  setResolution() or by the printer driver.
+    Returns the resolution of the paint device in DPI, either the default value
+    determined by the PrinterMode or the value set using setResolution().
 
-  \sa setResolution()
+    This is not the physical resolution of the printer.
+
+    \sa setResolution(), PrinterMode
 */
 
 int QPrinter::resolution() const
@@ -1907,12 +1913,14 @@ int QPrinter::winPageSize() const
 }
 
 /*!
-    Returns a list of the resolutions (a list of dots-per-inch
-    integers) that the printer says it supports.
+    Returns a list of the physical resolutions that the currently selected
+    printer says it supports.
 
-    For X11 where all printing is directly to PDF, this
-    function will always return a one item list containing only the
-    PDF resolution, i.e., 72 (72 dpi -- but see PrinterMode).
+    For PDF based print work flows (currently CUPS/Unix and PDF), this
+    will be a list of the default ScreenResolution and HighResolution
+    values (see PrinterMode).
+
+    \sa PrinterMode, setResolution(), resolution()
 */
 QList<int> QPrinter::supportedResolutions() const
 {
@@ -2215,12 +2223,12 @@ QPrinter::PrintRange QPrinter::printRange() const
     printer program used for printing,
 
     \value PPK_Resolution An integer describing the dots per inch for
-    this printer.
+    this paint device.
 
     \value PPK_SelectionOption
 
     \value PPK_SupportedResolutions A list of integer QVariants
-    describing the set of supported resolutions that the printer has.
+    describing the set of physical resolutions that the printer supports.
 
     \value PPK_WindowsPageSize An integer specifying a DM_PAPER entry
     on Windows.

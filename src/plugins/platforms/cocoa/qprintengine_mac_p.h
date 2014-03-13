@@ -127,7 +127,7 @@ public:
     QSharedDataPointer<QCocoaPrintDevice> m_printDevice;
     QPageLayout m_pageLayout;
     NSPrintInfo *printInfo;
-    PMResolution resolution;
+    int m_resolution;
     QString outputFilename;
     QString m_creator;
     QPaintEngine *paintEngine;
@@ -146,6 +146,8 @@ public:
     {
         return printInfo != 0;
     }
+
+    PMResolution physicalResolution() const;
 
     PMPageFormat format() const { return static_cast<PMPageFormat>([printInfo PMPageFormat]); }
     PMPrintSession session() const { return static_cast<PMPrintSession>([printInfo PMPrintSession]); }

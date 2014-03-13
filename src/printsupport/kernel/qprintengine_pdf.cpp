@@ -312,7 +312,7 @@ QVariant QPdfPrintEngine::property(PrintEnginePropertyKey key) const
         ret = d->resolution;
         break;
     case PPK_SupportedResolutions:
-        ret = QList<QVariant>() << 72;
+        ret = QList<QVariant>() << qt_defaultDpi() << 1200;
         break;
     case PPK_PaperRect:
         ret = d->m_pageLayout.fullRectPixels(d->resolution);
@@ -391,7 +391,7 @@ void QPdfPrintEnginePrivate::closePrintDevice()
 
 
 
-QPdfPrintEnginePrivate::QPdfPrintEnginePrivate(QPrinter::PrinterMode m)
+QPdfPrintEnginePrivate::QPdfPrintEnginePrivate(QPrinter::PrinterMode mode)
     : QPdfEnginePrivate(),
       duplex(QPrint::DuplexNone),
       collate(true),
@@ -400,11 +400,13 @@ QPdfPrintEnginePrivate::QPdfPrintEnginePrivate(QPrinter::PrinterMode m)
       paperSource(QPrinter::Auto),
       fd(-1)
 {
-    resolution = 72;
-    if (m == QPrinter::HighResolution)
+    switch (mode) {
+    case QPrinter::HighResolution:
         resolution = 1200;
-    else if (m == QPrinter::ScreenResolution)
+    case QPrinter::ScreenResolution:
+    case QPrinter::PrinterResolution:
         resolution = qt_defaultDpi();
+    }
 }
 
 QPdfPrintEnginePrivate::~QPdfPrintEnginePrivate()

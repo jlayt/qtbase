@@ -183,10 +183,10 @@ int QMacPrintEngine::metric(QPaintDevice::PaintDeviceMetric m) const
     int val = 1;
     switch (m) {
     case QPaintDevice::PdmWidth:
-        val = d->m_pageLayout.paintRectPixels(d->resolution.hRes).width();
+        val = d->m_pageLayout.paintRectPixels(d->m_resolution).width();
         break;
     case QPaintDevice::PdmHeight:
-        val = d->m_pageLayout.paintRectPixels(d->resolution.hRes).height();
+        val = d->m_pageLayout.paintRectPixels(d->m_resolution).height();
         break;
     case QPaintDevice::PdmWidthMM:
         val = qRound(d->m_pageLayout.paintRect(QPageLayout::Millimeter).width());
@@ -195,21 +195,16 @@ int QMacPrintEngine::metric(QPaintDevice::PaintDeviceMetric m) const
         val = qRound(d->m_pageLayout.paintRect(QPageLayout::Millimeter).height());
         break;
     case QPaintDevice::PdmPhysicalDpiX:
-    case QPaintDevice::PdmPhysicalDpiY: {
-        PMPrinter printer;
-        if (PMSessionGetCurrentPrinter(d->session(), &printer) == noErr) {
-            PMResolution resolution;
-            PMPrinterGetOutputResolution(printer, d->settings(), &resolution);
-            val = (int)resolution.vRes;
-            break;
-        }
-        //otherwise fall through
-    }
+        val = physicalResolution().hRes;
+        break;
+    case QPaintDevice::PdmPhysicalDpiY:
+        val = physicalResolution().vRes;
+        break;
     case QPaintDevice::PdmDpiY:
-        val = (int)d->resolution.vRes;
+        val = d->m_resolution;
         break;
     case QPaintDevice::PdmDpiX:
-        val = (int)d->resolution.hRes;
+        val = d->m_resolution;
         break;
     case QPaintDevice::PdmNumColors:
         val = (1 << metric(QPaintDevice::PdmDepth));
@@ -241,17 +236,15 @@ void QMacPrintEnginePrivate::initialize()
     QCocoaAutoReleasePool pool;
     printInfo = [[NSPrintInfo alloc] initWithDictionary:[NSDictionary dictionary]];
 
-    QList<int> resolutions = m_printDevice->supportedResolutions();
-    if (!resolutions.isEmpty() && mode != QPrinter::ScreenResolution) {
-        qSort(resolutions);
-        if (resolutions.count() > 1 && mode == QPrinter::HighResolution)
-            resolution.hRes = resolution.vRes = resolutions.last();
-        else
-            resolution.hRes = resolution.vRes = resolutions.first();
-        if (resolution.hRes == 0)
-            resolution.hRes = resolution.vRes = 600;
-    } else {
-        resolution.hRes = resolution.vRes = qt_defaultDpi();
+    switch (mode) {
+    case QPrinter::HighResolution:
+    case QPrinter::PrinterResolution:
+        m_resolution = physicalResolution().vRes;
+        break;
+    case QPrinter::ScreenResolution:
+    default:
+        m_resolution = qt_defaultDpi();
+        break;
     }
 
     setPageSize(m_pageLayout.pageSize());
@@ -293,8 +286,8 @@ bool QMacPrintEnginePrivate::newPage_helper()
         return false;
     }
 
-    QRect page = m_pageLayout.paintRectPixels(resolution.hRes);
-    QRect paper = m_pageLayout.fullRectPixels(resolution.hRes);
+    QRect page = m_pageLayout.paintRectPixels(m_resolution);
+    QRect paper = m_pageLayout.fullRectPixels(m_resolution);
 
     CGContextRef cgContext;
     OSStatus err = noErr;
@@ -306,9 +299,10 @@ bool QMacPrintEnginePrivate::newPage_helper()
     }
     cgEngine->d_func()->hd = cgContext;
 
-    // Set the resolution as a scaling ration of 72 (the default).
-    CGContextScaleCTM(cgContext, 72 / resolution.hRes, 72 / resolution.vRes);
+    // Set the resolution as a scaling ratio of 72 (the default).
+    CGContextScaleCTM(cgContext, 72 / m_resolution, 72 / m_resolution);
 
+    // Flip the reference coordinates
     CGContextScaleCTM(cgContext, 1, -1);
     CGContextTranslateCTM(cgContext, 0, -paper.height());
     if (m_pageLayout.mode() != QPageLayout::FullPageMode)
@@ -352,6 +346,18 @@ void QMacPrintEnginePrivate::setPageSize(const QPageSize &pageSize)
     if (PMSessionValidatePageFormat(session(), format(), kPMDontWantBoolean) != noErr)
         qWarning("QMacPrintEngine: Invalid page format");
     PMRelease(pageFormat);
+}
+
+PMResolution QMacPrintEnginePrivate::physicalResolution() const
+{
+    PMResolution physical;
+    // Default to the paint resolution in case session call fails
+    physical.hRes = m_resolution;
+    physical.vRes = m_resolution;
+    PMPrinter printer;
+    if (PMSessionGetCurrentPrinter(d->session(), &printer) == noErr)
+        PMPrinterGetOutputResolution(printer, d->settings(), &physical);
+    return physical;
 }
 
 void QMacPrintEngine::updateState(const QPaintEngineState &state)
@@ -471,26 +477,9 @@ void QMacPrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &va
         break;
 
     // The following keys are properties and settings that are supported by the Mac PrintEngine
-    case PPK_Resolution:  {
-        // TODO It appears the old code didn't actually set the resolution???  Can we delete all this???
-        int bestResolution = 0;
-        int dpi = value.toInt();
-        int bestDistance = INT_MAX;
-        foreach (int resolution, d->m_printDevice->supportedResolutions()) {
-            if (dpi == resolution) {
-                bestResolution = resolution;
-                break;
-            } else {
-                int distance = qAbs(dpi - resolution);
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    bestResolution = resolution;
-                }
-            }
-        }
-        PMSessionValidatePageFormat(d->session(), d->format(), kPMDontWantBoolean);
+    case PPK_Resolution:
+        d->m_resolution = value.toInt();
         break;
-    }
     case PPK_CollateCopies:
         PMSetCollate(d->settings(), value.toBool());
         break;
@@ -591,7 +580,7 @@ void QMacPrintEngine::setProperty(PrintEnginePropertyKey key, const QVariant &va
     }
     case PPK_QPageLayout: {
         QPageLayout pageLayout = value.value<QPageLayout>();
-        if (pageLayout.isValid() && d->m_printDevice->isValidPageLayout(pageLayout, d->resolution.hRes)) {
+        if (pageLayout.isValid() && d->m_printDevice->isValidPageLayout(pageLayout, d->m_resolution)) {
             setProperty(PPK_QPageSize, QVariant::fromValue(pageLayout.pageSize()));
             setProperty(PPK_FullPage, pageLayout.mode() == QPageLayout::FullPageMode);
             setProperty(PPK_Orientation, QVariant::fromValue(pageLayout.orientation()));
@@ -703,7 +692,7 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
         break;
     case PPK_PageRect:
         // PageRect is returned in device pixels
-        ret = d->m_pageLayout.paintRectPixels(d->resolution.hRes);
+        ret = d->m_pageLayout.paintRectPixels(d->m_resolution);
         break;
     case PPK_PageSize:
         ret = d->m_pageLayout.pageSize().id();
@@ -716,13 +705,13 @@ QVariant QMacPrintEngine::property(PrintEnginePropertyKey key) const
         break;
     case PPK_PaperRect:
         // PaperRect is returned in device pixels
-        ret = d->m_pageLayout.fullRectPixels(d->resolution.hRes);
+        ret = d->m_pageLayout.fullRectPixels(d->m_resolution);
         break;
     case PPK_PrinterName:
         return d->m_printDevice->id();
         break;
     case PPK_Resolution: {
-        ret = d->resolution.hRes;
+        ret = d->m_resolution;
         break;
     }
     case PPK_SupportedResolutions: {
