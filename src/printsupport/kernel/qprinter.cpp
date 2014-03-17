@@ -1656,9 +1656,11 @@ bool QPrinter::fontEmbeddingEnabled() const
 /*!
   \since 4.2
 
+  \obsolete Use setDuplex() instead.
+
   Enables double sided printing if \a doubleSided is true; otherwise disables it.
 
-  Currently this option is only supported on X11.
+  \sa setDuplex()
 */
 void QPrinter::setDoubleSidedPrinting(bool doubleSided)
 {
@@ -1669,9 +1671,11 @@ void QPrinter::setDoubleSidedPrinting(bool doubleSided)
 /*!
   \since 4.2
 
+  \obsolete Use duplex() instead.
+
   Returns \c true if double side printing is enabled.
 
-  Currently this option is only supported on X11.
+  \sa duplex()
 */
 bool QPrinter::doubleSidedPrinting() const
 {
@@ -1683,7 +1687,7 @@ bool QPrinter::doubleSidedPrinting() const
 
   Enables double sided printing based on the \a duplex mode.
 
-  Currently this option is only supported on X11.
+  \sa duplex()
 */
 void QPrinter::setDuplex(DuplexMode duplex)
 {
@@ -1696,7 +1700,7 @@ void QPrinter::setDuplex(DuplexMode duplex)
 
   Returns the current duplex mode.
 
-  Currently this option is only supported on X11.
+  \sa setDuplex()
 */
 QPrinter::DuplexMode QPrinter::duplex() const
 {
