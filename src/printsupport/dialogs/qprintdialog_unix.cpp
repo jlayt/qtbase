@@ -371,15 +371,46 @@ void QPrintDialogPrivate::selectPrinter(const QPrinter::OutputFormat outputForma
         else
             options.grayscale->setChecked(true);
 
+        // Always enable DuplexNone option, only enable other options if available for current printer
+        options.noDuplex->setEnabled(true);
+        options.noDuplex->setChecked(true);
+        options.duplexAuto->setEnabled(false);
+        options.duplexLong->setEnabled(false);
+        options.duplexShort->setEnabled(false);
+        if (outputFormat == QPrinter::NativeFormat) {
+            foreach (QPrint::DuplexMode mode, top->d->m_currentPrintDevice.supportedDuplexModes()) {
+                switch (mode) {
+                case QPrinter::DuplexNone:
+                    break;
+                case QPrinter::DuplexAuto:
+                    options.duplexAuto->setEnabled(true);
+                    break;
+                case QPrinter::DuplexLongSide:
+                    options.duplexLong->setEnabled(true);
+                    break;
+                case QPrinter::DuplexShortSide:
+                    options.duplexShort->setEnabled(true);
+                    break;
+                }
+            }
+        }
         switch (p->duplex()) {
         case QPrinter::DuplexNone:
-            options.noDuplex->setChecked(true); break;
-        case QPrinter::DuplexLongSide:
+            break;
         case QPrinter::DuplexAuto:
-            options.duplexLong->setChecked(true); break;
+            if (options.duplexAuto->isEnabled())
+                options.duplexAuto->setChecked(true);
+            break;
+        case QPrinter::DuplexLongSide:
+            if (options.duplexLong->isEnabled())
+                options.duplexLong->setChecked(true);
+            break;
         case QPrinter::DuplexShortSide:
-            options.duplexShort->setChecked(true); break;
+            if (options.duplexShort->isEnabled())
+                options.duplexShort->setChecked(true);
+            break;
         }
+
         options.copies->setValue(p->copyCount());
         options.collate->setChecked(p->collateCopies());
         options.reverse->setChecked(p->pageOrder() == QPrinter::LastPageFirst);
@@ -407,14 +438,14 @@ void QPrintDialogPrivate::setupPrinter()
     Q_Q(QPrintDialog);
     QPrinter* p = q->printer();
 
-    if (options.duplex->isEnabled()) {
-        if (options.noDuplex->isChecked())
-            p->setDuplex(QPrinter::DuplexNone);
-        else if (options.duplexLong->isChecked())
-            p->setDuplex(QPrinter::DuplexLongSide);
-        else
-            p->setDuplex(QPrinter::DuplexShortSide);
-    }
+    if (options.duplexAuto->isChecked())
+        p->setDuplex(QPrinter::DuplexAuto);
+    else if (options.duplexLong->isChecked())
+        p->setDuplex(QPrinter::DuplexLongSide);
+    else if (options.duplexShort->isChecked())
+        p->setDuplex(QPrinter::DuplexShortSide);
+    else
+        p->setDuplex(QPrinter::DuplexNone);
 
     p->setColorMode(options.color->isChecked() ? QPrinter::Color : QPrinter::GrayScale);
     p->setPageOrder(options.reverse->isChecked() ? QPrinter::LastPageFirst : QPrinter::FirstPageFirst);
