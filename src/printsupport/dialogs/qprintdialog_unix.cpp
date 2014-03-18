@@ -366,7 +366,25 @@ void QPrintDialogPrivate::selectPrinter(const QPrinter::OutputFormat outputForma
         QPrinter *p = q->printer();
         printerOutputFormat = outputFormat;
 
-        if (p->colorMode() == QPrinter::Color)
+        // Only enable the color modes available for the current printer
+        options.grayscale->setEnabled(false);
+        options.color->setEnabled(false);
+        if (outputFormat == QPrinter::NativeFormat) {
+            foreach (QPrint::ColorMode mode, top->d->m_currentPrintDevice.supportedColorModes()) {
+                switch (mode) {
+                case QPrint::GrayScale:
+                    options.grayscale->setEnabled(true);
+                    break;
+                case QPrint::Color:
+                    options.color->setEnabled(true);
+                    break;
+                }
+            }
+        } else { // PdfFormat
+            options.grayscale->setEnabled(true);
+            options.color->setEnabled(true);
+        }
+        if (p->colorMode() == QPrinter::Color && options.color->isEnabled())
             options.color->setChecked(true);
         else
             options.grayscale->setChecked(true);
