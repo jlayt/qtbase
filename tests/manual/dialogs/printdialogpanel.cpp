@@ -65,7 +65,18 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QTextStream>
+#include <QTextCodec>
+#include <QTextDocument>
 #include <QDir>
+#include <QUrl>
+
+extern qreal qt_pixelMultiplier(int resolution);
+
+const FlagData testDocumentComboData[] =
+{
+    {"Page Layout Test (1 page)", PrintDialogPanel::PageLayoutTest},
+    {"Rich Text Test (2 pages)", PrintDialogPanel::RichTextTest}
+};
 
 const FlagData printerModeComboData[] =
 {
@@ -192,41 +203,118 @@ const FlagData printDialogOptions[] =
 
 QTextStream &operator<<(QTextStream &s, const QSizeF &size)
 {
-    s << size.width() << 'x' << size.height();
+    s << size.width() << " x " << size.height();
     return s;
 }
 
+#if QT_VERSION >= 0x050300
+QTextStream &operator<<(QTextStream &s, const QPageLayout::Unit &units)
+{
+    switch (units) {
+    case QPageLayout::Millimeter:
+        s << " mm";
+        break;
+    case QPageLayout::Point:
+        s << " pt";
+        break;
+    case QPageLayout::Inch:
+        s << " in";
+        break;
+    case QPageLayout::Pica:
+        s << " pc";
+        break;
+    case QPageLayout::Didot:
+        s << " DD";
+        break;
+    case QPageLayout::Cicero:
+        s << " CC";
+        break;
+    }
+    return s;
+}
+
+QTextStream &operator<<(QTextStream &s, const QMarginsF &margins)
+{
+    s << "l " << margins.left() << " t " << margins.top() << " r " << margins.right() << " b " << margins.bottom();
+    return s;
+}
+
+QTextStream &operator<<(QTextStream &s, const QRect &rect)
+{
+    s << rect.width() << " x " << rect.height() << forcesign << ' ' << rect.x() << ' ' << rect.y() << noforcesign;
+    return s;
+}
+#else
+QTextStream &operator<<(QTextStream &s, const QPrinter::Margins &margins)
+{
+    s << "l " << margins.left << " t " << margins.top << " r " << margins.right << " b " << margins.bottom;
+    return s;
+}
+#endif
+
 QTextStream &operator<<(QTextStream &s, const QRectF &rect)
 {
-    s << rect.width() << 'x' << rect.height() << forcesign << rect.x() << rect.y() << noforcesign;
+    s << rect.width() << " x " << rect.height() << forcesign << ' ' << rect.x() << ' ' << rect.y() << noforcesign;
     return s;
 }
 
 QTextStream &operator<<(QTextStream &s, const QPrinter &printer)
 {
-    s << '"' << printer.printerName() << "\"\nPaper #" <<printer.paperSize()
+    s << "\n\nPrinter";
+    if (printer.outputFormat() == QPrinter::NativeFormat) {
+        s << "\nOutput Format    : NativeFormat";
+        s << "\nPrinter Name     : " << printer.printerName();
+    } else {
+        s << "\nOutput Format    : PdfFormat";
+        s << "\nOutput File Name : " << printer.outputFileName();
+    }
+
+    s << "\n\nPage Size";
+    s << "\nPage Size ID     : " << printer.pageSize();
+#if QT_VERSION >= 0x050300
+    s << "\nName             : " << printer.pageLayout().pageSize().name();
+    s << "\nPPD Key          : " << printer.pageLayout().pageSize().key();
+    s << "\nDefinition Size  : " << printer.pageLayout().pageSize().definitionSize()
+                                 << (printer.pageLayout().pageSize().definitionUnits() == QPageSize::Inch ? " in" : " mm");
+    s << "\nPoint Size       : " << printer.pageLayout().pageSize().size(QPageSize::Point) << " pt";
+#else
 #if QT_VERSION >= 0x050000
-        << " \"" << printer.paperName() << '"'
+    s << "\nPaper Name       : " << printer.paperName();
 #endif
-      << (printer.orientation() == QPrinter::Portrait ? ", Portrait" : ", Landscape");
-    if (printer.fullPage())
-        s << ", full page";
-    s << "\nPaper size: "
-        << printer.paperSize(QPrinter::Point) << "pt "
-        << printer.paperSize(QPrinter::Millimeter) << "mm "
-      << "\n            " << printer.paperSize(QPrinter::DevicePixel) << "device pt "
-        << printer.paperSize(QPrinter::Inch) << "inch "
-#if QT_VERSION >= 0x050000
-      << "\nPagedPaintDevSize: " <<   printer.pageSizeMM() << "mm"
+    s << "\nPaper Size       : " << printer.paperSize(QPrinter::Millimeter) << " mm";
 #endif
-      << "\nLogical resolution : " << printer.logicalDpiX() << ',' << printer.logicalDpiY() << "DPI"
-      << "\nPhysical resolution: " << printer.physicalDpiX() << ',' << printer.physicalDpiY() << "DPI"
-      << "\nPaperRect: " << printer.paperRect(QPrinter::Point) << "pt "
-        << printer.paperRect(QPrinter::Millimeter) << "mm "
-      << "\n           " << printer.paperRect(QPrinter::DevicePixel) << "device pt"
-      << "\nPageRect:  " << printer.pageRect(QPrinter::Point) << "pt "
-        << printer.pageRect(QPrinter::Millimeter) << "mm "
-      << "\n           " << printer.pageRect(QPrinter::DevicePixel) << "device pt";
+
+    s << "\n\nPage Layout";
+    s << "\nLayout Mode      : " << (printer.fullPage() ? "Full Page Mode" : "Standard Page Mode");
+    s << "\nOrientation      : " << (printer.orientation() == QPrinter::Landscape ? "Landscape" : "Portrait");
+#if QT_VERSION >= 0x050300
+    s << "\nMinimum Margins  : " << printer.pageLayout().minimumMargins() << printer.pageLayout().units();
+    s << "\nMargins          : " << printer.pageLayout().margins() << printer.pageLayout().units();
+    s << "\nFull Rect        : " << printer.pageLayout().fullRect() << printer.pageLayout().units();
+    s << "\n                   " << printer.pageLayout().fullRectPoints() << " pt";
+    s << "\n                   " << printer.pageLayout().fullRectPixels(printer.resolution()) << " px";
+    s << "\nPaint Rect       : " << printer.pageLayout().paintRect() << printer.pageLayout().units();
+    s << "\n                   " << printer.pageLayout().paintRectPoints() << " pt";
+    s << "\n                   " << printer.pageLayout().paintRectPixels(printer.resolution()) << " px";
+#else
+    s << "\nMargins          : " << printer.margins() << " mm";
+    s << "\nPaper Rect       : " << printer.paperRect(QPrinter::Millimeter) << " mm";
+    s << "\n                   " << printer.paperRect(QPrinter::Point) << " pt";
+    s << "\n                   " << printer.paperRect(QPrinter::DevicePixel) << " px";
+    s << "\nPage Rect        : " << printer.pageRect(QPrinter::Millimeter) << " mm";
+    s << "\n                   " << printer.pageRect(QPrinter::Point) << " pt";
+    s << "\n                   " << printer.pageRect(QPrinter::DevicePixel) << " px";
+#endif
+
+    s << "\n\nPaint Device Metrics";
+    s << "\nWidth x Height (pt) : " << printer.width() << " x " << printer.height() << " pt";
+    s << "\nWidth x Height (mm) : " << printer.widthMM() << " x " << printer.heightMM() << " mm";
+    s << "\nLogical Resolution  : " << printer.logicalDpiX() << " x " << printer.logicalDpiY() << " dpi";
+    s << "\nPhysical Resolution : " << printer.physicalDpiX() << " x " << printer.physicalDpiY() << " dpi";
+    s << "\nDevice Pixel Ratio  : " << printer.devicePixelRatio();
+    s << "\nNumber of Colors    : " << printer.colorCount();
+    s << "\nDepth               : " << printer.depth();
+
     return s;
 }
 
@@ -266,10 +354,40 @@ static void drawVertCmRuler(QPainter &painter, int x, int y1, int y2)
     }
 }
 
-static void print(QPrinter *printer)
+static void printPageLayoutTest(QPrinter *printer)
 {
     QPainter painter(printer);
-    const QRectF pageF = printer->pageRect();
+    QRectF physicalRect = printer->paperRect();
+    qreal left, top, right, bottom;
+    printer->getPageMargins(&left, &top, &right, &bottom, QPrinter::DevicePixel);
+    QRectF marginRect = physicalRect.adjusted(left, top, -right, -bottom);
+    QPointF origin(0, 0);
+
+    // Translate the QPrinter rects to the QPainter origin
+    // If not full page mode the QPainter and QPrinter origins differ
+    if (!printer->fullPage()) {
+        origin = QPointF(-left, -top);
+        physicalRect.translate(origin);
+        marginRect.translate(origin);
+    }
+
+    QPen defaultPen;
+
+    // Pen to draw border of physical paper
+    QPen paperPen;
+    paperPen.setWidth(2);
+
+    // Pen and brush to draw minimum margin area
+    QPen minMarginPen(Qt::DashDotLine);
+    minMarginPen.setWidth(2);
+    QBrush minMarginBrush(Qt::SolidPattern);
+    minMarginBrush.setColor(Qt::darkGray);
+
+    // Pen and brush to draw margin area
+    QPen marginPen(Qt::DotLine);
+    marginPen.setWidth(2);
+    QBrush marginBrush(Qt::SolidPattern);
+    marginBrush.setColor(Qt::lightGray);
 
     QFont font = painter.font();
     font.setFamily("Courier");
@@ -283,22 +401,56 @@ static void print(QPrinter *printer)
 #if QT_VERSION >= 0x050000
     str << ' ' << QGuiApplication::platformName();
 #endif
-    str << ' ' << QDateTime::currentDateTime().toString()
-        << "\nFont: " << font.family() << ' ' << font.pointSize() << '\n'
-        << *printer;
+    str << ' ' << QDateTime::currentDateTime().toString();
+    str << *printer;
+    str << "\n\nFont                : " << font.family() << ' ' << font.pointSize();
 
     if (!painter.device()->logicalDpiY() || !painter.device()->logicalDpiX()) {
         qWarning() << Q_FUNC_INFO << "Bailing out due to invalid DPI: " << msg;
         return;
     }
 
-    painter.drawRect(pageF);
+    // First draw the margin areas
+    painter.fillRect(QRect(origin.x(), origin.y(), left, physicalRect.height()), marginBrush);
+    painter.fillRect(QRect(origin.x(), origin.y(), physicalRect.width(), top), marginBrush);
+    painter.fillRect(QRect(origin.x() + physicalRect.width() - right, origin.y(), right, physicalRect.height()), marginBrush);
+    painter.fillRect(QRect(origin.x(), origin.y() + physicalRect.height() - bottom, physicalRect.width(), bottom), marginBrush);
+    painter.setPen(marginPen);
+    painter.drawRect(marginRect);
+    painter.setPen(defaultPen);
 
-    drawHorizCmRuler(painter, pageF.x(), pageF.right(), pageF.height() /2);
-    drawVertCmRuler(painter, pageF.x() + pageF.width() / 2, pageF.top(), pageF.bottom());
+#if QT_VERSION >= 0x050300
+    // Next draw the minimum margin area
+    QMarginsF minMargins = printer->pageLayout().minimumMargins() / qt_pixelMultiplier(printer->resolution());
+    QRectF minMarginRect = physicalRect.adjusted(minMargins.left(), minMargins.top(), -minMargins.right(), -minMargins.bottom());
+    painter.fillRect(QRect(origin.x(), origin.y(), minMargins.left(), physicalRect.height()), minMarginBrush);
+    painter.fillRect(QRect(origin.x(), origin.y(), physicalRect.width(), minMargins.top()), minMarginBrush);
+    painter.fillRect(QRect(origin.x() + physicalRect.width() - minMargins.right(), origin.y(), minMargins.right(), physicalRect.height()), minMarginBrush);
+    painter.fillRect(QRect(origin.x(), origin.y() + physicalRect.height() - minMargins.bottom(), physicalRect.width(), minMargins.bottom()), minMarginBrush);
+    painter.setPen(minMarginPen);
+    painter.drawRect(minMarginRect);
+    painter.setPen(defaultPen);
+#if 0
+    qDebug() << "pageLayout   " << printer->pageLayout();
+    qDebug() << "paperRect    " << printer->paperRect();
+    qDebug() << "pageRect     " << printer->pageRect();
+    qDebug() << "physicalRect " << physicalRect;
+    qDebug() << "marginRect   " << marginRect;
+    qDebug() << "minMarginRect" << minMarginRect;
+    qDebug() << "margins      " << QMarginsF(left, top, right, bottom);
+    qDebug() << "min margins  " << printer->pageLayout().minimumMargins();
+    qDebug() << "";
+#endif
+#endif
+
+    // Next draw the physical paper outline
+    painter.drawRect(physicalRect);
+
+    drawHorizCmRuler(painter, physicalRect.x(), physicalRect.right(), physicalRect.height() /2);
+    drawVertCmRuler(painter, physicalRect.x() + physicalRect.width() / 2, physicalRect.top(), physicalRect.bottom());
 
     painter.setFont(font);
-    QPointF textPoint = pageF.topLeft() + QPoint(10, charHeight + 10);
+    QPointF textPoint = marginRect.topLeft() + QPoint(10, charHeight + 10);
     foreach (const QString &line, msg.split('\n')) {
         painter.drawText(textPoint, line);
         textPoint.ry() += (15 * charHeight) / 10;
@@ -307,20 +459,11 @@ static void print(QPrinter *printer)
     painter.end();
 }
 
-class PrintPreviewDialog : public QPrintPreviewDialog {
-    Q_OBJECT
-public:
-    explicit PrintPreviewDialog(QPrinter *printer, QWidget *parent = 0) : QPrintPreviewDialog(printer, parent)
-    {
-        connect(this, SIGNAL(paintRequested(QPrinter*)), this, SLOT(slotPaintRequested(QPrinter*)));
-    }
-
-public slots:
-    void slotPaintRequested(QPrinter *p) { print(p); }
-};
-
 PrintDialogPanel::PrintDialogPanel(QWidget *parent)
-    : QWidget(parent), m_blockSignals(true)
+    : QWidget(parent),
+      m_blockSignals(true),
+      m_testDocument(PrintDialogPanel::PageLayoutTest),
+      m_textDocument(0)
 {
 #if QT_VERSION < 0x050300
     m_printerLayout.setOutputFormat(QPrinter::PdfFormat);
@@ -328,10 +471,15 @@ PrintDialogPanel::PrintDialogPanel(QWidget *parent)
 
     m_panel.setupUi(this);
 
-    // Setup the Create box
+    // Setup the QPrinter box
     populateCombo(m_panel.m_printerModeCombo, printerModeComboData, sizeof(printerModeComboData)/sizeof(FlagData));
     connect(m_panel.m_createButton, SIGNAL(clicked()), this, SLOT(createPrinter()));
     connect(m_panel.m_deleteButton, SIGNAL(clicked()), this, SLOT(deletePrinter()));
+
+    // Setup the Test Document box
+    populateCombo(m_panel.m_testDocumentCombo, testDocumentComboData, sizeof(testDocumentComboData)/sizeof(FlagData));
+    connect(m_panel.m_testDocumentCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(testDocumentChanged()));
+    testDocumentChanged();
 
     // Setup the Page Layout box
     populateCombo(m_panel.m_unitsCombo, unitsComboData, sizeof(unitsComboData)/sizeof(FlagData));
@@ -395,6 +543,7 @@ void PrintDialogPanel::enablePanels()
     m_panel.m_createButton->setEnabled(!exists);
     m_panel.m_printerModeCombo->setEnabled(!exists);
     m_panel.m_deleteButton->setEnabled(exists);
+    m_panel.m_documentGroupBox->setEnabled(exists);
     m_panel.m_pageLayoutGroupBox->setEnabled(exists);
     m_panel.m_printJobGroupBox->setEnabled(exists);
     m_panel.m_dialogsGroupBox->setEnabled(exists);
@@ -406,6 +555,7 @@ void PrintDialogPanel::createPrinter()
     m_printer.reset(new QPrinter(mode)); // Can set only once.
     retrieveSettings(m_printer.data());
     enablePanels();
+    testDocumentChanged();
 }
 
 void PrintDialogPanel::deletePrinter()
@@ -436,6 +586,8 @@ void PrintDialogPanel::applySettings(QPrinter *printer) const
     printer->setPaperSource(comboBoxValue<QPrinter::PaperSource>(m_panel.m_paperSourceCombo));
     printer->setColorMode(comboBoxValue<QPrinter::ColorMode>(m_panel.m_colorModeCombo));
     printer->setResolution(m_panel.m_resolution->value());
+    printer->setDocName(m_panel.m_documentName->text());
+    printer->setCreator(m_panel.m_documentCreator->text());
 
 #if QT_VERSION >= 0x050300
     printer->setPageLayout(m_pageLayout);
@@ -473,6 +625,8 @@ void PrintDialogPanel::retrieveSettings(const QPrinter *printer)
     setComboBoxValue(m_panel.m_paperSourceCombo, printer->paperSource());
     setComboBoxValue(m_panel.m_colorModeCombo, printer->colorMode());
     m_panel.m_resolution->setValue(printer->resolution());
+    m_panel.m_documentName->setText(printer->docName());
+    m_panel.m_documentCreator->setText(printer->creator());
 
 #if QT_VERSION >= 0x050300
     m_pageLayout = printer->pageLayout();
@@ -565,6 +719,22 @@ void PrintDialogPanel::updatePageLayoutWidgets()
     m_blockSignals = false;
 }
 
+void PrintDialogPanel::testDocumentChanged()
+{
+    m_testDocument = comboBoxValue<PrintDialogPanel::TestDocument>(m_panel.m_testDocumentCombo);
+    switch (m_testDocument) {
+    case PrintDialogPanel::PageLayoutTest:
+        m_panel.m_documentName->setText("PageLayoutTest");
+        break;
+    case PrintDialogPanel::RichTextTest:
+        initRichTextDocument();
+        break;
+    }
+    m_panel.m_documentCreator->setText(tr("Qt Project manual testing"));
+    m_panel.m_fileName->setText(QDir::homePath() + QDir::separator()
+                                + m_panel.m_documentName->text() + QStringLiteral(".pdf"));
+}
+
 void PrintDialogPanel::unitsChanged()
 {
     if (m_blockSignals)
@@ -655,8 +825,6 @@ void PrintDialogPanel::printerChanged()
 {
     bool isPdf = (m_panel.m_printerCombo->currentData().toString() == QStringLiteral("PdfFormat"));
     m_panel.m_fileName->setEnabled(isPdf);
-    if (isPdf && m_panel.m_fileName->text().isEmpty())
-        m_panel.m_fileName->setText(QDir::homePath() + QDir::separator() + QStringLiteral("print.pdf"));
 }
 
 void PrintDialogPanel::showPrintDialog()
@@ -673,7 +841,8 @@ void PrintDialogPanel::showPrintDialog()
 void PrintDialogPanel::showPreviewDialog()
 {
     applySettings(m_printer.data());
-    PrintPreviewDialog dialog(m_printer.data(), this);
+    QPrintPreviewDialog dialog(m_printer.data(), this);
+    connect(&dialog, SIGNAL(paintRequested(QPrinter*)), SLOT(print(QPrinter*)));
     dialog.resize(QApplication::desktop()->availableGeometry().size() * 4/ 5);
     if (dialog.exec() == QDialog::Accepted)
         retrieveSettings(m_printer.data());
@@ -694,7 +863,44 @@ void PrintDialogPanel::directPrint()
     retrieveSettings(m_printer.data());
 }
 
+void PrintDialogPanel::print(QPrinter* printer)
+{
+    switch (m_testDocument) {
+    case PrintDialogPanel::PageLayoutTest:
+        printPageLayoutTest(printer);
+        break;
+    case PrintDialogPanel::RichTextTest:
+        m_textDocument->print(printer);
+        break;
+    }
+}
+
+void PrintDialogPanel::initRichTextDocument()
+{
+    if (m_textDocument == 0) {
+        QFileInfo fileName = QFileInfo("documents/richtext.html");
+        QFile file(fileName.absoluteFilePath());
+        if (!file.open(QFile::ReadOnly))
+            return;
+
+        m_textDocument = new QTextDocument;
+        QByteArray data = file.readAll();
+        QTextCodec *codec = Qt::codecForHtml(data);
+        QString str = codec->toUnicode(data);
+        if (Qt::mightBeRichText(str)) {
+            m_textDocument->setHtml(str);
+        } else {
+            str = QString::fromLocal8Bit(data);
+            m_textDocument->setPlainText(str);
+        }
+        m_textDocument->setMetaInformation(QTextDocument::DocumentUrl,
+                                           QUrl::fromLocalFile(fileName.absoluteFilePath()).url());
+    }
+    m_panel.m_documentName->setText(m_textDocument->metaInformation(QTextDocument::DocumentTitle));
+    if (m_panel.m_documentName->text().isEmpty())
+        m_panel.m_documentName->setText("RichTextTest");
+}
+
 #include "moc_printdialogpanel.cpp"
-#include "printdialogpanel.moc"
 
 #endif // !QT_NO_PRINTER

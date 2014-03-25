@@ -58,6 +58,7 @@ class QComboBox;
 class QGroupBox;
 class QPushButton;
 class QCheckBox;
+class QTextDocument;
 QT_END_NAMESPACE
 
 class PageSizeControl;
@@ -92,6 +93,11 @@ class PrintDialogPanel  : public QWidget
 {
     Q_OBJECT
 public:
+    enum TestDocument {
+        PageLayoutTest,
+        RichTextTest
+    };
+
     explicit PrintDialogPanel(QWidget *parent = 0);
     ~PrintDialogPanel();
 
@@ -102,6 +108,7 @@ private slots:
     void showPreviewDialog();
     void showPageSetupDialog();
     void directPrint();
+    void testDocumentChanged();
     void unitsChanged();
     void pageSizeChanged();
     void pageDimensionsChanged();
@@ -109,6 +116,7 @@ private slots:
     void marginsChanged();
     void layoutModeChanged();
     void printerChanged();
+    void print(QPrinter* printer);
 
 private:
     QSizeF customPageSize() const;
@@ -116,10 +124,13 @@ private:
     void retrieveSettings(const QPrinter *printer);
     void updatePageLayoutWidgets();
     void enablePanels();
+    void initRichTextDocument();
 
     bool m_blockSignals;
     Ui::PrintDialogPanel m_panel;
 
+    TestDocument m_testDocument;
+    QTextDocument *m_textDocument;
 #if QT_VERSION >= 0x050300
     QPageLayout m_pageLayout;
 #else
