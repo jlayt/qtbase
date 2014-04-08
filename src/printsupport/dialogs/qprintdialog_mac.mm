@@ -47,7 +47,9 @@
 #include <QtCore/qhash.h>
 #include <QtCore/private/qcore_mac_p.h>
 #include <QtWidgets/private/qapplication_p.h>
+#include <QtWidgets/qmessagebox.h>
 #include <QtPrintSupport/qprinter.h>
+#include <QtPrintSupport/qprinterinfo.h>
 #include <QtPrintSupport/qprintengine.h>
 #include <qpa/qplatformprintdevice.h>
 
@@ -302,8 +304,17 @@ QPrintDialog::~QPrintDialog()
 int QPrintDialog::exec()
 {
     Q_D(QPrintDialog);
-    if (!warnIfNotNative(d->printer))
+    if (!warnIfNotNative(d->printer)) {
+        QMessageBox msgBox(parentWidget());
+        msgBox.setWindowTitle(tr("Print Dialog"));
+        // If not NativeFormat due to no printers, ask for one to be added
+        if (QPrinterInfo::availablePrinterNames().count() == 0)
+            msgBox.setText(tr("No printers installed. Please install a printer using System Preferences."));
+        else
+            msgBox.setText(tr("Printing unavailable."));
+        msgBox.exec();
         return QDialog::Rejected;
+    }
 
     QDialog::setVisible(true);
 

@@ -48,7 +48,9 @@
 #include "qpagesetupdialog_p.h"
 
 #include <qpa/qplatformnativeinterface.h>
+#include <QtWidgets/qmessagebox.h>
 #include <QtPrintSupport/qprintengine.h>
+#include <QtPrintSupport/qprinterinfo.h>
 
 QT_USE_NAMESPACE
 
@@ -201,8 +203,17 @@ int QPageSetupDialog::exec()
 {
     Q_D(QPageSetupDialog);
 
-    if (d->printer->outputFormat() != QPrinter::NativeFormat)
+    if (d->printer->outputFormat() != QPrinter::NativeFormat) {
+        QMessageBox msgBox(parentWidget());
+        msgBox.setWindowTitle(tr("Print Dialog"));
+        // If not NativeFormat due to no printers, ask for one to be added
+        if (QPrinterInfo::availablePrinterNames().count() == 0)
+            msgBox.setText(tr("No printers installed. Please install a printer using System Preferences."));
+        else
+            msgBox.setText(tr("Printing unavailable."));
+        msgBox.exec();
         return Rejected;
+    }
 
     QDialog::setVisible(true);
 
