@@ -50,10 +50,51 @@ class tst_QPdfWriter : public QObject
     Q_OBJECT
 
 private slots:
+    void createFileName();
+    void createIoDevice();
     void basics();
     void testPageMetrics_data();
     void testPageMetrics();
+
+private:
+    void createCheck(QPdfWriter &writer);
 };
+
+void tst_QPdfWriter::createFileName()
+{
+    QTemporaryFile file;
+    if (!file.open())
+        QSKIP("Couldn't open temp file!");
+    QPdfWriter writer(file.fileName());
+    createCheck(writer);
+}
+
+void tst_QPdfWriter::createIoDevice()
+{
+    QTemporaryFile file;
+    if (!file.open())
+        QSKIP("Couldn't open temp file!");
+    QPdfWriter writer(&file);
+    createCheck(writer);
+}
+
+void tst_QPdfWriter::createCheck(QPdfWriter &writer)
+{
+    // Change the default settings
+    writer.setPageSize(QPdfWriter::A3); // 297 x 420
+    writer.setPageOrientation(QPageLayout::Landscape); // 420 x 297
+    writer.setPageMargins(QMarginsF(10, 10, 10, 10), QPageLayout::Millimeter); // 400 x 277
+
+    // Check the paint device and writer engine are still in sync
+    QCOMPARE(writer.pageSize(), QPdfWriter::A3);
+    QCOMPARE(writer.pageLayout().pageSize().id(), QPageSize::A3);
+    QCOMPARE(writer.pageLayout().orientation(), QPageLayout::Landscape);
+    QCOMPARE(writer.pageLayout().margins().left(), 10.0);
+    QCOMPARE(writer.margins().left, 10.0);
+    QCOMPARE(writer.pageSizeMM(), QSizeF(297, 420));
+    QCOMPARE(writer.widthMM(), 400);
+    QCOMPARE(writer.heightMM(), 277);
+}
 
 void tst_QPdfWriter::basics()
 {
