@@ -1182,6 +1182,125 @@ QString QLocale::bcp47Name() const
 }
 
 /*!
+    \since 5.6
+
+    Returns the ISO 639 alpha-2 or alpha-3 language code for the \a language.
+
+    Most languages will return an ISO 639-1 alpha-2 code, but some languages
+    are not defined in ISO 639-1 and will instead return an ISO 639-3 alpha-3
+    code, e.g. English will return "en" not "eng", but Balinese will return "ban".
+
+    The code is defined as 2 or 3 lowercase letters, but is unique regardless of
+    the case. Any comparisons made between codes should be case insensitive.
+
+    If \a language is AnyLanguage then the result will be an empty string.
+
+    As a special case, the C locale will return "C".
+
+    \sa language(), languageCode(), languageCodeToLanguage()
+*/
+QString QLocale::languageToLanguageCode(Language language)
+{
+    return QLocalePrivate::languageToCode(language);
+}
+
+/*!
+    \since 5.6
+
+    Returns the ISO 3166-1 alpha-2 country code for the \a country.
+
+    The code is defined as 2 uppercase letters, but is unique regardless of
+    the case. Any comparisons made between codes should be case insensitive.
+
+    If \a country is AnyCountry then the result will be an empty string.
+
+    \sa country(), countryCode(), countryCodeToCountry()
+*/
+QString QLocale::countryToCountryCode(Country country)
+{
+    return QLocalePrivate::countryToCode(country);
+}
+
+/*!
+    \since 5.6
+
+    Returns the ISO 15924 alpha-4 script code for the \a script.
+
+    The code is defined as having the first letter uppercase followed by 3
+    lowercase letters, but is unique regardless of the case. Any comparisons
+    made between codes should be case insensitive.
+
+    If \a script is AnyScript then the result will be an empty string.
+
+    \sa script(), scriptCode(), scriptCodeToScript()
+*/
+QString QLocale::scriptToScriptCode(Script script)
+{
+    return QLocalePrivate::scriptToCode(script);
+}
+
+/*!
+    \since 5.6
+
+    Returns the Language for the given \a languageCode if known to QLocale.
+
+    The \a languageCode must be a ISO 639 alpha-2 or alpha-3 code that is
+    known to QLocale. QLocale only knows those ISO codes for which it has
+    a Language defined.
+
+    If the \a languageCode is unknown to QLocale then AnyLanguage will be
+    returned.
+
+    \sa language(), languageCode(), languageToLanguageCode()
+*/
+QLocale::Language QLocale::languageCodeToLanguage(QString languageCode)
+{
+    Language lang = QLocalePrivate::codeToLanguage(languageCode);
+    // codeToLanguage() always returns C if unknown code
+    if (lang == C && languageCode.toUpper() != QStringLiteral("C"))
+        return AnyLanguage;
+    return lang;
+}
+
+/*!
+    \since 5.6
+
+    Returns the Country for the given \a countryCode if known to QLocale.
+
+    The \a countryCode must be a ISO 3166-1 alpha-2 code that is
+    known to QLocale. QLocale only knows those ISO codes for which it has
+    a Country defined.
+
+    If the \a countryCode is unknown to QLocale then AnyCountry will be
+    returned.
+
+    \sa country(), countryCode(), countryToCountryCode()
+*/
+QLocale::Country QLocale::countryCodeToCountry(QString countryCode)
+{
+    return QLocalePrivate::codeToCountry(countryCode);
+}
+
+/*!
+    \since 5.6
+
+    Returns the Script for the given \a scriptCode if known to QLocale.
+
+    The \a scriptCode must be a ISO 15924 alpha-4 code that is
+    known to QLocale. QLocale only knows those ISO codes for which it has
+    a Script defined.
+
+    If the \a scriptCode is unknown to QLocale then AnyScript will be
+    returned.
+
+    \sa script(), scriptCode(), scriptToScriptCode()
+*/
+QLocale::Script QLocale::scriptCodeToScript(QString scriptCode)
+{
+    return QLocalePrivate::codeToScript(scriptCode);
+}
+
+/*!
     Returns a QString containing the name of \a language.
 
     \sa countryToString(), scriptToString(), bcp47Name()

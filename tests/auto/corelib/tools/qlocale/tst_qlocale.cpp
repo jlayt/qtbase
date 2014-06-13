@@ -684,6 +684,41 @@ void tst_QLocale::isoCodes()
     TEST_CODES(Filipino, LatinScript, Philippines, "fil", "Latn", "PH") //
 
 #undef TEST_CODES
+
+    QCOMPARE(QLocale::languageToLanguageCode(QLocale::C), QString("C"));
+    QCOMPARE(QLocale::languageToLanguageCode(QLocale::English), QString("en"));
+    QCOMPARE(QLocale::languageToLanguageCode(QLocale::Filipino), QString("fil"));
+    QCOMPARE(QLocale::languageToLanguageCode(QLocale::AnyLanguage), QString());
+
+    QCOMPARE(QLocale::countryToCountryCode(QLocale::UnitedKingdom), QString("GB"));
+    QCOMPARE(QLocale::countryToCountryCode(QLocale::AnyCountry), QString());
+
+    QCOMPARE(QLocale::scriptToScriptCode(QLocale::CyrillicScript), QString("Cyrl"));
+    QCOMPARE(QLocale::scriptToScriptCode(QLocale::AnyScript), QString());
+
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("C")), QLocale::C);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("en")), QLocale::English);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("EN")), QLocale::English);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("eN")), QLocale::English);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("En")), QLocale::English);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("fil")), QLocale::Filipino);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("qq")), QLocale::AnyLanguage);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("qqq")), QLocale::AnyLanguage);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString("qqqq")), QLocale::AnyLanguage);
+    QCOMPARE(QLocale::languageCodeToLanguage(QString()), QLocale::AnyLanguage);
+
+    QCOMPARE(QLocale::countryCodeToCountry(QString("GB")), QLocale::UnitedKingdom);
+    QCOMPARE(QLocale::countryCodeToCountry(QString("gb")), QLocale::UnitedKingdom);
+    QCOMPARE(QLocale::countryCodeToCountry(QString("Gb")), QLocale::UnitedKingdom);
+    QCOMPARE(QLocale::countryCodeToCountry(QString("gB")), QLocale::UnitedKingdom);
+    QCOMPARE(QLocale::countryCodeToCountry(QString("GBB")), QLocale::AnyCountry);
+    QCOMPARE(QLocale::countryCodeToCountry(QString()), QLocale::AnyCountry);
+
+    QCOMPARE(QLocale::scriptCodeToScript(QString("Cyrl")), QLocale::CyrillicScript);
+    QCOMPARE(QLocale::scriptCodeToScript(QString("cYRL")), QLocale::CyrillicScript);
+    QCOMPARE(QLocale::scriptCodeToScript(QString("cyrl")), QLocale::CyrillicScript);
+    QCOMPARE(QLocale::scriptCodeToScript(QString("Qqqq")), QLocale::AnyScript);
+    QCOMPARE(QLocale::scriptCodeToScript(QString()), QLocale::AnyScript);
 }
 
 void tst_QLocale::double_conversion_data()

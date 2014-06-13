@@ -962,6 +962,14 @@ public:
     bool operator==(const QLocale &other) const;
     bool operator!=(const QLocale &other) const;
 
+    static QString languageToLanguageCode(Language language);
+    static QString scriptToScriptCode(Script script);
+    static QString countryToCountryCode(Country country);
+
+    static Language languageCodeToLanguage(QString languageCode);
+    static Script scriptCodeToScript(QString scriptCode);
+    static Country countryCodeToCountry(QString countryCode);
+
     static QString languageToString(Language language);
     static QString countryToString(Country country);
     static QString scriptToString(Script script);
