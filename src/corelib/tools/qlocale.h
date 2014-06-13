@@ -865,6 +865,9 @@ public:
     Language language() const;
     Script script() const;
     Country country() const;
+    QString languageCode() const;
+    QString countryCode() const;
+    QString scriptCode() const;
     QString name() const;
 
     QString bcp47Name() const;

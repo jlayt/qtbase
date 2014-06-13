@@ -1038,6 +1038,64 @@ QLocale::Country QLocale::country() const
 }
 
 /*!
+    \since 5.6
+
+    Returns the ISO 639 alpha-2 or alpha-3 language code of this locale.
+
+    Most languages will return an ISO 639-1 alpha-2 code, but some languages
+    are not defined in ISO 639-1 and will instead return an ISO 639-3 alpha-3
+    code, e.g. English will return "en" not "eng", but Balinese will return "ban".
+
+    The code is defined as 2 or 3 lowercase letters, but is unique regardless of
+    the case. Any comparisons made between codes should be case insensitive.
+
+    If language() is AnyLanguage then the result will be an empty string.
+
+    As a special case, the C locale will return "C".
+
+    \sa language(), countryCode(), scriptCode()
+*/
+QString QLocale::languageCode() const
+{
+    return d->languageCode();
+}
+
+/*!
+    \since 5.6
+
+    Returns the ISO 3166-1 alpha-2 country code of this locale.
+
+    The code is defined as 2 uppercase letters, but is unique regardless of
+    the case. Any comparisons made between codes should be case insensitive.
+
+    If country() is AnyCountry then the result will be an empty string.
+
+    \sa country(), languageCode(), scriptCode()
+*/
+QString QLocale::countryCode() const
+{
+    return d->countryCode();
+}
+
+/*!
+    \since 5.6
+
+    Returns the ISO 15924 alpha-4 script code of this locale.
+
+    The code is defined as having the first letter uppercase followed by 3
+    lowercase letters, but is unique regardless of the case. Any comparisons
+    made between codes should be case insensitive.
+
+    If script() is AnyScript then the result will be an empty string.
+
+    \sa script(), languageCode(), countryCode()
+*/
+QString QLocale::scriptCode() const
+{
+    return d->scriptCode();
+}
+
+/*!
     Returns the language and country of this locale as a
     string of the form "language_country", where
     language is a lowercase, two-letter ISO 639 language code,

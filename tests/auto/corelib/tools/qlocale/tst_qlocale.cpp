@@ -139,6 +139,7 @@ private slots:
 #endif
     void legacyNames();
     void unixLocaleName();
+    void isoCodes();
     void matchingLocales();
     void double_conversion_data();
     void double_conversion();
@@ -662,6 +663,27 @@ void tst_QLocale::unixLocaleName()
     TEST_NAME(Aymara, UnitedKingdom, "C")
 
 #undef TEST_NAME
+}
+
+void tst_QLocale::isoCodes()
+{
+#define TEST_CODES(req_lang, req_script, req_country, exp_lang, exp_script, exp_country) \
+    { \
+        QLocale l(QLocale::req_lang, QLocale::req_script, QLocale::req_country); \
+        QCOMPARE(l.languageCode(), QString(exp_lang)); \
+        QCOMPARE(l.scriptCode(), QString(exp_script)); \
+        QCOMPARE(l.countryCode(), QString(exp_country)); \
+    }
+
+    TEST_CODES(C, AnyScript, AnyCountry, "C", "", "")
+    TEST_CODES(English, AnyScript, AnyCountry, "en", "Latn", "US")
+    TEST_CODES(English, AnyScript, UnitedKingdom, "en", "Latn", "GB")
+    TEST_CODES(Serbian, AnyScript, Serbia, "sr", "Cyrl", "RS")
+    TEST_CODES(Serbian, CyrillicScript, Serbia, "sr", "Cyrl", "RS")
+    TEST_CODES(Serbian, LatinScript, Serbia, "sr", "Latn", "RS")
+    TEST_CODES(Filipino, LatinScript, Philippines, "fil", "Latn", "PH") //
+
+#undef TEST_CODES
 }
 
 void tst_QLocale::double_conversion_data()
