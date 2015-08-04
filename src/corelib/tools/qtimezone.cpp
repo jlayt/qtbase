@@ -385,6 +385,31 @@ QTimeZone::QTimeZone(const QByteArray &ianaId, int offsetSeconds, const QString 
 }
 
 /*!
+    Creates a custom time zone with an ID of \a ianaId and a set of
+    \a transitions. The optional \a country will be used by country().
+    The \a comment is an optional note that may be displayed in
+    a GUI to assist users in selecting a time zone.
+
+    The \a ianaId must not be one of the available system IDs returned by
+    availableTimeZoneIds().
+
+    If the custom time zone does not have a specific country then set it to the
+    default value of QLocale::AnyCountry.
+*/
+
+QTimeZone::QTimeZone(const QByteArray &ianaId, OffsetDataList transitions,
+                     QLocale::Country country, const QString &comment)
+    : d()
+{
+    if (!isTimeZoneIdAvailable(ianaId)) {
+        QTimeZonePrivate::DataList list;
+        foreach (const OffsetData tran, transitions)
+            list.append(d->toData(tran));
+        d = new QDataTimeZonePrivate(ianaId, list, country, comment);
+    }
+}
+
+/*!
     \internal
 
     Private. Create time zone with given private backend

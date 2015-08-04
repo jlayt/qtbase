@@ -441,6 +441,19 @@ QTimeZone::OffsetData QTimeZonePrivate::toOffsetData(const QTimeZonePrivate::Dat
     return offsetData;
 }
 
+QTimeZonePrivate::Data QTimeZonePrivate::toData(const QTimeZone::OffsetData &offsetData)
+{
+    Data data = invalidData();
+    if (offsetData.atUtc.isValid()) {
+        data.atMSecsSinceEpoch = offsetData.atUtc.toMSecsSinceEpoch();
+        data.offsetFromUtc = offsetData.offsetFromUtc;
+        data.standardTimeOffset = offsetData.standardTimeOffset;
+        data.daylightTimeOffset = offsetData.daylightTimeOffset;
+        data.abbreviation = offsetData.abbreviation;
+    }
+    return data;
+}
+
 // If the format of the ID is valid
 bool QTimeZonePrivate::isValidId(const QByteArray &ianaId)
 {
@@ -734,6 +747,165 @@ void QUtcTimeZonePrivate::serialize(QDataStream &ds) const
 {
     ds << QStringLiteral("OffsetFromUtc") << QString::fromUtf8(m_id) << m_offsetFromUtc << m_name
        << m_abbreviation << (qint32) m_country << m_comment;
+}
+#endif // QT_NO_DATASTREAM
+
+/*
+    Simple DataList implementation, uses a list of transition data structures
+*/
+
+// Create default null time zone
+QDataTimeZonePrivate::QDataTimeZonePrivate()
+{
+    m_country = QLocale::AnyCountry;
+}
+
+QDataTimeZonePrivate::QDataTimeZonePrivate(const QByteArray &zoneId, DataList transitions,
+                                           QLocale::Country country, const QString &comment)
+{
+    init(zoneId, transitions, country, comment);
+}
+
+QDataTimeZonePrivate::QDataTimeZonePrivate(const QDataTimeZonePrivate &other)
+    : QTimeZonePrivate(other),
+      m_comment(other.m_comment),
+      m_country(other.m_country),
+      m_transitions(other.m_transitions)
+{
+}
+
+QDataTimeZonePrivate::~QDataTimeZonePrivate()
+{
+}
+
+QTimeZonePrivate *QDataTimeZonePrivate::clone()
+{
+    return new QDataTimeZonePrivate(*this);
+}
+
+bool QDataTimeZonePrivate::isValid() const
+{
+    return !m_id.isEmpty() && !m_transitions.isEmpty();
+}
+
+void QDataTimeZonePrivate::init(const QByteArray &zoneId, DataList transitions,
+                                QLocale::Country country, const QString &comment)
+{
+    m_id = zoneId;
+    m_transitions = transitions; // TODO Sort into order!!!
+    m_country = country;
+    m_comment = comment;
+}
+
+QLocale::Country QDataTimeZonePrivate::country() const
+{
+    return m_country;
+}
+
+QString QDataTimeZonePrivate::comment() const
+{
+    return m_comment;
+}
+
+QString QDataTimeZonePrivate::abbreviation(qint64 atMSecsSinceEpoch) const
+{
+    return data(atMSecsSinceEpoch).abbreviation;
+}
+
+int QDataTimeZonePrivate::offsetFromUtc(qint64 atMSecsSinceEpoch) const
+{
+    return data(atMSecsSinceEpoch).offsetFromUtc;
+}
+
+qint32 QDataTimeZonePrivate::standardTimeOffset(qint64 atMSecsSinceEpoch) const
+{
+    return data(atMSecsSinceEpoch).standardTimeOffset;
+}
+
+qint32 QDataTimeZonePrivate::daylightTimeOffset(qint64 atMSecsSinceEpoch) const
+{
+    return data(atMSecsSinceEpoch).daylightTimeOffset;
+}
+
+bool QDataTimeZonePrivate::hasDaylightTime() const
+{
+    // TODO Perhaps cache as frequently accessed?
+    foreach (const Data &tran, m_transitions) {
+        if (tran.daylightTimeOffset != 0)
+            return true;
+    }
+    return false;
+}
+
+bool QDataTimeZonePrivate::isDaylightTime(qint64 atMSecsSinceEpoch) const
+{
+    return (data(atMSecsSinceEpoch).daylightTimeOffset != 0);
+}
+
+QTimeZonePrivate::Data QDataTimeZonePrivate::data(qint64 forMSecsSinceEpoch) const
+{
+    for (int i = m_transitions.size() - 1; i >= 0; --i) {
+        if (m_transitions.at(i).atMSecsSinceEpoch <= forMSecsSinceEpoch) {
+            Data data = m_transitions.at(i);
+            data.atMSecsSinceEpoch = forMSecsSinceEpoch;
+            return data;
+        }
+    }
+    return invalidData();
+}
+
+bool QDataTimeZonePrivate::hasTransitions() const
+{
+    return !m_transitions.isEmpty();
+}
+
+QTimeZonePrivate::Data QDataTimeZonePrivate::nextTransition(qint64 afterMSecsSinceEpoch) const
+{
+    for (int i = 0; i < m_transitions.size(); ++i) {
+        if (m_transitions.at(i).atMSecsSinceEpoch > afterMSecsSinceEpoch)
+            return m_transitions.at(i);
+    }
+
+    if (m_transitions.size() > 0) {
+        Data data = m_transitions.at(0);
+        data.atMSecsSinceEpoch = afterMSecsSinceEpoch;
+        return data;
+    }
+
+    return invalidData();
+}
+
+QTimeZonePrivate::Data QDataTimeZonePrivate::previousTransition(qint64 beforeMSecsSinceEpoch) const
+{
+    for (int i = m_transitions.size() - 1; i >= 0; --i) {
+        if (m_transitions.at(i).atMSecsSinceEpoch < beforeMSecsSinceEpoch)
+            return m_transitions.at(i);
+    }
+
+    return invalidData();
+}
+
+QTimeZonePrivate::DataList QDataTimeZonePrivate::transitions(qint64 fromMSecsSinceEpoch,
+                                                             qint64 toMSecsSinceEpoch) const
+{
+    DataList list;
+    if (toMSecsSinceEpoch < fromMSecsSinceEpoch)
+        return list;
+
+    foreach (const Data &tran, m_transitions) {
+        if (tran.atMSecsSinceEpoch >= fromMSecsSinceEpoch
+            && tran.atMSecsSinceEpoch <= toMSecsSinceEpoch) {
+            list.append(tran);
+        }
+    }
+    return list;
+}
+
+#ifndef QT_NO_DATASTREAM
+void QDataTimeZonePrivate::serialize(QDataStream &ds) const
+{
+    // TODO serialize the m__transitions!
+    ds << QStringLiteral("DataList") << QString::fromUtf8(m_id) << m_transitions.size() << (qint32) m_country << m_comment;
 }
 #endif // QT_NO_DATASTREAM
 

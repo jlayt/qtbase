@@ -56,6 +56,7 @@ private slots:
     void isValidId();
     // Backend tests
     void utcTest();
+    void dataTest();
     void icuTest();
     void tzTest();
     void macTest();
@@ -633,6 +634,71 @@ void tst_QTimeZone::utcTest()
     QCOMPARE(tz.offsetFromUtc(now), 123456);
     QCOMPARE(tz.standardTimeOffset(now), 123456);
     QCOMPARE(tz.daylightTimeOffset(now), 0);
+#endif // QT_BUILD_INTERNAL
+}
+
+void tst_QTimeZone::dataTest()
+{
+#ifdef QT_BUILD_INTERNAL
+    // Test default UTC constructor
+    QDataTimeZonePrivate tzp;
+    QCOMPARE(tzp.isValid(), false);
+    QCOMPARE(tzp.id(), QByteArray());
+    QCOMPARE(tzp.country(), QLocale::AnyCountry);
+    QCOMPARE(tzp.abbreviation(0), QString());
+    QCOMPARE(tzp.hasDaylightTime(), false);
+    QCOMPARE(tzp.hasTransitions(), false);
+
+    // Test create custom zone
+    QTimeZone::OffsetDataList list;
+    QTimeZone::OffsetData tran;
+    QDateTime tt1 = QDateTime::fromMSecsSinceEpoch(0, Qt::UTC);
+    tran.atUtc = tt1;
+    tran.offsetFromUtc = 43200;
+    tran.standardTimeOffset = 43200;
+    tran.daylightTimeOffset = 0;
+    tran.abbreviation = "QST";
+    list.append(tran);
+    QDateTime tt2 = QDateTime::fromMSecsSinceEpoch(1000000000000, Qt::UTC);
+    tran.atUtc = tt2;
+    tran.offsetFromUtc = 46800;
+    tran.daylightTimeOffset = 3600;
+    tran.abbreviation = "QDT";
+    list.append(tran);
+    QDateTime tt3 = QDateTime::fromMSecsSinceEpoch(2000000000000, Qt::UTC);
+    tran.atUtc = tt3;
+    tran.offsetFromUtc = 43200;
+    tran.daylightTimeOffset = 0;
+    tran.abbreviation = "QST";
+    list.append(tran);
+    QTimeZone tz = QTimeZone("Testing/QST", list, QLocale::Norway, "Qt Testing");
+    QCOMPARE(tz.isValid(),   true);
+    QCOMPARE(tz.id(), QByteArray("Testing/QST"));
+    QCOMPARE(tz.comment(), QString("Qt Testing"));
+    QCOMPARE(tz.country(), QLocale::Norway);
+    QCOMPARE(tz.hasDaylightTime(), true);
+    QCOMPARE(tz.hasTransitions(), true);
+    QDateTime t1 = QDateTime::fromMSecsSinceEpoch(500000000000, Qt::UTC);
+    QCOMPARE(tz.abbreviation(t1), QString("QST"));
+    QCOMPARE(tz.offsetFromUtc(t1), 43200);
+    QCOMPARE(tz.standardTimeOffset(t1), 43200);
+    QCOMPARE(tz.daylightTimeOffset(t1), 0);
+    QCOMPARE(tz.isDaylightTime(t1), false);
+    QDateTime t2 = QDateTime::fromMSecsSinceEpoch(1500000000000, Qt::UTC);
+    QCOMPARE(tz.abbreviation(t2), QString("QDT"));
+    QCOMPARE(tz.offsetFromUtc(t2), 46800);
+    QCOMPARE(tz.standardTimeOffset(t2), 43200);
+    QCOMPARE(tz.daylightTimeOffset(t2), 3600);
+    QCOMPARE(tz.isDaylightTime(t2), true);
+    QDateTime t3 = QDateTime::fromMSecsSinceEpoch(2500000000000, Qt::UTC);
+    QCOMPARE(tz.abbreviation(t3), QString("QST"));
+    QCOMPARE(tz.offsetFromUtc(t3), 43200);
+    QCOMPARE(tz.standardTimeOffset(t3), 43200);
+    QCOMPARE(tz.daylightTimeOffset(t3), 0);
+    QCOMPARE(tz.isDaylightTime(t3), false);
+    QCOMPARE(tz.previousTransition(tt2).atUtc, tt1);
+    QCOMPARE(tz.nextTransition(tt2).atUtc, tt3);
+    QCOMPARE(tz.transitions(t1, t3).at(0).atUtc, tt2);
 #endif // QT_BUILD_INTERNAL
 }
 

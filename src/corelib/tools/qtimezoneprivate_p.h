@@ -95,7 +95,7 @@ public:
     bool operator==(const QTimeZonePrivate &other) const;
     bool operator!=(const QTimeZonePrivate &other) const;
 
-    bool isValid() const;
+    virtual bool isValid() const;
 
     QByteArray id() const;
     virtual QLocale::Country country() const;
@@ -122,7 +122,7 @@ public:
     virtual bool hasTransitions() const;
     virtual Data nextTransition(qint64 afterMSecsSinceEpoch) const;
     virtual Data previousTransition(qint64 beforeMSecsSinceEpoch) const;
-    DataList transitions(qint64 fromMSecsSinceEpoch, qint64 toMSecsSinceEpoch) const;
+    virtual DataList transitions(qint64 fromMSecsSinceEpoch, qint64 toMSecsSinceEpoch) const;
 
     virtual QByteArray systemTimeZoneId() const;
 
@@ -140,6 +140,7 @@ public:
     static Data invalidData();
     static QTimeZone::OffsetData invalidOffsetData();
     static QTimeZone::OffsetData toOffsetData(const Data &data);
+    static QTimeZonePrivate::Data toData(const QTimeZone::OffsetData &offsetData);
     static bool isValidId(const QByteArray &ianaId);
     static QString isoOffsetFormat(int offsetFromUtc);
 
@@ -219,6 +220,51 @@ private:
     QString m_comment;
     QLocale::Country m_country;
     int m_offsetFromUtc;
+};
+
+class Q_AUTOTEST_EXPORT QDataTimeZonePrivate Q_DECL_FINAL : public QTimeZonePrivate
+{
+public:
+    // Create default null time zone
+    QDataTimeZonePrivate();
+    // Create custom offset from UTC
+    QDataTimeZonePrivate(const QByteArray &zoneId, DataList transitions,
+                        QLocale::Country country, const QString &comment);
+    QDataTimeZonePrivate(const QDataTimeZonePrivate &other);
+    virtual ~QDataTimeZonePrivate();
+
+    QTimeZonePrivate *clone() Q_DECL_OVERRIDE;
+
+    bool isValid() const Q_DECL_OVERRIDE;
+
+    QLocale::Country country() const Q_DECL_OVERRIDE;
+    QString comment() const Q_DECL_OVERRIDE;
+
+    QString abbreviation(qint64 atMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+
+    int offsetFromUtc(qint64 atMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+    int standardTimeOffset(qint64 atMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+    int daylightTimeOffset(qint64 atMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+
+    bool hasDaylightTime() const Q_DECL_OVERRIDE;
+    bool isDaylightTime(qint64 atMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+
+    Data data(qint64 forMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+
+    bool hasTransitions() const Q_DECL_OVERRIDE;
+    Data nextTransition(qint64 afterMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+    Data previousTransition(qint64 beforeMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+    DataList transitions(qint64 fromMSecsSinceEpoch, qint64 toMSecsSinceEpoch) const Q_DECL_OVERRIDE;
+
+    void serialize(QDataStream &ds) const Q_DECL_OVERRIDE;
+
+private:
+    void init(const QByteArray &zoneId, DataList transitions,
+              QLocale::Country country, const QString &comment);
+
+    QString m_comment;
+    QLocale::Country m_country;
+    DataList m_transitions;
 };
 
 #ifdef QT_USE_ICU

@@ -74,6 +74,8 @@ public:
     /*implicit*/ QTimeZone(const QByteArray &zoneId, int offsetSeconds, const QString &name,
               const QString &abbreviation, QLocale::Country country = QLocale::AnyCountry,
               const QString &comment = QString());
+    /*implicit*/ QTimeZone(const QByteArray &zoneId, OffsetDataList transitions,
+                           QLocale::Country country = QLocale::AnyCountry, const QString &comment = QString());
     QTimeZone(const QTimeZone &other);
     ~QTimeZone();
 
