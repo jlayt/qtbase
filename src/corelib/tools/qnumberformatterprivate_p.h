@@ -53,7 +53,9 @@ class Q_AUTOTEST_EXPORT QNumberFormatterPrivate : public QSharedData
 {
 public:
     QNumberFormatterPrivate(QLocale::NumberStyle style, const QLocaleCode &locale);
+    QNumberFormatterPrivate(QLocale::CurrencyStyle style, const QLocaleCode &locale);
     QNumberFormatterPrivate(QLocale::NumberStyle style, const QString positive, const QString negative, const QLocaleCode &locale);
+    QNumberFormatterPrivate(QLocale::CurrencyStyle style, const QString positive, const QString negative, const QLocaleCode &locale);
     QNumberFormatterPrivate(const QNumberFormatterPrivate &other);
     virtual ~QNumberFormatterPrivate();
 
@@ -66,9 +68,18 @@ public:
     QLocale::NumberStyle numberStyle() const;
     virtual QList<QLocale::NumberStyle> availableNumberStyles();
 
+    virtual QLocale::CurrencyStyle currencyStyle() const;
+    virtual QList<QLocale::CurrencyStyle> availableCurrencyStyles();
+
     virtual QString positivePattern() const;
     virtual QString negativePattern() const;
     virtual void setPattern(const QString &positive, const QString &negative);
+
+    virtual QString currencyCode() const;
+    virtual void setCurrencyCode(const QString &currencyCode);
+
+    virtual QString currencySymbol(QLocale::CurrencySymbolType symbol) const;
+    virtual void setCurrencySymbol(QLocale::CurrencySymbolType symbol, const QString &value);
 
     virtual QString symbol(QLocale::NumberSymbol symbol) const;
     virtual void setSymbol(QLocale::NumberSymbol symbol, const QString &value);
@@ -106,8 +117,15 @@ public:
     virtual quint64 toUInt64(const QString &from, bool *ok, qint32 *pos) const;
     virtual double toDouble(const QString &from, bool *ok, qint32 *pos) const;
 
+    virtual QString toCurrencyString(double from) const;
+    virtual double toCurrencyDouble(const QString &from, bool *ok, int *pos) const;
+
+    virtual QString toCurrencyString(double from, const QString &currencyCode) const;
+    virtual double toCurrencyDouble(const QString &from, QString *currencyCode, bool *ok, int *pos) const;
+
 protected:
     QLocale::NumberStyle m_numberStyle;
+    QLocale::CurrencyStyle m_currencyStyle;
     QLocaleCode m_locale;
 };
 

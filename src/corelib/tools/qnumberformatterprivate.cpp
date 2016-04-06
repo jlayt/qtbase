@@ -45,12 +45,28 @@ QT_BEGIN_NAMESPACE
 
 QNumberFormatterPrivate::QNumberFormatterPrivate(QLocale::NumberStyle style, const QLocaleCode &locale)
     : m_numberStyle(style),
+      m_currencyStyle(QLocale::CurrencyStyle(-1)),
       m_locale(locale)
 {
 }
 
+QNumberFormatterPrivate::QNumberFormatterPrivate(QLocale::CurrencyStyle style, const QLocaleCode &locale)
+    : m_numberStyle(QLocale::NumberStyle(-1)),
+      m_currencyStyle(style),
+      m_locale(locale)
+{
+}
 QNumberFormatterPrivate::QNumberFormatterPrivate(QLocale::NumberStyle style, const QString positive, const QString negative, const QLocaleCode &locale)
     : m_numberStyle(style),
+      m_currencyStyle(QLocale::CurrencyStyle(-1)),
+      m_locale(locale)
+{
+    setPattern(positive, negative);
+}
+
+QNumberFormatterPrivate::QNumberFormatterPrivate(QLocale::CurrencyStyle style, const QString positive, const QString negative, const QLocaleCode &locale)
+    : m_numberStyle(QLocale::NumberStyle(-1)),
+      m_currencyStyle(style),
       m_locale(locale)
 {
     setPattern(positive, negative);
@@ -59,6 +75,7 @@ QNumberFormatterPrivate::QNumberFormatterPrivate(QLocale::NumberStyle style, con
 QNumberFormatterPrivate::QNumberFormatterPrivate(const QNumberFormatterPrivate &other)
     : QSharedData(other),
       m_numberStyle(other.m_numberStyle),
+      m_currencyStyle(other.m_currencyStyle),
       m_locale(other.m_locale)
 {
 }
@@ -94,6 +111,18 @@ QList<QLocale::NumberStyle> QNumberFormatterPrivate::availableNumberStyles()
     return list;
 }
 
+QLocale::CurrencyStyle QNumberFormatterPrivate::currencyStyle() const
+{
+    return m_currencyStyle;
+}
+
+QList<QLocale::CurrencyStyle> QNumberFormatterPrivate::availableCurrencyStyles()
+{
+    QList<QLocale::CurrencyStyle> list;
+    list << QLocale::CurrencySymbolStyle;
+    return list;
+}
+
 QString QNumberFormatterPrivate::positivePattern() const
 {
     //TODO Get the right value
@@ -110,6 +139,33 @@ void QNumberFormatterPrivate::setPattern(const QString &positive, const QString 
 {
     Q_UNUSED(positive)
     Q_UNUSED(negative)
+}
+
+QString QNumberFormatterPrivate::currencyCode() const
+{
+    return QStringLiteral("USD");
+}
+
+void QNumberFormatterPrivate::setCurrencyCode(const QString & currencyCode)
+{
+    Q_UNUSED(currencyCode)
+}
+
+QString QNumberFormatterPrivate::currencySymbol(QLocale::CurrencySymbolType symbol) const
+{
+    switch (symbol) {
+    case QLocale::CurrencyStandardSymbol :
+        return QStringLiteral("$");
+    case QLocale::CurrencyInternationalSymbol :
+        return QStringLiteral("USD");
+    }
+    return QStringLiteral("$");
+}
+
+void QNumberFormatterPrivate::setCurrencySymbol(QLocale::CurrencySymbolType symbol, const QString &value)
+{
+    Q_UNUSED(symbol)
+    Q_UNUSED(value)
 }
 
 QString QNumberFormatterPrivate::symbol(QLocale::NumberSymbol symbol) const
@@ -312,6 +368,34 @@ quint64 QNumberFormatterPrivate::toUInt64(const QString &from, bool *ok, qint32 
 double QNumberFormatterPrivate::toDouble(const QString &from, bool *ok, qint32 *pos = 0) const
 {
     //TODO Replace with old QLocale code
+    Q_UNUSED(pos)
+    return from.toDouble(ok);
+}
+
+QString QNumberFormatterPrivate::toCurrencyString(double from) const
+{
+    //TODO Replace with old QLocale code
+    return QString::number(from);
+}
+
+double QNumberFormatterPrivate::toCurrencyDouble(const QString &from, bool *ok, qint32 *pos) const
+{
+    //TODO Replace with old QLocale code
+    Q_UNUSED(pos)
+    return from.toDouble(ok);
+}
+
+QString QNumberFormatterPrivate::toCurrencyString(double from, const QString &currencyCode) const
+{
+    //TODO Replace with old QLocale code
+    Q_UNUSED(currencyCode)
+    return QString::number(from);
+}
+
+double QNumberFormatterPrivate::toCurrencyDouble(const QString &from, QString *currencyCode, bool *ok, int *pos) const
+{
+    //TODO Replace with old QLocale code
+    Q_UNUSED(currencyCode)
     Q_UNUSED(pos)
     return from.toDouble(ok);
 }

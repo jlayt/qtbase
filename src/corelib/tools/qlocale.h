@@ -58,6 +58,7 @@ class QTextStream;
 class QTextStreamPrivate;
 class QLocaleCode;
 class QNumberFormatter;
+class QCurrencyFormatter;
 
 class QLocalePrivate;
 
@@ -943,6 +944,22 @@ public:
     };
     Q_ENUM(PadPosition)
 
+    enum CurrencyStyle {
+        CurrencySymbolStyle = 1,    // $10.00
+        CurrencyCodeStyle,          // USD10.00
+        CurrencyNameStyle,          // 10 US dollars
+        CurrencyAccountingStyle,    // ($10.00)
+        CurrencyCashStyle,          // $10
+        LastCurrencyStyle = CurrencyCashStyle
+    };
+    Q_ENUM(CurrencyStyle)
+
+    enum CurrencySymbolType {
+        CurrencyStandardSymbol,
+        CurrencyInternationalSymbol,
+    };
+    Q_ENUM(CurrencySymbolType)
+
     enum MeasurementSystem {
         MetricSystem,
         ImperialUSSystem,
@@ -995,6 +1012,7 @@ public:
 
     QLocaleCode localeCode() const;
     QNumberFormatter number() const;
+    QCurrencyFormatter currency() const;
 
     short toShort(const QString &s, bool *ok = Q_NULLPTR) const;
     ushort toUShort(const QString &s, bool *ok = Q_NULLPTR) const;
