@@ -42,6 +42,8 @@ HEADERS +=  \
         tools/qmap.h \
         tools/qmargins.h \
         tools/qmessageauthenticationcode.h \
+        tools/qnumberformatter.h \
+        tools/qnumberformatterprivate_p.h \
         tools/qcontiguouscache.h \
         tools/qpodlist_p.h \
         tools/qpair.h \
@@ -108,6 +110,8 @@ SOURCES += \
         tools/qmap.cpp \
         tools/qmargins.cpp \
         tools/qmessageauthenticationcode.cpp \
+        tools/qnumberformatter.cpp \
+        tools/qnumberformatterprivate.cpp \
         tools/qcontiguouscache.cpp \
         tools/qrect.cpp \
         tools/qregexp.cpp \

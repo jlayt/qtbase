@@ -57,6 +57,7 @@ class QVariant;
 class QTextStream;
 class QTextStreamPrivate;
 class QLocaleCode;
+class QNumberFormatter;
 
 class QLocalePrivate;
 
@@ -862,6 +863,86 @@ public:
     };
     Q_ENUM(CodeFormat)
 
+    enum NumberStyle {
+        DecimalStyle = 1,     // 10.00
+        ScientificStyle,      // 1.0E2
+        PercentageStyle,      // 10%
+        SpelloutStyle,        // ten
+        OrdinalStyle,         // 10th
+        DurationStyle,        // 00:00:10
+        LastNumberStyle = DurationStyle
+    };
+    Q_ENUM(NumberStyle)
+
+    enum NumberSymbol {
+        DecimalSeparatorSymbol = 1,
+        GroupingSeparatorSymbol,
+        PercentSymbol,
+        MinusSignSymbol,
+        PlusSignSymbol,
+        ExponentialSymbol,
+        PerMillSymbol,
+        InfinitySymbol,
+        NaNSymbol,
+        PositivePrefix,
+        PositiveSuffix,
+        NegativePrefix,
+        NegativeSuffix,
+        ZeroDigitSymbol
+    };
+    Q_ENUM(NumberSymbol)
+
+    enum NumberAttribute {
+        MaximumIntegerDigits = 1,
+        MinimumIntegerDigits,
+        MaximumFractionDigits,
+        MinimumFractionDigits,
+        MaximumSignificantDigits,
+        MinimumSignificantDigits,
+        Multiplier,
+        PrimaryGroupingSize,
+        SecondaryGroupingSize
+    };
+    Q_ENUM(NumberAttribute)
+
+    enum NumberFlag {
+        DefaultNumberFlags = 0x0,
+        ParseLenient = 0x1,
+        ParseToDecimalSeparator = 0x2,
+        FormatIntegerWithDecimalSeparator = 0x4,
+        FormatWithoutGroupingSeparator = 0x8
+    };
+    Q_ENUM(NumberFlag)
+    Q_DECLARE_FLAGS(NumberFlags, NumberFlag)
+
+    enum DecimalFormatMode {
+        IntegerFractionDigitsMode = 1,
+        SignificantDigitsMode
+    };
+    Q_ENUM(DecimalFormatMode)
+
+    enum RoundingMode {
+        DefaultRoundingMode = 0,
+        RoundCeiling,
+        RoundFloor,
+        RoundDown,
+        RoundUp,
+        RoundHalfEven,
+        RoundHalfDown,
+        RoundHalfUp,
+        RoundUnnecessary
+    };
+    Q_ENUM(RoundingMode)
+
+    enum PadPosition {
+        DefaultPadPosition = 0,
+        PadBeforePrefix,
+        PadAfterPrefix,
+        PadBeforeSuffix,
+        PadAfterSuffix
+    };
+    Q_ENUM(PadPosition)
+
     enum MeasurementSystem {
         MetricSystem,
         ImperialUSSystem,
@@ -913,6 +994,7 @@ public:
     QString nativeCountryName() const;
 
     QLocaleCode localeCode() const;
+    QNumberFormatter number() const;
 
     short toShort(const QString &s, bool *ok = Q_NULLPTR) const;
     ushort toUShort(const QString &s, bool *ok = Q_NULLPTR) const;
