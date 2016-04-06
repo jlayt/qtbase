@@ -24,6 +24,8 @@ HEADERS +=  \
         tools/qcurrencyformatter.h \
         tools/qdatetime.h \
         tools/qdatetime_p.h \
+        tools/qdatetimeformatter.h \
+        tools/qdatetimeformatterprivate_p.h \
         tools/qdatetimeparser_p.h \
         tools/qdoublescanprint_p.h \
         tools/qeasingcurve.h \
@@ -96,6 +98,8 @@ SOURCES += \
         tools/qcryptographichash.cpp \
         tools/qcurrencyformatter.cpp \
         tools/qdatetime.cpp \
+        tools/qdatetimeformatter.cpp \
+        tools/qdatetimeformatterprivate.cpp \
         tools/qdatetimeparser.cpp \
         tools/qeasingcurve.cpp \
         tools/qelapsedtimer.cpp \

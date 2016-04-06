@@ -59,6 +59,7 @@ class QTextStreamPrivate;
 class QLocaleCode;
 class QNumberFormatter;
 class QCurrencyFormatter;
+class QDateTimeFormatter;
 
 class QLocalePrivate;
 
@@ -960,6 +961,90 @@ public:
     };
     Q_ENUM(CurrencySymbolType)
 
+    enum DateTimeStyle {
+        DefaultDateTimeStyle = 0,
+        FullStyle,
+        LongStyle,
+        MediumStyle,
+        ShortStyle,
+        FullRelativeStyle,
+        LongRelativeStyle,
+        MediumRelativeStyle,
+        ShortRelativeStyle,
+        IsoDateStyle,
+        IsoWeekStyle,
+        IsoOrdinalStyle,
+        Rfc2822Style,
+        Rfc3339Style,
+        LastDateTimeStyle = Rfc3339Style
+    };
+    Q_ENUM(DateTimeStyle)
+
+    enum DateTimeComponent {
+        Year          = 0x1,
+        YearName      = 0x2,
+        Month         = 0x4,
+        MonthName     = 0x8,
+        Day           = 0x10,
+        DayName       = 0x20,
+        JulianDay     = 0x40,
+        EraName       = 0x80,
+        EraYear       = 0x100,
+        YearInEra     = 0x200,
+        DayOfYear     = 0x400,
+        DayOfYearName = 0x800,
+        DayOfWeek     = 0x1000,
+        DayOfWeekName = 0x2000,
+        Week          = 0x4000,
+        WeekYear      = 0x8000,
+        MonthsInYear  = 0x10000,
+        WeeksInYear   = 0x20000,
+        DaysInYear    = 0x40000,
+        DaysInMonth   = 0x80000,
+        DaysInWeek    = 0x100000,
+        Hour          = 0x200000,
+        Minute        = 0x400000,
+        Second        = 0x800000,
+        Millisecond   = 0x1000000,
+        DayPeriod     = 0x2000000,
+        DayPeriodHour = 0x4000000,
+        TimeZone      = 0x8000000,
+        TimeZoneName  = 0x10000000,
+        UnixTime      = 0x20000000
+    };
+    Q_ENUM(DateTimeComponent)
+    Q_DECLARE_FLAGS(DateTimeComponents, DateTimeComponent)
+
+    enum ComponentStyle {
+        DefaultComponentStyle = 0,
+        LongName,           // e.g. January
+        ShortName,          // e.g. Jan
+        NarrowName,         // e.g. J
+        LongNumber,         // e.g. 01
+        ShortNumber         // e.g. 1
+    };
+    Q_ENUM(ComponentStyle)
+
+    enum ComponentContext {
+        DefaultContext = 0,
+        StyleContext,         // Use in a style
+        StandaloneContext     // Use standalone
+    };
+    Q_ENUM(ComponentContext)
+
+    enum YearType {
+        StandardYear,
+        LeapYear
+    };
+    Q_ENUM(YearType)
+
+    enum CalendarSystem {
+        DefaultCalendar   = 0,
+        GregorianCalendar = 1,
+        LastCalendar      = GregorianCalendar
+    };
+    Q_ENUM(CalendarSystem)
+
     enum MeasurementSystem {
         MetricSystem,
         ImperialUSSystem,
@@ -1013,6 +1098,7 @@ public:
     QLocaleCode localeCode() const;
     QNumberFormatter number() const;
     QCurrencyFormatter currency() const;
+    QDateTimeFormatter dateTime() const;
 
     short toShort(const QString &s, bool *ok = Q_NULLPTR) const;
     ushort toUShort(const QString &s, bool *ok = Q_NULLPTR) const;
