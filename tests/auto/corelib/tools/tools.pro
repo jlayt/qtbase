@@ -17,6 +17,7 @@ SUBDIRS=\
     qcryptographichash \
     qdate \
     qdatetime \
+    qdatetimeformatter \
     qeasingcurve \
     qelapsedtimer \
     qexplicitlyshareddatapointer \
@@ -34,6 +35,7 @@ SUBDIRS=\
     qmap_strictiterators \
     qmargins \
     qmessageauthenticationcode \
+    qnumberformatter \
     qpair \
     qpoint \
     qpointf \
