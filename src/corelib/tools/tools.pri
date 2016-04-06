@@ -37,6 +37,8 @@ HEADERS +=  \
         tools/qlocale_p.h \
         tools/qlocale_tools_p.h \
         tools/qlocale_data_p.h \
+        tools/qlocalecode.h \
+        tools/qlocalecodeprivate_p.h \
         tools/qmap.h \
         tools/qmargins.h \
         tools/qmessageauthenticationcode.h \
@@ -100,6 +102,8 @@ SOURCES += \
         tools/qlist.cpp \
         tools/qlocale.cpp \
         tools/qlocale_tools.cpp \
+        tools/qlocalecode.cpp \
+        tools/qlocalecodeprivate.cpp \
         tools/qpoint.cpp \
         tools/qmap.cpp \
         tools/qmargins.cpp \

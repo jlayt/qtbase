@@ -56,6 +56,7 @@ class QTime;
 class QVariant;
 class QTextStream;
 class QTextStreamPrivate;
+class QLocaleCode;
 
 class QLocalePrivate;
 
@@ -839,6 +840,28 @@ public:
     Q_ENUM(Country)
     Q_ENUM(Script)
 
+    enum LocaleType {
+        SystemLocale,   // The default system locale
+        UserLocale,     // The users default locale including customizations
+        CustomLocale    // A custom locale, either a standard system locale or a made-up one
+    };
+    Q_ENUM(LocaleType)
+
+    // ICU ULocDataLocaleType
+    enum LocaleCodeType {
+        RequestedLocaleCode = 1, // The locale code the user requested
+        EffectiveLocaleCode      // The locale code actually being used
+    };
+    Q_ENUM(LocaleCodeType)
+
+    enum CodeFormat {
+        DefaultCode,
+        IsoAlpha2Code,
+        IsoAlpha3Code,
+        IsoNumeric3Code
+    };
+    Q_ENUM(CodeFormat)
+
     enum MeasurementSystem {
         MetricSystem,
         ImperialUSSystem,
@@ -888,6 +911,8 @@ public:
     QString bcp47Name() const;
     QString nativeLanguageName() const;
     QString nativeCountryName() const;
+
+    QLocaleCode localeCode() const;
 
     short toShort(const QString &s, bool *ok = Q_NULLPTR) const;
     ushort toUShort(const QString &s, bool *ok = Q_NULLPTR) const;
