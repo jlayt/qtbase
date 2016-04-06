@@ -47,6 +47,10 @@
 
 #include "qnumberformatter.h"
 
+#ifdef QT_USE_ICU
+#include <unicode/unum.h>
+#endif // QT_USE_ICU
+
 QT_BEGIN_NAMESPACE
 
 class Q_AUTOTEST_EXPORT QNumberFormatterPrivate : public QSharedData
@@ -61,11 +65,11 @@ public:
 
     virtual QNumberFormatterPrivate *clone();
 
-    bool isValid() const;
+    virtual bool isValid() const;
 
-    QLocaleCode locale() const;
+    virtual QLocaleCode locale() const;
 
-    QLocale::NumberStyle numberStyle() const;
+    virtual QLocale::NumberStyle numberStyle() const;
     virtual QList<QLocale::NumberStyle> availableNumberStyles();
 
     virtual QLocale::CurrencyStyle currencyStyle() const;
@@ -130,6 +134,76 @@ protected:
 };
 
 template<> QNumberFormatterPrivate *QSharedDataPointer<QNumberFormatterPrivate>::clone();
+
+#ifdef QT_USE_ICU
+class Q_AUTOTEST_EXPORT QIcuNumberFormatterPrivate Q_DECL_FINAL : public QNumberFormatterPrivate
+{
+public:
+    QIcuNumberFormatterPrivate(QLocale::NumberStyle style, const QLocaleCode &locale);
+    QIcuNumberFormatterPrivate(QLocale::CurrencyStyle style, const QLocaleCode &locale);
+    QIcuNumberFormatterPrivate(const QIcuNumberFormatterPrivate &other);
+    ~QIcuNumberFormatterPrivate();
+
+    QIcuNumberFormatterPrivate *clone() Q_DECL_OVERRIDE;
+
+    bool isValid() const Q_DECL_OVERRIDE;
+
+    QList<QLocale::NumberStyle> availableNumberStyles() Q_DECL_OVERRIDE;
+    QList<QLocale::CurrencyStyle> availableCurrencyStyles() Q_DECL_OVERRIDE;
+
+    QString positivePattern() const Q_DECL_OVERRIDE;
+    QString negativePattern() const Q_DECL_OVERRIDE;
+    void setPattern(const QString &positive, const QString &negative) Q_DECL_OVERRIDE;
+
+    QString currencyCode() const Q_DECL_OVERRIDE;
+    void setCurrencyCode(const QString &currencyCode) Q_DECL_OVERRIDE;
+
+    QString currencySymbol(QLocale::CurrencySymbolType symbol) const Q_DECL_OVERRIDE;
+    void setCurrencySymbol(QLocale::CurrencySymbolType symbol, const QString &value) Q_DECL_OVERRIDE;
+
+    QString symbol(QLocale::NumberSymbol symbol) const Q_DECL_OVERRIDE;
+    void setSymbol(QLocale::NumberSymbol symbol, const QString &value) Q_DECL_OVERRIDE;
+
+    qint32 attribute(QLocale::NumberAttribute attribute) const Q_DECL_OVERRIDE;
+    void setAttribute(QLocale::NumberAttribute attribute, qint32 value) Q_DECL_OVERRIDE;
+
+    bool flag(QLocale::NumberFlag flag) const Q_DECL_OVERRIDE;
+    void setFlag(QLocale::NumberFlag flag, bool value = true) Q_DECL_OVERRIDE;
+
+    QLocale::NumberFlags flags() const Q_DECL_OVERRIDE;
+    void setFlags(QLocale::NumberFlags flags) Q_DECL_OVERRIDE;
+
+    QLocale::DecimalFormatMode decimalFormatMode() const Q_DECL_OVERRIDE;
+    void setDecimalFormatMode(QLocale::DecimalFormatMode mode) Q_DECL_OVERRIDE;
+
+    QLocale::RoundingMode roundingMode() const Q_DECL_OVERRIDE;
+    double roundingIncrement() const Q_DECL_OVERRIDE;
+    void setRounding(QLocale::RoundingMode mode, double increment) Q_DECL_OVERRIDE;
+
+    qint32 paddingWidth() const Q_DECL_OVERRIDE;
+    QString padding() const Q_DECL_OVERRIDE;
+    QLocale::PadPosition paddingPosition() const Q_DECL_OVERRIDE;
+    void setPadding(qint32 width, const QString &padding, QLocale::PadPosition position) Q_DECL_OVERRIDE;
+
+    QString toString(qint64 from) const Q_DECL_OVERRIDE;
+    QString toString(quint64 from) const Q_DECL_OVERRIDE;
+    QString toString(double from) const Q_DECL_OVERRIDE;
+
+    qint64 toInt64(const QString &from, bool *ok, qint32 *pos) const Q_DECL_OVERRIDE;
+    quint64 toUInt64(const QString &from, bool *ok, qint32 *pos) const Q_DECL_OVERRIDE;
+    double toDouble(const QString &from, bool *ok, qint32 *pos) const Q_DECL_OVERRIDE;
+
+    QString toCurrencyString(double from) const Q_DECL_OVERRIDE;
+    double toCurrencyDouble(const QString &from, bool *ok, int *pos) const Q_DECL_OVERRIDE;
+
+    QString toCurrencyString(double from, const QString &currencyCode) const Q_DECL_OVERRIDE;
+    double toCurrencyDouble(const QString &from, QString *currencyCode, bool *ok, int *pos) const Q_DECL_OVERRIDE;
+
+private:
+    UNumberFormat *m_unum;
+    UErrorCode m_status;
+};
+#endif // QT_USE_ICU
 
 QT_END_NAMESPACE
 

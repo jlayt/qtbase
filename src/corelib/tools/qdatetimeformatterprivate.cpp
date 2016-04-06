@@ -47,6 +47,8 @@ QDateTimeFormatterPrivate::QDateTimeFormatterPrivate(QLocale::DateTimeStyle styl
     : m_style(style),
       m_locale(locale)
 {
+    if (style == QLocale::DefaultDateTimeStyle)
+        m_style = QLocale::MediumStyle;
 }
 
 QDateTimeFormatterPrivate::QDateTimeFormatterPrivate(const QString date, const QString time, const QLocaleCode &locale)

@@ -49,6 +49,10 @@
 
 #include "qdatetime.h"
 
+#ifdef QT_USE_ICU
+#include <unicode/udat.h>
+#endif // QT_USE_ICU
+
 QT_BEGIN_NAMESPACE
 
 class Q_AUTOTEST_EXPORT QDateTimeFormatterPrivate : public QSharedData
@@ -109,12 +113,66 @@ public:
     virtual QString weekdayName(int day, QLocale::ComponentStyle style, QLocale::ComponentContext context) const;
     virtual QString dayPeriodName(const QTime &time, QLocale::ComponentStyle style, QLocale::ComponentContext context) const;
 
-private:
+protected:
     QLocale::DateTimeStyle m_style;
     QLocaleCode m_locale;
 };
 
 template<> QDateTimeFormatterPrivate *QSharedDataPointer<QDateTimeFormatterPrivate>::clone();
+
+#ifdef QT_USE_ICU
+class Q_AUTOTEST_EXPORT QIcuDateTimeFormatterPrivate Q_DECL_FINAL : public QDateTimeFormatterPrivate
+{
+public:
+    QIcuDateTimeFormatterPrivate(QLocale::DateTimeStyle style, const QLocaleCode &locale);
+    QIcuDateTimeFormatterPrivate(const QIcuDateTimeFormatterPrivate &other);
+    virtual ~QIcuDateTimeFormatterPrivate();
+
+    QIcuDateTimeFormatterPrivate *clone() Q_DECL_OVERRIDE;
+
+    bool isValid(QMetaType::Type type = QMetaType::QDateTime) const Q_DECL_OVERRIDE;
+
+    QList<QLocale::DateTimeStyle> availableStyles() Q_DECL_OVERRIDE;
+
+    QString datePattern() const Q_DECL_OVERRIDE;
+    QString timePattern() const Q_DECL_OVERRIDE;
+    QString dateTimePattern() const Q_DECL_OVERRIDE;
+
+    void setDatePattern(const QString & pattern) Q_DECL_OVERRIDE;
+    void setTimePattern(const QString & pattern) Q_DECL_OVERRIDE;
+    void setDateTimePattern(const QString & pattern) Q_DECL_OVERRIDE;
+
+    qint32 shortYearWindowStart() const Q_DECL_OVERRIDE;
+    void setShortYearWindowStart(qint32 year) Q_DECL_OVERRIDE;
+
+    QString toString(const QDate &date) const Q_DECL_OVERRIDE;
+    QString toString(const QTime &time) const Q_DECL_OVERRIDE;
+    QString toString(const QDateTime &dateTime) const Q_DECL_OVERRIDE;
+
+    QString toString(const QDate &date, const QString &pattern) const Q_DECL_OVERRIDE;
+    QString toString(const QTime &time, const QString &pattern) const Q_DECL_OVERRIDE;
+    QString toString(const QDateTime &dateTime, const QString &pattern) const Q_DECL_OVERRIDE;
+
+    QDate toDate(const QString &string, QDateTimeFormatter::ParsingMode mode) const Q_DECL_OVERRIDE;
+    QTime toTime(const QString &string, QDateTimeFormatter::ParsingMode mode) const Q_DECL_OVERRIDE;
+    QDateTime toDateTime(const QString &string, QDateTimeFormatter::ParsingMode mode) const Q_DECL_OVERRIDE;
+
+    QDate toDate(const QString &string, const QString &pattern, QDateTimeFormatter::ParsingMode mode) const Q_DECL_OVERRIDE;
+    QTime toTime(const QString &string, const QString &pattern, QDateTimeFormatter::ParsingMode mode) const Q_DECL_OVERRIDE;
+    QDateTime toDateTime(const QString &string, const QString &pattern, QDateTimeFormatter::ParsingMode mode) const Q_DECL_OVERRIDE;
+
+    QString eraName(int era, QLocale::ComponentStyle style, QLocale::ComponentContext context) const Q_DECL_OVERRIDE;
+    QString quarterName(int quarter, QLocale::ComponentStyle style, QLocale::ComponentContext context) const Q_DECL_OVERRIDE;
+    QString monthName(int month, QLocale::ComponentStyle style, QLocale::ComponentContext context) const Q_DECL_OVERRIDE;
+    QString weekdayName(int day, QLocale::ComponentStyle style, QLocale::ComponentContext context) const Q_DECL_OVERRIDE;
+    QString dayPeriodName(const QTime &time, QLocale::ComponentStyle style, QLocale::ComponentContext context) const Q_DECL_OVERRIDE;
+
+private:
+    UDateFormat *m_dateFormatter;
+    UDateFormat *m_timeFormatter;
+    UDateFormat *m_dateTimeFormatter;
+};
+#endif // QT_USE_ICU
 
 QT_END_NAMESPACE
 

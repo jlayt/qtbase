@@ -176,6 +176,8 @@ contains(QT_CONFIG,icu) {
     include($$PWD/../../3rdparty/icu_dependency.pri)
 
     SOURCES += tools/qlocale_icu.cpp \
+               tools/qdatetimeformatterprivate_icu.cpp \
+               tools/qnumberformatterprivate_icu.cpp \
                tools/qcollator_icu.cpp \
                tools/qtimezoneprivate_icu.cpp
     DEFINES += QT_USE_ICU
